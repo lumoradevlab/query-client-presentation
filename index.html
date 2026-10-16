@@ -219,13 +219,27 @@ html[data-theme="light"] .btn.primary:hover{color:#f3f5fe}
     <div class="cols c3" style="gap:20px">
       <div class="card"><span class="tag">01</span><h3>ایده از کجا آمد</h3><p>React Query: چه مشکلی را حل کرد و چرا به Compose آمد</p></div>
       <div class="card"><span class="tag">02</span><h3>مشکل</h3><p>چرا ViewModel برای server data زیادی است</p></div>
-      <div class="card"><span class="tag">03</span><h3>ایده در Compose</h3><p><span class="ic">useQuery</span>، <span class="ic">useMutation</span> و <span class="ic">QueryContent</span></p></div>
-      <div class="card"><span class="tag">04</span><h3>Engine</h3><p>cache، freshness، de-duplication، invalidate، retry و polling — با simulator</p></div>
+      <div class="card"><span class="tag">03</span><h3>ایده در Compose</h3><p>یک جعبه‌ی مشترک، key، و سه ابزار: <span class="ic">useQuery</span>، <span class="ic">useMutation</span>، <span class="ic">QueryContent</span></p></div>
+      <div class="card"><span class="tag">04</span><h3>Engine</h3><p>قانون‌های جعبه: staleTime، observers، fetch، invalidate، retry، polling — با simulator</p></div>
       <div class="card"><span class="tag">05</span><h3>Traps</h3><p>آنچه یک پیاده‌سازی ساده اشتباه می‌کند</p></div>
       <div class="card accent-card"><span class="tag">06</span><h3>شروع کار</h3><p>recipe ساخت feature، rules و یک تمرین عملی</p></div>
     </div>
   </div>
 </section>
+
+<section class="slide" id="destination" data-title="مقصد امروز">
+  <div class="hd"><div class="kicker">مقصد <span class="en">Where we are going</span></div><h2>مقصد امروز، در یک جمله</h2></div>
+  <div class="bd" style="justify-content:center;gap:34px">
+    <div class="quote"><p style="font-size:calc(30px * var(--fs));line-height:1.75">server data مال ما نیست؛ یک کپی است. پس به جای اینکه هر screen کپی خودش را در یک ViewModel نگه دارد، <b>یک cache مشترک</b> داریم و screen فقط می‌گوید چه data‌ای می‌خواهد.</p></div>
+    <div class="cols c3">
+      <div class="card accent-card"><span class="tag">QueryEntry</span><h3>جعبه</h3><p>یک جعبه برای یک تکه server data، مشترک بین همه‌ی screenها.</p></div>
+      <div class="card accent-card"><span class="tag">key</span><h3>اسم جعبه</h3><p>مثل <span class="ic">"wallet.balance.USDT"</span>؛ screen با آن جعبه‌اش را پیدا می‌کند.</p></div>
+      <div class="card accent-card"><span class="tag">QueryClient</span><h3>جای جعبه‌ها</h3><p>یک map که همه‌ی جعبه‌ها را با اسمشان نگه می‌دارد.</p></div>
+    </div>
+    <p class="small">هر چیز دیگری امروز — staleTime، retry، invalidate — فقط یک قانون درباره‌ی همین جعبه است.</p>
+  </div>
+</section>
+
 
 <!-- ═════════════ SECTION 01 · REACT QUERY ═════════════ -->
 <section class="slide sec" id="sec-react" data-title="بخش ۱ — ایده از کجا آمد">
@@ -396,6 +410,37 @@ fun ArticleListScreen() {
   </div>
 </section>
 
+<section class="slide" id="two-screens" data-title="دو screen، دو کپی">
+  <div class="hd"><div class="kicker">مشکل <span class="en">Two screens, two copies</span></div><h2>دو screen، دو کپی از یک data</h2></div>
+  <div class="bd">
+    <div class="cols w60">
+<pre class="code"><code class="kt">class WalletViewModel(...) : ViewModel() {
+    val balance = MutableStateFlow&lt;String?&gt;(null)
+
+    fun load() = viewModelScope.launch {
+        balance.value = repo.getBalance()
+    }
+}
+
+class DashboardViewModel(...) : ViewModel() {
+    val balance = MutableStateFlow&lt;String?&gt;(null)
+
+    fun load() = viewModelScope.launch {
+        balance.value = repo.getBalance()
+    }
+}</code></pre>
+      <div class="card bad-card"><h3>نتیجه</h3><ul class="plain">
+        <li><b>دو جعبه</b> که یک عدد را نگه می‌دارند</li>
+        <li><b>دو request</b> برای یک چیز</li>
+        <li>بعد از خرید، <b>هر دو عدد قدیمی</b> را نشان می‌دهند تا دستی بگوییم reload کنند</li>
+        <li>و هیچ‌کدام cache یا retry ندارند</li>
+      </ul></div>
+    </div>
+    <div class="quote"><p>مشکل فقط تعداد خط نیست: هر ViewModel یک کپی جدا از یک data دارد، و ما مسئولیم این کپی‌ها را دستی هماهنگ نگه داریم.</p></div>
+  </div>
+</section>
+
+
 <section class="slide" id="server-state" data-title="server data در برابر state screen">
   <div class="hd"><div class="kicker">ایده‌ی کلیدی <span class="en">Server state ≠ client state</span></div><h2>Server data با screen state فرق دارد</h2></div>
   <div class="bd">
@@ -418,6 +463,64 @@ fun ArticleListScreen() {
   <h1>همان ایده، در Compose</h1>
   <p class="lead">یک cache layer مشترک برای همه‌ی server data؛ screen فقط می‌گوید «چه data‌ای» و «success state چه شکلی است».</p>
 </section>
+
+<section class="slide" id="box" data-title="یک جعبه‌ی مشترک">
+  <div class="hd"><div class="kicker">ایده <span class="en">One shared box · QueryEntry</span></div><h2>یک جعبه‌ی مشترک برای هر data</h2></div>
+  <div class="bd">
+    <div class="cols w40" style="align-items:center">
+      <div style="display:flex;flex-direction:column;gap:14px">
+        <div class="lane on"><span class="who">Wallet</span><span class="st">← همان جعبه را می‌خواند</span></div>
+        <div class="lane on"><span class="who">Dashboard</span><span class="st">← همان جعبه را می‌خواند</span></div>
+        <div class="lane on"><span class="who">Buy</span><span class="st">← همان جعبه را می‌خواند</span></div>
+      </div>
+      <div class="card accent-card">
+        <span class="tag">QueryEntry · key = "wallet.balance.USDT"</span>
+        <div class="kv" style="grid-template-columns:1fr 1fr;margin-top:10px">
+          <div><div class="k">data</div><div class="v ltr" style="text-align:right">StateFlow · 1,250 USDT</div></div>
+          <div><div class="k">observers</div><div class="v">۳ screen</div></div>
+          <div><div class="k">lastFetch</div><div class="v ltr" style="text-align:right">10:42</div></div>
+          <div><div class="k">in-flight request</div><div class="v">ندارد</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="cols c3">
+      <div class="card good-card"><p><b>یک جعبه</b>، پس عدد هیچ‌وقت بین screenها فرق نمی‌کند.</p></div>
+      <div class="card good-card"><p><b>یک request</b> جعبه را پر می‌کند و همه نتیجه را می‌بینند.</p></div>
+      <div class="card good-card"><p>بعد از خرید، <b>همین یک جعبه</b> refresh می‌شود و همه‌ی screenها با هم عوض می‌شوند.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" id="key-client" data-title="key و QueryClient">
+  <div class="hd"><div class="kicker">اسم و جای جعبه <span class="en">key · QueryClient</span></div><h2>هر جعبه یک اسم دارد؛ همه در یک map</h2></div>
+  <div class="bd">
+    <div class="cols">
+      <div style="display:flex;flex-direction:column;gap:16px">
+<pre class="code"><code class="kt">@Singleton
+class QueryClient @Inject constructor(...) {
+    private val entries =
+        ConcurrentHashMap&lt;String, QueryEntry&lt;*&gt;&gt;()
+
+    fun getOrCreate(key: String, ...) =
+        entries.computeIfAbsent(key) { QueryEntry(key, ...) }
+}</code></pre>
+<pre class="code"><code class="kt">object ArticleKeys {
+    fun headlines(source: String, page: Int) =
+        "articles.headlines.$source.$page"
+}</code></pre>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:14px">
+        <div class="card"><h3>key هست؟</h3><p>همان جعبه را برمی‌گرداند، پس screen دوم جعبه‌ی screen اول را می‌گیرد. نیست؟ یک جعبه‌ی جدید می‌سازد.</p></div>
+        <div class="card accent-card"><h3>سه قانون key</h3><ul class="plain">
+          <li>هر چیزی که نتیجه‌ی request را عوض می‌کند (page، فیلتر، id) <b>باید در key باشد</b></li>
+          <li>key سلسله‌مراتبی است، تا یک گروه را با هم invalidate کنیم</li>
+          <li>keyها در یک <span class="ic">object XxxKeys</span> کنار Api؛ نه رشته‌ی دستی</li>
+        </ul></div>
+      </div>
+    </div>
+  </div>
+</section>
+
 
 <section class="slide" id="react-map" data-title="نقشه‌ی React به Compose">
   <div class="hd"><div class="kicker">Mapping <span class="en">React Query → ComposeCleanArch</span></div><h2>از React به Compose، تکه به تکه</h2></div>
@@ -533,6 +636,59 @@ QueryContent(headlines) { list -&gt; ArticleList(list) }
   <p class="lead">هر key یک <span class="ltr">QueryEntry</span> دارد. بیایید با simulator ببینیم در طول زمان با آن چه اتفاقی می‌افتد.</p>
 </section>
 
+<section class="slide" id="stale-rule" data-title="قانون ۱: staleTime">
+  <div class="hd"><div class="kicker">قانون ۱ <span class="en">staleTime · lastFetch</span></div><h2>جعبه کِی به سرور می‌رود؟</h2></div>
+  <div class="bd">
+    <div class="cols">
+      <div style="display:flex;flex-direction:column;gap:18px">
+        <table class="tbl">
+          <tr><th>داخل جعبه</th><th>کار جعبه</th></tr>
+          <tr><td>خالی</td><td class="v2">به سرور برو</td></tr>
+          <tr><td>data دارد و fresh است</td><td class="v2">همان را بده؛ request نزن</td></tr>
+          <tr><td>data دارد ولی stale است</td><td class="v2">به سرور برو</td></tr>
+        </table>
+<pre class="code"><code class="kt">private fun shouldFetch(): Boolean =
+    current == null ||                  // empty box
+    (now() - lastFetch) &gt; staleTime     // or old data</code></pre>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:16px">
+        <div class="card accent-card"><h3>staleTime = ۵ دقیقه (default)</h3><p>۲ دقیقه پیش گرفته شده: <b>fresh</b>، بدون request.<br>۷ دقیقه پیش: <b>stale</b>، دوباره fetch.</p></div>
+        <div class="card bad-card"><h3>اشتباه رایج</h3><p>stale شدن به‌تنهایی request نمی‌زند. جعبه فقط علامت می‌خورد؛ دفعه‌ی بعد که screenی بازش کند refetch می‌شود. data زنده = <span class="ic">refetchInterval</span>.</p></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" id="observers" data-title="قانون ۲: observers و cacheTime">
+  <div class="hd"><div class="kicker">قانون ۲ <span class="en">observers · cacheTime</span></div><h2>جعبه می‌شمارد چه کسی نگاهش می‌کند</h2></div>
+  <div class="bd">
+    <div class="cols">
+      <div style="display:flex;flex-direction:column;gap:14px">
+<pre class="code"><code class="kt">fun observe() {
+    observers++
+    cancelEvictTimer()
+    if (observers == 1 &amp;&amp; shouldFetch()) fetch()
+}
+
+fun unobserve() {
+    observers--
+    if (observers == 0) startEvictTimer(cacheTime)
+}</code></pre>
+<pre class="code"><code class="kt">// inside useQuery
+DisposableEffect(key) {
+    entry.observe()                    // screen appeared: +1
+    onDispose { entry.unobserve() }    // screen left: -1
+}</code></pre>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:14px">
+        <div class="log" style="font-size:17px;line-height:1.9">Wallet opens      → observers = 1   (fetch)<br>Dashboard opens   → observers = 2   (no request)<br>Wallet closes     → observers = 1<br>Dashboard closes  → observers = 0   (evict timer)</div>
+        <div class="card"><h3>دو زمان، کنار هم</h3><p><b>staleTime (۵ دقیقه):</b> تا کی data fresh است.<br><b>cacheTime (۱۰ دقیقه):</b> جعبه‌ای که کسی نگاهش نمی‌کند تا کی نگه داشته می‌شود.</p></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
 <section class="slide" id="lifecycle" data-title="simulator: lifecycle key">
   <div class="hd"><div class="kicker">Simulator <span class="en">staleTime = 5 min · cacheTime = 10 min</span></div><h2>lifecycle یک key در cache</h2></div>
   <div class="bd">
@@ -564,6 +720,40 @@ QueryContent(headlines) { list -&gt; ArticleList(list) }
   </div>
 </section>
 
+<section class="slide" id="fetch-steps" data-title="قانون ۳: fetch">
+  <div class="hd"><div class="kicker">قانون ۳ <span class="en">fetch · de-duplication</span></div><h2>fetch: سه کار، و فقط یک request در هر لحظه</h2></div>
+  <div class="bd">
+    <div class="cols w40">
+      <div class="flow">
+        <div class="box"><div><h3>۱. نشان بده که load می‌کنی</h3><p>جعبه خالی: <span class="ic">Loading</span>. data دارد: <span class="ic">Success(old, refreshing)</span>؛ spinner نمی‌آید</p></div></div>
+        <div class="arrow">↓</div>
+        <div class="box"><div><h3>۲. fetcher را صدا بزن</h3><p>همان lambdaی که در hook دادید</p></div></div>
+        <div class="arrow">↓</div>
+        <div class="box hot"><div><h3>۳. نتیجه را ذخیره کن</h3><p>موفق: <span class="ic">Success(new)</span> و lastFetch = now. ناموفق: <span class="ic">Failure</span>، یا اگر data قبلی بود همان می‌ماند</p></div></div>
+      </div>
+<pre class="code"><code class="kt">fun fetch() {
+    if (inFlight != null) return     // already fetching → join it
+
+    inFlight = scope.launch {
+        state = if (data == null) Loading
+                else Success(data, refreshing = true)
+        try {
+            val newData = fetcher()
+            state = Success(newData)
+            lastFetch = now()
+        } catch (e: Exception) {
+            state = if (data != null) Success(data)
+                    else Failure(AppError.from(e))
+        } finally {
+            inFlight = null
+        }
+    }
+}</code></pre>
+    </div>
+  </div>
+</section>
+
+
 <section class="slide" id="dedup" data-title="simulator: de-duplication">
   <div class="hd"><div class="kicker">Simulator <span class="en">Request de-duplication</span></div><h2>سه screen، یک request</h2></div>
   <div class="bd">
@@ -592,18 +782,22 @@ QueryContent(headlines) { list -&gt; ArticleList(list) }
   <div class="bd">
     <div class="cols">
       <div style="display:flex;flex-direction:column;gap:16px">
-<pre class="code"><code class="kt">val bookmark = useMutation&lt;String, Unit&gt;(
-    mutationFn = { id -&gt; repo.bookmark(id) },
+<pre class="code"><code class="kt">val buy = useMutation&lt;BuyRequest, Order&gt;(
+    mutationFn = { request -&gt; repo.buy(request) },
     options = MutationOptions(
-        invalidateKeys = listOf(ArticleKeys.BOOKMARKS),
+        invalidateKeys = listOf(WalletKeys.balance("USDT")),
     ),
 )
 
-Button(
-    onClick = { bookmark(id) },
-    enabled = !bookmark.isLoading,
-) { Text("Save") }</code></pre>
-        <div class="card"><p><b>ابزارهای QueryClient:</b> <span class="ic">invalidate(key)</span>، <span class="ic">invalidateMatching("articles\\..*")</span>، <span class="ic">setData</span> برای optimistic update، <span class="ic">prefetch</span> قبل از navigation، <span class="ic">clear()</span> هنگام خروج.</p></div>
+Button(onClick = { buy(request) }, enabled = !buy.isLoading) {
+    Text("Buy")
+}</code></pre>
+<pre class="code"><code class="kt">// QueryEntry
+fun invalidate() {
+    lastFetch = 0L                  // now counts as old
+    if (observers &gt; 0)
+        fetch(force = true)         // someone is watching
+}</code></pre>
       </div>
       <div class="flow">
         <div class="box"><div><h3>۱. کاربر دکمه را می‌زند</h3><p>mutate فقط یک بار اجرا می‌شود (single-flight)</p></div></div>
@@ -956,6 +1150,20 @@ fun `concurrent reads are de-duplicated to a single fetch`() =
         </ul></div>
         <div class="card"><h3>چک‌لیست بازبینی</h3><p>screen ViewModel ندارد؟ Loading/Error دستی نیست؟ key در <span class="ic">SourceKeys</span> است؟ Resource از Repository بیرون نیامده؟</p></div>
       </div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" id="recap" data-title="جمع‌بندی">
+  <div class="hd"><div class="kicker">جمع‌بندی <span class="en">Recap</span></div><h2>همان جمله‌ی اول، حالا با معنی</h2></div>
+  <div class="bd" style="gap:26px">
+    <div class="quote"><p style="font-size:calc(26px * var(--fs))">server data مال ما نیست؛ یک کپی است. پس یک جعبه‌ی مشترک برایش داریم، و screen فقط می‌گوید چه data‌ای می‌خواهد.</p></div>
+    <div class="steps" style="grid-template-columns:repeat(5,1fr)">
+      <div class="step"><span class="no">01</span><h3>وب</h3><p>همین مشکل را داشت و React Query حلش کرد</p></div>
+      <div class="step"><span class="no">02</span><h3>ما</h3><p>ViewModelها: کپی‌های جدا از یک data</p></div>
+      <div class="step"><span class="no">03</span><h3>جعبه</h3><p>QueryEntry با key، در QueryClient</p></div>
+      <div class="step"><span class="no">04</span><h3>قانون‌ها</h3><p>staleTime، observers، یک request، retry، invalidate</p></div>
+      <div class="step"><span class="no">05</span><h3>از فردا</h3><p>recipe هشت‌قدمی؛ ViewModel فقط برای screen state</p></div>
     </div>
   </div>
 </section>

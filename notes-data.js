@@ -9,6 +9,11 @@ window.NOTES = {
 <p>شش بخش: اول اینکه ایده از کجا آمد — React Query. بعد مشکل در اندروید، بعد همان ایده در Compose، بعد engine با چند simulator زنده.</p>
 <p>بعد trapهایی که یک نسخه‌ی ساده دارد، و آخر اینکه از فردا چطور بنویسیم، با یک تمرین. سؤال‌ها را وسط هم بپرسید.</p>` },
 
+  destination: { time: '1.5′', html: `
+<p>این جمله را آرام بخوانید؛ آخر جلسه همین را تکرار می‌کنیم.</p>
+<p>بعد سه کارت را معرفی کنید: «امروز همه‌چیز درباره‌ی این سه است: یک جعبه برای هر data، یک اسم برای هر جعبه (key)، و یک map که همه‌ی جعبه‌ها را نگه می‌دارد (QueryClient).»</p>
+<p>«هر چیز دیگری که امروز می‌بینید — staleTime، retry، invalidate — فقط یک قانون درباره‌ی همین جعبه است.»</p>` },
+
   'sec-react': { time: '0.5′', html: `
 <p>قبل از هر خط کد اندرویدی، از وب شروع می‌کنیم. بپرسید: «چند نفر با React یا React Query کار کرده‌اند؟» اگر کسی هست، یک جمله از تجربه‌اش بگوید.</p>` },
 
@@ -36,6 +41,11 @@ window.NOTES = {
 <p>نکته‌ی مهم پایین اسلاید: نسخه‌ی MVVM با این همه کد هنوز <b>کمتر</b> کار می‌کند — cache ندارد، اگر دو screen همین data را بخواهند دو request می‌زند، و retry ندارد.</p>
 <p>یعنی مشکل فقط تعداد خط نیست؛ هر ViewModel یک cache ناقص جدید است.</p>` },
 
+  'two-screens': { time: '2′', html: `
+<p>همان ViewModel ساده، دو بار. بپرسید: «اینجا چند کپی از موجودی داریم؟ چند request؟»</p>
+<p>بعد سه نتیجه را بخوانید: دو جعبه، دو request، و بعد از خرید هر دو عدد قدیمی را نشان می‌دهند تا دستی reload کنیم.</p>
+<p>بپرسید: «در اپ خودمان، کدام data در بیشتر از یک screen هست؟ و بعد از یک خرید، امروز چطور به screenهای دیگر می‌گوییم refresh کنند؟»</p>` },
+
   'server-state': { time: '2′', html: `
 <p>این ایده‌ی اصلی React Query است و کل معماری روی آن بنا شده: server data مال ما نیست، ما فقط یک کپی داریم که stale می‌شود.</p>
 <p>screen state — متن فرم، تب انتخاب‌شده — واقعاً مال screen است. برای آن ViewModel یا remember کاملاً درست است.</p>
@@ -43,6 +53,16 @@ window.NOTES = {
 
   'sec-idea': { time: '0.5′', html: `
 <p>پس ایده: یک layer مشترک برای همه‌ی server data. screen فقط دو چیز می‌گوید: چه data‌ای (key + fetch) و success state چه شکلی است.</p>` },
+
+  box: { time: '2′', html: `
+<p>راه‌حل: به جای یک جعبه در هر ViewModel، یک جعبه در یک جای مشترک. هر سه screen همان را می‌خوانند.</p>
+<p>چهار چیز داخل جعبه را نشان دهید: data (یک StateFlow)، observers (چند screen نگاه می‌کنند)، lastFetch (کِی آخرین بار گرفته شد)، و request در جریان. بگویید: «بخش Engine دقیقاً همین چهار چیز است.»</p>
+<p>اسم این جعبه در کد QueryEntry است.</p>` },
+
+  'key-client': { time: '2′', html: `
+<p>اپ جعبه‌های زیادی دارد، پس همه را در یک map نگه می‌داریم و هر جعبه یک اسم دارد: key. این map همان QueryClient است، یک Singleton در Hilt.</p>
+<p>computeIfAbsent یعنی: اگر جعبه با این key هست همان را بده، اگر نیست بساز. برای همین screen دوم همان جعبه‌ی screen اول را می‌گیرد.</p>
+<p>سه قانون key را بخوانید. بپرسید: «اگر key لیست سفارش‌ها فقط orders باشد و فیلتر باز/بسته داشته باشیم، چه باگی داریم؟» (هر دو فیلتر یک جعبه‌اند.)</p>` },
 
   'react-map': { time: '2′', html: `
 <p>نقشه‌ی تکه به تکه از React Query به ComposeCleanArch. سه تفاوت را توضیح دهید:</p>
@@ -74,6 +94,17 @@ window.NOTES = {
   'sec-engine': { time: '0.5′', html: `
 <p>حالا زیر کاپوت. برای هر key یک QueryEntry وجود دارد. چند simulator آماده کرده‌ام که رفتار واقعی engine را نشان می‌دهند.</p>` },
 
+  'stale-rule': { time: '3′', html: `
+<p>اولین قانون جعبه. جدول را بخوانید: خالی → fetch؛ fresh → از جعبه؛ stale → fetch. کد shouldFetch دقیقاً همین جدول است.</p>
+<p>مثال: Wallet را باز می‌کنیم، جعبه خالی است، fetch. یک دقیقه بعد Dashboard: data fresh است، بدون request و فوراً نشان داده می‌شود.</p>
+<p>روی کارت قرمز مکث کنید: stale شدن به‌تنهایی request نمی‌زند. اگر data باید زنده بماند، refetchInterval لازم است.</p>` },
+
+  observers: { time: '3′', html: `
+<p>دومین قانون: جعبه می‌شمارد چند screen نگاهش می‌کنند. log سمت چپ را خط به خط بخوانید.</p>
+<p>دو تصمیم: فقط اولین observer fetch را شروع می‌کند؛ و وقتی شمارنده صفر شد، جعبه بعد از cacheTime پاک می‌شود — اگر کسی زودتر برگردد، تایمر لغو می‌شود.</p>
+<p>کد پایین را نشان دهید: useQuery با DisposableEffect این شمارش را خودکار انجام می‌دهد. «screen روی صفحه است» یعنی «یک observer».</p>
+<p>بعد برویم simulator و همین را زنده ببینیم.</p>` },
+
   lifecycle: { time: '4′', html: `
 <p><b>سناریوی پیشنهادی برای اجرا:</b></p>
 <ol>
@@ -87,6 +118,11 @@ window.NOTES = {
 </ol>
 <p>دو عدد را به خاطر بسپارید: <b>staleTime</b> = تا کی از cache بخوان بدون request. <b>cacheTime</b> = بعد از رفتن آخرین screen، چقدر نگهش دار.</p>` },
 
+  'fetch-steps': { time: '3′', html: `
+<p>سومین قانون: خود fetch. سه کار به ترتیب: نشان بده load می‌کنی (Loading، یا data قبلی با refreshing)، fetcher را صدا بزن، نتیجه را ذخیره کن.</p>
+<p>روی دو نکته تأکید کنید: اگر data قبلی هست، spinner روی صفحه‌ی پر نمی‌آید؛ و اگر request شکست بخورد، data قبلی می‌ماند.</p>
+<p>خط اول کد: اگر یک request در جریان است، دومی شروع نمی‌شود. این de-duplication است؛ simulator بعدی همین را نشان می‌دهد.</p>` },
+
   dedup: { time: '2′', html: `
 <p>اول حالت «هر screen جدا» را اجرا کنید: سه screen، سه request، سه کپی از یک data. این دقیقاً اتفاقی است که با سه ViewModel می‌افتد.</p>
 <p>بعد «با QueryClient»: یک request؛ دو screen دیگر به in-flight request وصل می‌شوند.</p>
@@ -94,10 +130,9 @@ window.NOTES = {
 <p>این single-flight حتی بین threadهای واقعی تضمین شده — با compareAndSet روی in-flight — و برایش test داریم.</p>` },
 
   mutation: { time: '2.5′', html: `
-<p>write با useMutation. function mutationFn مثل fetcher است: API را صدا می‌زند و نتیجه یا throw.</p>
-<p>نکته‌ی اصلی invalidateKeys است: بعد از موفقیت، keyهای مربوط invalidate می‌شوند. اگر screen‌ای الان نگاهشان می‌کند، همین حالا refetch می‌شود؛ اگر نه، فقط stale می‌شوند.</p>
-<p>پس دیگر لازم نیست بعد از خرید دستی به ViewModel کیف پول بگوییم «دوباره لود کن».</p>
-<p>ابزارهای دیگر: invalidateMatching با regex، setData برای optimistic update، prefetch قبل از رفتن به screen، و clear هنگام خروج کاربر.</p>` },
+<p>کاربر می‌خرد؛ موجودی در سرور عوض شد ولی جعبه‌ی موجودی هنوز عدد قدیمی را دارد. useMutation بعد از موفقیت، keyهای invalidateKeys را invalidate می‌کند.</p>
+<p>کد invalidate را نشان دهید: دو خط. lastFetch صفر می‌شود (data کهنه حساب می‌شود)؛ اگر screenی نگاه می‌کند همین حالا fetch، وگرنه دفعه‌ی بعد که باز شود.</p>
+<p>نکته‌ی اصلی: screen خرید نمی‌داند screen کیف پول وجود دارد. فقط می‌گوید کدام data عوض شد.</p>` },
 
   retry: { time: '2.5′', html: `
 <p>روی چند error بزنید؛ پیشنهاد: اول IOException، بعد 422، بعد 401، بعد 500.</p>
@@ -173,6 +208,10 @@ window.NOTES = {
 <p>تمرین روی ComposeCleanArch. NewsAPI یک endpoint برای منابع دارد: top-headlines/sources.</p>
 <p>هر قدم دقیقاً یکی از قدم‌های recipe است. useHeadlines همین حالا پارامتر source دارد، پس قدم آخر فقط اتصال است.</p>
 <p>پیشنهاد اجرا: دونفره، یک هفته، و PR را با چک‌لیست بازبینی همین اسلاید review کنیم.</p>` },
+
+  recap: { time: '2′', html: `
+<p>همان جمله‌ی اول جلسه را دوباره بخوانید و بگویید: «حالا معنی‌اش را می‌دانید.»</p>
+<p>پنج قدم را در یک نفس مرور کنید: وب همین مشکل را داشت؛ ما با ViewModelها کپی‌های جدا داریم؛ راه‌حل یک جعبه‌ی مشترک با key در QueryClient است؛ جعبه قانون دارد؛ و از فردا recipe هشت‌قدمی.</p>` },
 
   thanks: { time: '—', html: `
 <p>ممنون. سؤال‌ها؟</p>

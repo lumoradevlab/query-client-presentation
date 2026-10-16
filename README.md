@@ -42,17 +42,20 @@ Navigate from either window.
 
 ---
 
-## Outline (35 slides)
+## Outline (43 slides)
+
+The talk follows one path: the destination first, then where the idea comes from, the same problem in Android, the
+shared "box" that fixes it, the box's rules one at a time, the traps, and how to build with it.
 
 | # | Section | Contents |
 |---|---|---|
-| 1–2 | Intro | Cover, agenda |
-| 3–6 | **Where it comes from** | The Redux-era problem; React Query's idea (server state is a cache); why it fits Compose |
-| 7–9 | **The problem** | MVVM vs hooks for the same screen; server state ≠ client state |
-| 10–15 | **The idea, in Compose** | React Query → ComposeCleanArch mapping; `useQuery` / `useMutation` / `QueryContent` / `QueryClient`; data flow; the 9 modules; sealed `QueryState` |
-| 16–24 | **The engine** | Cache lifecycle simulator (staleTime / cacheTime / eviction); de-duplication simulator; mutations + invalidation; retry-policy explorer; out-of-order response simulator (epochs); polling; WebSocket hooks; Room tier |
-| 25–27 | **Traps** | What a naive implementation gets wrong; double-tap mutation simulator |
-| 28–35 | **Getting started** | When a state holder still belongs; hard rules; 8-step feature recipe; cheat sheet; testing; hands-on exercise; Q&A |
+| 1–3 | Intro | Cover, agenda, today's destination in one sentence (box, key, QueryClient) |
+| 4–7 | **Where it comes from** | The Redux-era problem; React Query's idea (server state is a cache); why it fits Compose |
+| 8–11 | **The problem** | MVVM vs hooks for the same screen; two screens, two copies; server state ≠ client state |
+| 12–19 | **The idea, in Compose** | One shared box (QueryEntry); key and QueryClient; React Query → ComposeCleanArch mapping; `useQuery` / `useMutation` / `QueryContent`; data flow; modules; sealed `QueryState` |
+| 20–31 | **The engine** | Rule 1 staleTime; rule 2 observers and cacheTime; cache lifecycle simulator; rule 3 fetch and de-duplication; de-duplication simulator; mutations + invalidate; retry-policy explorer; out-of-order response simulator (epochs); polling; WebSocket hooks; Room tier |
+| 32–34 | **Traps** | What a naive implementation gets wrong; double-tap mutation simulator |
+| 35–43 | **Getting started** | When a state holder still belongs; hard rules; 8-step feature recipe; cheat sheet; testing; hands-on exercise; recap; Q&A |
 
 ### Interactive simulators
 
