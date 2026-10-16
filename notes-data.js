@@ -1,177 +1,177 @@
 /* Speaker notes, keyed by slide id. Plain HTML; shown in notes.html. */
 window.NOTES = {
   cover: { time: '1′', html: `
-<p>سلام. امروز یک معماری را درس می‌دهم که ایده‌اش از React Query می‌آید و ما آن را برای Jetpack Compose ساختیم. نسخه‌ی تمیز و تست‌شده‌اش در ComposeCleanArch است.</p>
-<p>جمله‌ی اصلی: <b>صفحه‌ها ViewModel ندارند</b>. داده‌ی سرور از یک کش مشترک می‌آید.</p>
-<p>هدف: از این جلسه به بعد همه با همین الگو فیچر بنویسیم.</p>` },
+<p>سلام. امروز یک معماری را درس می‌دهم که ایده‌اش از React Query می‌آید و ما آن را برای Jetpack Compose ساختیم. نسخه‌ی تمیز و tested آن در ComposeCleanArch است.</p>
+<p>جمله‌ی اصلی: <b>screenها ViewModel ندارند</b>. server data از یک cache مشترک می‌آید.</p>
+<p>هدف: از این جلسه به بعد همه با همین الگو feature بنویسیم.</p>` },
 
   agenda: { time: '1′', html: `
-<p>شش بخش: اول اینکه ایده از کجا آمد — React Query. بعد مشکل در اندروید، بعد همان ایده در Compose، بعد موتور با چند شبیه‌ساز زنده.</p>
-<p>بعد تله‌هایی که یک نسخه‌ی ساده دارد، و آخر اینکه از فردا چطور بنویسیم، با یک تمرین. سؤال‌ها را وسط هم بپرسید.</p>` },
+<p>شش بخش: اول اینکه ایده از کجا آمد — React Query. بعد مشکل در اندروید، بعد همان ایده در Compose، بعد engine با چند simulator زنده.</p>
+<p>بعد trapهایی که یک نسخه‌ی ساده دارد، و آخر اینکه از فردا چطور بنویسیم، با یک تمرین. سؤال‌ها را وسط هم بپرسید.</p>` },
 
   'sec-react': { time: '0.5′', html: `
 <p>قبل از هر خط کد اندرویدی، از وب شروع می‌کنیم. بپرسید: «چند نفر با React یا React Query کار کرده‌اند؟» اگر کسی هست، یک جمله از تجربه‌اش بگوید.</p>` },
 
   'react-origin': { time: '2′', html: `
-<p>تا حدود ۲۰۱۹ بیشتر اپ‌های React داده‌ی سرور را در Redux نگه می‌داشتند. برای هر درخواست سه action، یک reducer با isLoading و error، و یک useEffect.</p>
+<p>تا حدود ۲۰۱۹ بیشتر اپ‌های React server data را در Redux نگه می‌داشتند. برای هر request سه action، یک reducer با isLoading و error، و یک useEffect.</p>
 <p>بپرسید: «آشنا نیست؟» بگذارید خودشان شباهت را بگویند: action + reducer همان UiState + ViewModel است، useEffect همان LaunchedEffect.</p>
-<p>مشکل‌ها هم همان است: کد تکراری، داده‌ی کهنه، درخواست تکراری، صفحه‌ای که بعد از ویرایش تازه نمی‌شود.</p>` },
+<p>مشکل‌ها هم همان است: کد تکراری، stale data، request تکراری، screen‌ای که بعد از ویرایش refetch نمی‌شود.</p>` },
 
   'react-idea': { time: '2.5′', html: `
-<p>Tanner Linsley در ۲۰۱۹ React Query را ساخت؛ امروز اسمش TanStack Query است. بینش اصلی یک جمله است: <b>داده‌ی سرور state نیست، کش است.</b></p>
-<p>روی دو چیز کد تأکید کنید: queryKey که هویت داده است، و invalidateQueries بعد از نوشتن.</p>
-<p>پنج کاری که کش مرکزی انجام می‌دهد را بخوانید. هر کدام یکی از درس‌های بخش موتور است.</p>` },
+<p>Tanner Linsley در ۲۰۱۹ React Query را ساخت؛ امروز اسمش TanStack Query است. بینش اصلی یک جمله است: <b>server data state نیست، cache است.</b></p>
+<p>روی دو چیز کد تأکید کنید: queryKey که هویت data است، و invalidateQueries بعد از write.</p>
+<p>پنج کاری که cache مرکزی انجام می‌دهد را بخوانید. هر کدام یکی از درس‌های بخش engine است.</p>` },
 
   'react-why': { time: '2′', html: `
 <p>چهار دلیل. اول: Compose همان مدل React است — جدول را بخوانید. hook در Compose طبیعی جا می‌افتد چون remember و DisposableEffect همان ابزارهای React را دارند.</p>
-<p>دوم: مشکل یکی است. سوم: Store5 کش را در Repository می‌گذارد و از صفحه خبر ندارد؛ Apollo فقط GraphQL است.</p>
-<p>چهارم: کوچک است — حدود ۸۸۰ خط، بدون وابستگی، با تست. کتابخانه‌ی React را استفاده نمی‌کنیم؛ فقط ایده و قرارداد را.</p>` },
+<p>دوم: مشکل یکی است. سوم: Store5 cache را در Repository می‌گذارد و از screen خبر ندارد؛ Apollo فقط GraphQL است.</p>
+<p>چهارم: کوچک است — حدود ۸۸۰ خط، بدون dependency، با test. library‌ی React را استفاده نمی‌کنیم؛ فقط ایده و contract را.</p>` },
 
   'sec-problem': { time: '0.5′', html: `
-<p>حالا همان مشکل در اندروید. سؤال از جمع: «آخرین صفحه‌ای که ساختید، چند خط کد فقط برای loading و error داشت؟»</p>` },
+<p>حالا همان مشکل در اندروید. سؤال از جمع: «آخرین screen‌ای که ساختید، چند خط کد فقط برای loading و error داشت؟»</p>` },
 
   boilerplate: { time: '3′', html: `
-<p>سمت راست همان چیزی است که همه نوشته‌ایم: UiState با سه فیلد، ViewModel با MutableStateFlow، تابع load، و LaunchedEffect در صفحه.</p>
-<p>سمت چپ همان صفحه با hook است: یک تابع useHeadlines و یک QueryContent. این کد واقعی ComposeCleanArch است.</p>
-<p>نکته‌ی مهم پایین اسلاید: نسخه‌ی MVVM با این همه کد هنوز <b>کمتر</b> کار می‌کند — کش ندارد، اگر دو صفحه همین داده را بخواهند دو درخواست می‌زند، و retry ندارد.</p>
-<p>یعنی مشکل فقط تعداد خط نیست؛ هر ViewModel یک کش ناقص جدید است.</p>` },
+<p>سمت راست همان چیزی است که همه نوشته‌ایم: UiState با سه فیلد، ViewModel با MutableStateFlow، function load، و LaunchedEffect در screen.</p>
+<p>سمت چپ همان screen با hook است: یک function به اسم useHeadlines و یک QueryContent. این کد واقعی ComposeCleanArch است.</p>
+<p>نکته‌ی مهم پایین اسلاید: نسخه‌ی MVVM با این همه کد هنوز <b>کمتر</b> کار می‌کند — cache ندارد، اگر دو screen همین data را بخواهند دو request می‌زند، و retry ندارد.</p>
+<p>یعنی مشکل فقط تعداد خط نیست؛ هر ViewModel یک cache ناقص جدید است.</p>` },
 
   'server-state': { time: '2′', html: `
-<p>این ایده‌ی اصلی React Query است و کل معماری روی آن بنا شده: داده‌ی سرور مال ما نیست، ما فقط یک کپی داریم که کهنه می‌شود.</p>
-<p>state صفحه — متن فرم، تب انتخاب‌شده — واقعاً مال صفحه است. برای آن ViewModel یا remember کاملاً درست است.</p>
-<p>اما داده‌ی سرور نیازهای مشترکی دارد: کش، تازه‌سازی، حذف تکرار، retry، invalidate. اگر این‌ها را در هر ViewModel بنویسیم، هر بار کمی متفاوت و کمی ناقص می‌نویسیم.</p>` },
+<p>این ایده‌ی اصلی React Query است و کل معماری روی آن بنا شده: server data مال ما نیست، ما فقط یک کپی داریم که stale می‌شود.</p>
+<p>screen state — متن فرم، تب انتخاب‌شده — واقعاً مال screen است. برای آن ViewModel یا remember کاملاً درست است.</p>
+<p>اما server data نیازهای مشترکی دارد: cache، refetch، de-duplication، retry، invalidate. اگر این‌ها را در هر ViewModel بنویسیم، هر بار کمی متفاوت و کمی ناقص می‌نویسیم.</p>` },
 
   'sec-idea': { time: '0.5′', html: `
-<p>پس ایده: یک لایه‌ی مشترک برای همه‌ی داده‌های سرور. صفحه فقط دو چیز می‌گوید: چه داده‌ای (کلید + fetch) و حالت موفق چه شکلی است.</p>` },
+<p>پس ایده: یک layer مشترک برای همه‌ی server data. screen فقط دو چیز می‌گوید: چه data‌ای (key + fetch) و success state چه شکلی است.</p>` },
 
   'react-map': { time: '2′', html: `
 <p>نقشه‌ی تکه به تکه از React Query به ComposeCleanArch. سه تفاوت را توضیح دهید:</p>
 <ol><li><b>staleTime ۵ دقیقه به جای ۰:</b> وب ارزان رفرش می‌کند؛ موبایل باتری و دیتای کاربر را خرج می‌کند.</li>
-<li><b>retry فقط برای خطای گذرا:</b> React Query پیش‌فرض همه‌چیز را ۳ بار تکرار می‌کند؛ 4xx تکرار کردن فقط خطا را دیرتر نشان می‌دهد.</li>
-<li><b>QueryState sealed:</b> کامپایلر Kotlin حالت جاافتاده را می‌گیرد.</li></ol>` },
+<li><b>retry فقط برای transient error:</b> React Query default همه‌چیز را ۳ بار تکرار می‌کند؛ 4xx تکرار کردن فقط error را دیرتر نشان می‌دهد.</li>
+<li><b>QueryState sealed:</b> compiler Kotlin حالت جاافتاده را می‌گیرد.</li></ol>` },
 
   primitives: { time: '2′', html: `
-<p>سه ابزار: useQuery برای خواندن، useMutation برای نوشتن، QueryContent برای نمایش.</p>
-<p>پشت همه یک QueryClient است که Singleton هیلت است. خود DI مالک کش است، نه یک صفحه — برای همین بین صفحه‌ها مشترک است.</p>
-<p>از React Query الهام گرفته، ولی کتابخانه‌ی بیرونی نیست؛ حدود ۹۰۰ خط Kotlin با Coroutines و StateFlow. Store5 را بررسی کردیم و کنار گذاشتیم چون برای نیاز ما سنگین بود.</p>` },
+<p>سه ابزار: useQuery برای read، useMutation برای write، QueryContent برای نمایش.</p>
+<p>پشت همه یک QueryClient است که Singleton Hilt است. خود DI مالک cache است، نه یک screen — برای همین بین screenها مشترک است.</p>
+<p>از React Query الهام گرفته، ولی library‌ی بیرونی نیست؛ حدود ۹۰۰ خط Kotlin با Coroutines و StateFlow. Store5 را بررسی کردیم و کنار گذاشتیم چون برای نیاز ما سنگین بود.</p>` },
 
   flow: { time: '2′', html: `
-<p>مسیر داده از بالا به پایین. فقط دو لایه‌ی بالا Composable هستند: صفحه و hook.</p>
-<p>موتور کش — QueryClient و QueryEntry — Kotlin خالص است. یعنی بدون Compose و بدون امولاتور تست می‌شود. این تصمیم عمدی است.</p>
-<p>پایین‌ترین لایه: Resource call adapter. هر endpoint نوع Resource برمی‌گرداند و adapter هر پاسخی را بدون throw به Resource تبدیل می‌کند؛ پس دیگر safeApiCall در هر فراخوانی نداریم.</p>
-<p>Repository آن را باز می‌کند: یا مدل دامنه برمی‌گرداند یا throw می‌کند، و موتور throw را به AppError تبدیل می‌کند.</p>` },
+<p>Data flow از بالا به پایین. فقط دو layer بالا Composable هستند: screen و hook.</p>
+<p>cache engine — QueryClient و QueryEntry — Kotlin خالص است. یعنی بدون Compose و بدون امولاتور test می‌شود. این تصمیم عمدی است.</p>
+<p>پایین‌ترین layer: Resource call adapter. هر endpoint نوع Resource برمی‌گرداند و adapter هر responseی را بدون throw به Resource تبدیل می‌کند؛ پس دیگر safeApiCall در هر فراخوانی نداریم.</p>
+<p>Repository آن را باز می‌کند: یا domain model برمی‌گرداند یا throw می‌کند، و engine throw را به AppError تبدیل می‌کند.</p>` },
 
   modules: { time: '1.5′', html: `
-<p>ساختار ماژول‌ها در ComposeCleanArch. وابستگی فقط رو به پایین است و دور ندارد.</p>
-<p>عمداً ماژول فیچر نداریم. ماژول فیچر هزینه دارد و برای اپ به این اندازه سودش کم است؛ پلاگین convention آماده است برای روزی که لازم شود.</p>
-<p>یک سؤال رایج: چرا mapperها در model نیستند؟ چون mapper به DTO اشاره می‌کند؛ اگر در model باشد، model به network وابسته می‌شود و دور ایجاد می‌شود.</p>` },
+<p>ساختار module‌ها در ComposeCleanArch. dependency فقط رو به پایین است و cycle ندارد.</p>
+<p>عمداً feature module نداریم. feature module هزینه دارد و برای اپ به این اندازه سودش کم است؛ پلاگین convention آماده است برای روزی که لازم شود.</p>
+<p>یک سؤال رایج: چرا mapperها در model نیستند؟ چون mapper به DTO اشاره می‌کند؛ اگر در model باشد، model به network وابسته می‌شود و cycle ایجاد می‌شود.</p>` },
 
   state: { time: '2′', html: `
-<p>یک نسخه‌ی ساده سه فیلد مستقل دارد: data، error، isLoading. یعنی ۸ ترکیب؛ می‌شود هم داده داشت هم خطا هم loading، و هر صفحه باید تصمیم بگیرد کدام مهم‌تر است.</p>
-<p>QueryState یک sealed interface است: دقیقاً یکی از سه حالت. when کامل است و کامپایلر کمک می‌کند.</p>
-<p>refreshing مهم است: وقتی داده داریم و دوباره fetch می‌کنیم، Success با refreshing=true می‌ماند. اسپینر تمام‌صفحه نمی‌آید. این stale-while-revalidate است.</p>` },
+<p>یک نسخه‌ی ساده سه فیلد مستقل دارد: data، error، isLoading. یعنی ۸ combination؛ می‌شود هم data داشت هم error هم loading، و هر screen باید تصمیم بگیرد کدام مهم‌تر است.</p>
+<p>QueryState یک sealed interface است: دقیقاً یکی از سه state. when کامل است و compiler کمک می‌کند.</p>
+<p>refreshing مهم است: وقتی data داریم و دوباره fetch می‌کنیم، Success با refreshing=true می‌ماند. spinner تمام‌صفحه نمی‌آید. این stale-while-revalidate است.</p>` },
 
   'sec-engine': { time: '0.5′', html: `
-<p>حالا زیر کاپوت. برای هر کلید یک QueryEntry وجود دارد. چند شبیه‌ساز آماده کرده‌ام که رفتار واقعی موتور را نشان می‌دهند.</p>` },
+<p>حالا زیر کاپوت. برای هر key یک QueryEntry وجود دارد. چند simulator آماده کرده‌ام که رفتار واقعی engine را نشان می‌دهند.</p>` },
 
   lifecycle: { time: '4′', html: `
 <p><b>سناریوی پیشنهادی برای اجرا:</b></p>
 <ol>
-<li>«باز کردن صفحه» → entry ساخته می‌شود، Loading، یک درخواست.</li>
-<li>دوباره «باز کردن صفحه» → صفحه‌ی دوم، بدون درخواست؛ همان داده.</li>
-<li>دو بار «بستن صفحه» → شمارش معکوس حذف شروع می‌شود (cacheTime = ۱۰ دقیقه).</li>
-<li>۲ بار «+۱ دقیقه» و بعد «باز کردن» → حذف لغو شد، و چون هنوز تازه است درخواستی نرفت.</li>
-<li>چند بار «+۱ دقیقه» تا بیشتر از ۵ دقیقه → stale شد. توجه: خودبه‌خود refetch نمی‌کند؛ موقع باز شدن صفحه‌ی بعدی تازه می‌شود.</li>
-<li>«invalidate» وقتی صفحه باز است → فوراً refetch، و داده‌ی قبلی روی صفحه می‌ماند (refreshing).</li>
-<li>بستن و ۱۰ بار «+۱ دقیقه» → evict.</li>
+<li>«باز کردن screen» → entry ساخته می‌شود، Loading، یک request.</li>
+<li>دوباره «باز کردن screen» → screen دوم، بدون request؛ همان data.</li>
+<li>دو بار «بستن screen» → شمارش معکوس حذف شروع می‌شود (cacheTime = ۱۰ دقیقه).</li>
+<li>۲ بار «یک دقیقه بعد» و بعد «باز کردن» → حذف لغو شد، و چون هنوز fresh است requestی نرفت.</li>
+<li>چند بار «یک دقیقه بعد» تا بیشتر از ۵ دقیقه → stale شد. توجه: خودبه‌خود refetch نمی‌کند؛ موقع باز شدن screen بعدی refetch می‌شود.</li>
+<li>«invalidate» وقتی screen باز است → فوراً refetch، و data قبلی روی صفحه می‌ماند (refreshing).</li>
+<li>بستن و ۱۰ بار «یک دقیقه بعد» → evict.</li>
 </ol>
-<p>دو عدد را به خاطر بسپارید: <b>staleTime</b> = تا کی از کش بخوان بدون درخواست. <b>cacheTime</b> = بعد از رفتن آخرین صفحه، چقدر نگهش دار.</p>` },
+<p>دو عدد را به خاطر بسپارید: <b>staleTime</b> = تا کی از cache بخوان بدون request. <b>cacheTime</b> = بعد از رفتن آخرین screen، چقدر نگهش دار.</p>` },
 
   dedup: { time: '2′', html: `
-<p>اول حالت «هر صفحه جدا» را اجرا کنید: سه صفحه، سه درخواست، سه کپی از یک داده. این دقیقاً اتفاقی است که با سه ViewModel می‌افتد.</p>
-<p>بعد «با QueryClient»: یک درخواست؛ دو صفحه‌ی دیگر به درخواست در جریان وصل می‌شوند.</p>
-<p>مثال واقعی: موجودی کیف پول که هم در داشبورد هست، هم در صفحه‌ی کیف پول، هم در صفحه‌ی خرید.</p>
-<p>این single-flight حتی بین threadهای واقعی تضمین شده — با compareAndSet روی in-flight — و برایش تست داریم.</p>` },
+<p>اول حالت «هر screen جدا» را اجرا کنید: سه screen، سه request، سه کپی از یک data. این دقیقاً اتفاقی است که با سه ViewModel می‌افتد.</p>
+<p>بعد «با QueryClient»: یک request؛ دو screen دیگر به in-flight request وصل می‌شوند.</p>
+<p>مثال واقعی: موجودی کیف پول که هم در داشبورد هست، هم در screen کیف پول، هم در screen خرید.</p>
+<p>این single-flight حتی بین threadهای واقعی تضمین شده — با compareAndSet روی in-flight — و برایش test داریم.</p>` },
 
   mutation: { time: '2.5′', html: `
-<p>نوشتن با useMutation. تابع mutationFn مثل fetcher است: API را صدا می‌زند و نتیجه یا throw.</p>
-<p>کلید ماجرا invalidateKeys است: بعد از موفقیت، کلیدهای مربوط invalidate می‌شوند. اگر صفحه‌ای الان نگاهشان می‌کند، همین حالا refetch می‌شود؛ اگر نه، فقط stale می‌شوند.</p>
+<p>write با useMutation. function mutationFn مثل fetcher است: API را صدا می‌زند و نتیجه یا throw.</p>
+<p>نکته‌ی اصلی invalidateKeys است: بعد از موفقیت، keyهای مربوط invalidate می‌شوند. اگر screen‌ای الان نگاهشان می‌کند، همین حالا refetch می‌شود؛ اگر نه، فقط stale می‌شوند.</p>
 <p>پس دیگر لازم نیست بعد از خرید دستی به ViewModel کیف پول بگوییم «دوباره لود کن».</p>
-<p>ابزارهای دیگر: invalidateMatching با regex، setData برای آپدیت خوش‌بینانه، prefetch قبل از رفتن به صفحه، و clear هنگام خروج کاربر.</p>` },
+<p>ابزارهای دیگر: invalidateMatching با regex، setData برای optimistic update، prefetch قبل از رفتن به screen، و clear هنگام خروج کاربر.</p>` },
 
   retry: { time: '2.5′', html: `
-<p>روی چند خطا بزنید؛ پیشنهاد: اول IOException، بعد 422، بعد 401، بعد 500.</p>
-<p>قانون ساده است: فقط خطای گذرا retry می‌شود — قطعی اتصال، timeout، 5xx. 4xx قطعی است؛ تکرارش فقط همان خطا را دیرتر نشان می‌دهد.</p>
-<p>برای نوشتن، حساس‌تر است: حتی روی timeout ممکن است سرور سفارش را ثبت کرده باشد و فقط پاسخ گم شده باشد. retry یعنی سفارش تکراری. برای همین retry در mutation پیش‌فرض خاموش است.</p>
-<p>401 اینجا retry نمی‌شود چون TokenAuthenticator در OkHttp یک بار refresh می‌کند؛ اگر نشد، session پاک می‌شود و اپ خودش به صفحه‌ی ورود می‌رود. هیچ صفحه‌ای navigate به login نمی‌کند.</p>` },
+<p>روی چند error بزنید؛ پیشنهاد: اول IOException، بعد 422، بعد 401، بعد 500.</p>
+<p>قانون ساده است: فقط transient error retry می‌شود — قطعی اتصال، timeout، 5xx. 4xx قطعی است؛ تکرارش فقط همان error را دیرتر نشان می‌دهد.</p>
+<p>برای write، حساس‌تر است: حتی روی timeout ممکن است سرور سفارش را ثبت کرده باشد و فقط response گم شده باشد. retry یعنی سفارش تکراری. برای همین retry در mutation default خاموش است.</p>
+<p>401 اینجا retry نمی‌شود چون TokenAuthenticator در OkHttp یک بار refresh می‌کند؛ اگر نشد، session پاک می‌شود و اپ خودش به screen ورود می‌رود. هیچ screen‌ای navigate به login نمی‌کند.</p>` },
 
   race: { time: '3′', html: `
-<p>اول حالت «نسخه‌ی ساده» را قدم به قدم جلو ببرید. قبل از قدم ۴ بپرسید: «صفحه الان چه نشان می‌دهد؟»</p>
-<p>polling یک درخواست کند زده؛ وسطش کاربر خرید می‌کند و invalidate درخواست دوم را می‌زند. دومی زودتر برمی‌گردد با ۸۰، و بعد اولی با ۱۰۰ می‌رسد و روی آن می‌نویسد.</p>
-<p>بعد «با epoch»: هر fetch وقتی جای in-flight را می‌گیرد یک epoch می‌گیرد. fetch با force قبلی را لغو می‌کند، و اگر لغو به‌موقع نرسد، فقط fetchی که epochش آخرین است حق نوشتن دارد.</p>
-<p>setData هم epoch را بالا می‌برد، پس آپدیت خوش‌بینانه با یک پاسخ قدیمی پاک نمی‌شود.</p>` },
+<p>اول حالت «نسخه‌ی ساده» را قدم به قدم جلو ببرید. قبل از قدم ۴ بپرسید: «screen الان چه نشان می‌دهد؟»</p>
+<p>polling یک request کند زده؛ وسطش کاربر خرید می‌کند و invalidate request دوم را می‌زند. دومی زودتر برمی‌گردد با ۸۰، و بعد اولی با ۱۰۰ می‌رسد و روی آن می‌نویسد.</p>
+<p>بعد «با epoch»: هر fetch وقتی جای in-flight را می‌گیرد یک epoch می‌گیرد. fetch با force قبلی را لغو می‌کند، و اگر لغو به‌موقع نرسد، فقط fetchی که epochش آخرین است حق write دارد.</p>
+<p>setData هم epoch را بالا می‌برد، پس optimistic update با یک response قدیمی پاک نمی‌شود.</p>` },
 
   polling: { time: '2′', html: `
-<p>مثال useWalletBalance: هر ۱۵ ثانیه. جدول سمت چپ فاصله‌های پیشنهادی برای انواع داده است.</p>
-<p>polling فقط وقتی صفحه STARTED است اجرا می‌شود؛ در پس‌زمینه باتری و دیتا مصرف نمی‌شود.</p>
-<p>نکته‌ی ظریف: روی شبکه‌ی کند، اگر درخواست قبلی هنوز تمام نشده، این دور رد می‌شود. اگر force می‌زدیم، هر درخواست قبل از رسیدن لغو می‌شد و داده هرگز تازه نمی‌شد — بی‌صدا.</p>
+<p>مثال useWalletBalance: هر ۱۵ ثانیه. جدول سمت چپ intervalهای پیشنهادی برای انواع data است.</p>
+<p>polling فقط وقتی screen STARTED است اجرا می‌شود؛ در background باتری و دیتا مصرف نمی‌شود.</p>
+<p>نکته‌ی ظریف: روی network‌ی کند، اگر request قبلی هنوز تمام نشده، این دور رد می‌شود. اگر force می‌زدیم، هر request قبل از رسیدن لغو می‌شد و data هرگز refetch نمی‌شد — بی‌صدا.</p>
 <p>کد کامل، همراه با mutation خرید که همه‌ی موجودی‌ها را invalidate می‌کند، در examples/WalletHooks.kt است.</p>` },
 
   ticker: { time: '1.5′', html: `
-<p>hook فقط برای REST نیست؛ یک قرارداد است. useTickerPrice قیمت را از یک WebSocket مشترک می‌دهد و صفحه نمی‌داند منبع چیست (examples/TickerHooks.kt).</p>
-<p>مدیریت چرخه‌ی عمر هم در یک hook است: در ON_STOP سوکت می‌خوابد و در ON_START بیدار می‌شود. هیچ صفحه‌ای این را تکرار نمی‌کند.</p>` },
+<p>hook فقط برای REST نیست؛ یک contract است. useTickerPrice قیمت را از یک WebSocket مشترک می‌دهد و screen نمی‌داند منبع چیست (examples/TickerHooks.kt).</p>
+<p>مدیریت lifecycle هم در یک hook است: در ON_STOP سوکت می‌خوابد و در ON_START بیدار می‌شود. هیچ screen‌ای این را تکرار نمی‌کند.</p>` },
 
   persistent: { time: '1.5′', html: `
-<p>بیشتر کلیدها فقط در حافظه‌اند. اما برای داده‌ای مثل پروفایل که باید بعد از بسته شدن اپ و بدون اینترنت باشد، useCachedQuery داریم.</p>
-<p>Room منبع حقیقت است: مقدار از reader می‌آید، هر fetch موفق با writer ذخیره می‌شود. اگر شبکه قطع باشد، مقدار ذخیره‌شده نمایش داده می‌شود.</p>
-<p>پیش‌فرضش OfflineForever است: خودش کهنه نمی‌شود و فقط با invalidate تازه می‌شود — مثلاً بعد از ویرایش پروفایل.</p>` },
+<p>بیشتر keyها فقط در حافظه‌اند. اما برای data‌ای مثل پروفایل که باید بعد از بسته شدن اپ و بدون اینترنت باشد، useCachedQuery داریم.</p>
+<p>Room source of truth است: مقدار از reader می‌آید، هر fetch موفق با writer ذخیره می‌شود. اگر network قطع باشد، مقدار ذخیره‌شده نمایش داده می‌شود.</p>
+<p>defaultش OfflineForever است: خودش stale نمی‌شود و فقط با invalidate refetch می‌شود — مثلاً بعد از ویرایش پروفایل.</p>` },
 
   'sec-lessons': { time: '0.5′', html: `
-<p>useQuery ساده را می‌شود یک عصره نوشت. این بخش نشان می‌دهد چرا موتور ۸۸۰ خط است و ۱۰۰ خط نیست.</p>` },
+<p>useQuery ساده را می‌شود یک عصره نوشت. این بخش نشان می‌دهد چرا engine ۸۸۰ خط است و ۱۰۰ خط نیست.</p>` },
 
   lessons: { time: '3′', html: `
 <p>اول بپرسید: «اگر امروز بخواهید useQuery را خودتان بنویسید، چه چیزهایی می‌نویسید؟» لیستشان را روی تخته بنویسید، بعد جدول را نشان دهید.</p>
 <p>روی سه ردیف تمرکز کنید:</p>
-<ol><li><b>retry در نوشتن:</b> تکرار روی 4xx یا حتی timeout یعنی ریسک سفارش تکراری.</li>
-<li><b>refetch ناموفق:</b> داده‌ی خوب نباید با خطا جایگزین شود.</li>
-<li><b>کلیدهای پویا:</b> کلیدی برای هر نماد یا هر id، اگر از map حذف نشود، نشت حافظه است.</li></ol>
-<p>درس عمومی: گزینه‌ای که کاری نمی‌کند از نبودنش بدتر است. هر گزینه یک تست می‌خواهد.</p>` },
+<ol><li><b>retry در write:</b> تکرار روی 4xx یا حتی timeout یعنی ریسک سفارش تکراری.</li>
+<li><b>refetch ناموفق:</b> data‌ی خوب نباید با error جایگزین شود.</li>
+<li><b>dynamic keys:</b> کلیدی برای هر نماد یا هر id، اگر از map حذف نشود، نشت حافظه است.</li></ol>
+<p>درس عمومی: گزینه‌ای که کاری نمی‌کند از نبودنش بدتر است. هر گزینه یک test می‌خواهد.</p>` },
 
   doubletap: { time: '2′', html: `
 <p>اول در «نسخه‌ی ساده» سریع دو سه بار روی خرید بزنید: دو یا سه سفارش ثبت می‌شود.</p>
 <p>بعد «با single-flight»: ضربه‌های بعدی تا تمام شدن اولی نادیده گرفته می‌شوند.</p>
-<p>غیرفعال کردن دکمه با isLoading کافی نیست؛ بین ضربه و recomposition فاصله هست. این تضمین باید در useMutation باشد، نه اینکه هر صفحه یادش بماند.</p>` },
+<p>غیرفعال کردن دکمه با isLoading کافی نیست؛ بین ضربه و recomposition فاصله هست. این تضمین باید در useMutation باشد، نه اینکه هر screen یادش بماند.</p>` },
 
   'sec-start': { time: '0.5′', html: `
 <p>حالا مهم‌ترین بخش برای تیم: از فردا چطور بنویسیم.</p>` },
 
   'when-vm': { time: '2′', html: `
-<p>«بدون ViewModel» یعنی برای داده‌ی سرور، نه ممنوعیت مطلق.</p>
-<p>اگر صفحه state محلی واقعی دارد — فرم، اعتبارسنجی، جریان چندمرحله‌ای — state holder بسازید.</p>
-<p>قانون مهم: state holder خودش fetch نمی‌کند. همان hookها و mutationها را صدا می‌زند. اگر state holder هم fetch کند، دو راه برای گرفتن داده داریم و دوباره همان کش‌های ناقص برمی‌گردند.</p>` },
+<p>«بدون ViewModel» یعنی برای server data، نه ممنوعیت مطلق.</p>
+<p>اگر screen state محلی واقعی دارد — فرم، validation، جریان چندمرحله‌ای — state holder بسازید.</p>
+<p>قانون مهم: state holder خودش fetch نمی‌کند. همان hookها و mutationها را صدا می‌زند. اگر state holder هم fetch کند، دو راه برای گرفتن data داریم و دوباره همان cache‌های ناقص برمی‌گردند.</p>` },
 
   rules: { time: '2′', html: `
 <p>این شش قانون از ARCHITECTURE.md است و در code review به آن‌ها استناد می‌کنیم.</p>
 <p>مخصوصاً در اپ مالی: پول همیشه BigDecimal پشت یک نوع Money. هیچ Double برای موجودی یا کارمزد.</p>
-<p>و dispatcher تزریقی؛ بدون آن موتور قابل تست نیست.</p>` },
+<p>و dispatcher تزریقی؛ بدون آن engine قابل test نیست.</p>` },
 
   recipe: { time: '2′', html: `
-<p>دستور ساخت هر فیچر جدید، به ترتیب لایه‌ها، از پایین به بالا: مدل، Api و کلیدها، DTO و mapper، Repository، Hilt، hook، صفحه، تست.</p>
+<p>recipe هر feature جدید، به ترتیب layer‌ها، از پایین به بالا: مدل، Api و keyها، DTO و mapper، Repository، Hilt، hook، screen، test.</p>
 <p>کامل در ARCHITECTURE.md آمده. پیشنهاد: لینکش را در توضیح PRها بگذاریم.</p>` },
 
   cheatsheet: { time: '1.5′', html: `
 <p>مرجع سریع برای وقتی کد می‌نویسید.</p>
-<p>دو preset مفید: freshFor برای فیدها — از کش بخوان تا وقتی از یک مدت مشخص قدیمی‌تر شود — و OfflineForever برای چیزهایی مثل پروفایل که فقط با invalidate عوض می‌شوند.</p>
-<p>metricsSnapshot برای پیدا کردن صفحه‌ای که بیش از حد درخواست می‌زند یا زیاد خطا می‌دهد.</p>` },
+<p>دو preset مفید: freshFor برای فیدها — از cache بخوان تا وقتی از یک مدت مشخص قدیمی‌تر شود — و OfflineForever برای چیزهایی مثل پروفایل که فقط با invalidate عوض می‌شوند.</p>
+<p>metricsSnapshot برای پیدا کردن screen‌ای که بیش از حد request می‌زند یا زیاد error می‌دهد.</p>` },
 
   testing: { time: '1.5′', html: `
-<p>چون موتور Kotlin خالص است، با runTest و UnconfinedTestDispatcher تست می‌شود؛ FakeClock هم زمان را جلو می‌برد، پس هیچ تستی واقعاً منتظر نمی‌ماند.</p>
-<p>این تست dedup را نشان می‌دهد: fetcher پشت یک gate منتظر است، دو fetch دیگر زده می‌شود، و در نهایت فقط یک بار اجرا شده.</p>
-<p>۱۲ تست برای موتور، و در کل ریپو ۲۸ تست.</p>` },
+<p>چون engine Kotlin خالص است، با runTest و UnconfinedTestDispatcher test می‌شود؛ FakeClock هم زمان را جلو می‌برد، پس هیچ testی واقعاً منتظر نمی‌ماند.</p>
+<p>این test dedup را نشان می‌دهد: fetcher پشت یک gate منتظر است، دو fetch دیگر زده می‌شود، و در نهایت فقط یک بار اجرا شده.</p>
+<p>۱۲ test برای engine، و در کل ریپو ۲۸ test.</p>` },
 
   exercise: { time: '2′', html: `
 <p>تمرین روی ComposeCleanArch. NewsAPI یک endpoint برای منابع دارد: top-headlines/sources.</p>
-<p>هر قدم دقیقاً یکی از قدم‌های دستور ساخت است. useHeadlines همین حالا پارامتر source دارد، پس قدم آخر فقط اتصال است.</p>
+<p>هر قدم دقیقاً یکی از قدم‌های recipe است. useHeadlines همین حالا پارامتر source دارد، پس قدم آخر فقط اتصال است.</p>
 <p>پیشنهاد اجرا: دونفره، یک هفته، و PR را با چک‌لیست بازبینی همین اسلاید review کنیم.</p>` },
 
   thanks: { time: '—', html: `
