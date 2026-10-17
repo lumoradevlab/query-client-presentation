@@ -1,0 +1,141 @@
+/* Session 1 speaker notes, keyed by slide id. Plain HTML; shown in notes.html. */
+window.NOTES = {
+  cover: { time: '1′', html: `
+<p>سلام. این اولین جلسه از سه جلسه است. در این سه جلسه یک معماری را با هم می‌سازیم که در آن بیشتر screenها <b>ViewModel ندارند</b>.</p>
+<p>امروز فقط «ایده» است: چرا، و چه چیزی. جزئیات engine جلسه‌ی بعد است.</p>` },
+
+  series: { time: '1′', html: `
+<p>با هر → یک جلسه ظاهر می‌شود. فقط اسم‌ها را بخوانید:</p>
+<ol><li><b>امروز، The idea:</b> چرا screen به ViewModel نیاز ندارد.</li>
+<li><b>دوشنبه‌ی بعد، The engine:</b> درِ جعبه را باز می‌کنیم.</li>
+<li><b>جلسه‌ی سوم، Building:</b> با هم یک feature واقعی می‌سازیم.</li></ol>` },
+
+  open: { time: '3′', html: `
+<p><b>اول سؤال را بپرسید و صبر کنید جواب بدهند.</b> «الان اپ ما چند کپی از موجودی کیف پول دارد؟»</p>
+<p>→ سه phone: «موجودی در Dashboard هست، در Wallet، در Buy.»</p>
+<p>→ سه ViewModel: «هر screen، ViewModel خودش را دارد. پس سه کپی.»</p>
+<p>→ سه request به سرور: «سه request برای یک عدد.»</p>
+<p>→ خرید: «کاربر خرید کرد. سرور حالا ۱٬۲۳۰ دارد. ولی هر سه screen هنوز ۱٬۲۵۰ نشان می‌دهند، تا یکی دستی به هر ViewModel بگوید reload کن.»</p>
+<p>بپرسید: «امروز در کد خودمان، بعد از یک خرید چطور به screenهای دیگر می‌گوییم refresh کنند؟» بگذارید جواب بدهند (event bus، callback، یا اصلاً نمی‌گوییم).</p>` },
+
+  reveal: { time: '2′', html: `
+<p>آرام بگویید، با مکث بین هر →:</p>
+<p>«server data…» → «…مال شما نیست.» → «یک کپی است. و کپی‌ها را باید مثل cache مدیریت کرد.»</p>
+<p>این جمله‌ی اصلی کل سه جلسه است. بگویید: «اگر فقط یک چیز از امروز یادتان بماند، همین باشد.»</p>` },
+
+  destination: { time: '2′', html: `
+<p>«امروز سه چیز را با هم می‌سازیم.» با هر → یکی:</p>
+<ol><li><b>جعبه (QueryEntry):</b> یک جعبه برای هر تکه server data، که همه‌ی screenها مشترک می‌خوانند.</li>
+<li><b>اسم جعبه (key):</b> screen با اسم، جعبه‌اش را پیدا می‌کند.</li>
+<li><b>جای جعبه‌ها (QueryClient):</b> یک map از اسم به جعبه.</li></ol>
+<p>→ «تا آخر جلسه، هر screen فقط می‌گوید چه data‌ای می‌خواهد.»</p>` },
+
+  web: { time: '3′', html: `
+<p>«این مشکل جدید نیست. وب زودتر از ما داشت.»</p>
+<p>→ اولین ستون: «تا حدود ۲۰۱۹ در React، برای گرفتن یک لیست: سه action، یک reducer، و یک useEffect که load را صدا می‌زد.»</p>
+<p>→ دو ستون دیگر: «و برای هر request دیگر، همه‌ی این‌ها دوباره.»</p>
+<p>→ «آشنا نیست؟» صبر کنید. «این همان UiState + ViewModel + LaunchedEffect ماست.»</p>
+<p>اگر کسی پرسید Redux چیست: «یک store مرکزی برای state؛ action یعنی event، reducer یعنی تابعی که state جدید می‌سازد.»</p>` },
+
+  'react-query': { time: '3′', html: `
+<p>«در ۲۰۱۹ Tanner Linsley کتابخانه‌ای ساخت به اسم React Query، که امروز TanStack Query است. کل ایده‌اش همین جمله است.»</p>
+<p>→ کد: «component فقط دو چیز می‌گوید: queryKey، یعنی چه data‌ای؛ و queryFn، یعنی از کجا. isLoading و error را خود کتابخانه می‌دهد.»</p>
+<p>→ چهار کار: «این کارها دیگر کار هر component نیست؛ یک cache مرکزی یک بار و درست انجامشان می‌دهد.»</p>` },
+
+  'why-compose': { time: '2′', html: `
+<p>«چرا فکر می‌کنیم این ایده در اندروید جواب می‌دهد؟ چون Compose همان مدل React است.» با هر → یک جفت:</p>
+<ul><li><b>remember</b> = useMemo / useRef: یک مقدار را بین recompositionها نگه دار.</li>
+<li><b>DisposableEffect</b> = useEffect: وقتی screen آمد کاری بکن، وقتی رفت تمیزکاری.</li>
+<li><b>CompositionLocal</b> = Context: یک چیز را به همه‌ی درخت UI بده.</li>
+<li><b>@Composable fun useX()</b> = custom hook: تابعی که به جای UI، یک مقدار برمی‌گرداند.</li></ul>
+<p>→ «library ی React را نمی‌آوریم. فقط ایده را. حدود ۸۸۰ خط Kotlin خودمان.»</p>` },
+
+  'two-states': { time: '3′', html: `
+<p>«مهم‌ترین تمایز امروز.»</p>
+<p>→ screen state: «تب انتخاب‌شده، متن فرم. مال screen است؛ خودمان نوشتیم، پس همیشه درست است.»</p>
+<p>→ server data: «موجودی، سفارش‌ها، قیمت‌ها. مال سرور است. ما فقط یک کپی داریم: stale می‌شود، چند screen می‌خواهندش، و بعد از هر تغییر باید refetch شود.»</p>
+<p>→ «ViewModel برای اولی عالی است و می‌ماند. برای دومی یک cache مشترک لازم داریم.»</p>
+<p>بپرسید: «در آخرین screenی که ساختید، کدام فیلدها screen state بودند و کدام server data؟»</p>` },
+
+  box: { time: '3′', html: `
+<p>«راه‌حل: به جای سه کپی، یک جعبه.»</p>
+<p>→ «یک جعبه به اسم QueryEntry، با key "wallet.balance.USDT". هر سه screen همین را می‌خوانند. یک request.»</p>
+<p>→ «حالا خرید. جعبه invalidate می‌شود، یک بار refetch می‌کند، و هر سه screen <b>با هم</b> سبز می‌شوند. هیچ‌کس دستی کاری نکرد.»</p>
+<p>به requests نگاه کنید: ۱ بود، ۲ شد. نه ۶.</p>` },
+
+  inside: { time: '3′', html: `
+<p>«داخل جعبه فقط چهار چیز هست.» با هر → یکی:</p>
+<ol><li><b>data:</b> یک StateFlow که همه‌ی screenها می‌خوانند. همان StateFlowی که امروز در ViewModel داریم، فقط از screen بیرون آمده.</li>
+<li><b>observers:</b> یک شمارنده؛ چند screen الان نشانش می‌دهند.</li>
+<li><b>lastFetch:</b> آخرین بار کِی از سرور گرفته شد.</li>
+<li><b>inFlight:</b> اگر یک request الان در راه است.</li></ol>
+<p>→ «این چهار تا قانون دارند: کِی fetch، کِی پاک، چند request. جلسه‌ی بعد.» (اینجا جواب جزئیات را ندهید؛ بگویید جلسه‌ی بعد.)</p>` },
+
+  key: { time: '3′', html: `
+<p>«هر جعبه یک اسم دارد: key. سه مثال.» (سلسله‌مراتبی است: articles، headlines، techcrunch، صفحه‌ی ۲.)</p>
+<p>→ قانون: «هر چیزی که نتیجه را عوض می‌کند، باید در key باشد.»</p>
+<p>→ باگ: «اینجا page در fetcher هست ولی در key نیست. صفحه‌ی ۱ و ۲ یک key دارند، پس یک جعبه. صفحه‌ی ۲ همان data‌ی صفحه‌ی ۱ را نشان می‌دهد.» بپرسید: «باگ کجاست؟» قبل از اینکه fix را نشان دهید.</p>
+<p>→ fix: «keyها را در یک object کنار Api تعریف می‌کنیم: ArticleKeys.headlines(source, page). هیچ رشته‌ی دستی.»</p>` },
+
+  client: { time: '2′', html: `
+<p>«همه‌ی جعبه‌ها کجا هستند؟ در یک map. اسمش QueryClient است.»</p>
+<p>→ کد ساده‌شده: «یک ConcurrentHashMap از key به QueryEntry. computeIfAbsent یعنی: اگر هست بده، اگر نیست بساز.»</p>
+<p>→ «key هست؟ همان جعبه. پس screen دوم جعبه‌ی screen اول را می‌گیرد.»</p>
+<p>→ «key نیست؟ جعبه‌ی جدید.»</p>
+<p>→ «یک Singleton در Hilt: کل اپ یک map. برای همین data مشترک است.»</p>` },
+
+  'before-after': { time: '2′', html: `
+<p>«حالا ببینیم برای کسی که screen می‌نویسد چه فرقی می‌کند.»</p>
+<p>سمت راست: «۳۰ خط: UiState، ViewModel، load، LaunchedEffect. و هنوز cache ندارد.»</p>
+<p>→ سمت چپ: «همان screen. دو خط.»</p>
+<p>→ «بدون ViewModel، بدون UiState، بدون load()، بدون boolean loading.» مکث کنید.</p>` },
+
+  tools: { time: '2′', html: `
+<p>«screen فقط سه ابزار لازم دارد.» با هر → یکی:</p>
+<ul><li><b>useQuery:</b> برای خواندن. key + fetcher.</li>
+<li><b>useMutation:</b> برای نوشتن: خرید، ویرایش، حذف.</li>
+<li><b>QueryContent:</b> برای نمایش؛ loading و error را خودش می‌کشد.</li></ul>
+<p>«دو اسلاید بعد هر کدام را از نزدیک می‌بینیم.»</p>` },
+
+  hook: { time: '4′', html: `
+<p>کد ComposeCleanArch است (ArticleHooks.kt). با هر → یک تکه روشن می‌شود:</p>
+<ol><li><b>hook:</b> «یک تابع Composable که UI نمی‌کشد؛ یک مقدار برمی‌گرداند. اسمش با use شروع می‌شود، از React.»</li>
+<li><b>HookProvider:</b> «راه رسیدن به repositoryهای Hilt از Compose. یک HiltViewModel است، ولی بدون state و بدون منطق؛ فقط وابستگی‌ها را نگه می‌دارد.»</li>
+<li><b>key:</b> «کدام جعبه. source و page در key هستند چون نتیجه را عوض می‌کنند.»</li>
+<li><b>fetcher:</b> «جعبه را از کجا پر کنیم. یک lambda که repository را صدا می‌زند؛ یا data برمی‌گرداند یا throw می‌کند.»</li>
+<li><b>screen:</b> «و این کل screen است. دو خط.»</li></ol>
+<p>اگر کسی پرسید «پس hiltViewModel یعنی باز ViewModel داریم؟»: «HookProvider فقط برای تزریق وابستگی است؛ نه state دارد نه fetch.»</p>` },
+
+  states: { time: '3′', html: `
+<p>«جعبه همیشه دقیقاً در یکی از سه حالت است.» با هر → یکی:</p>
+<ul><li><b>Loading:</b> هنوز data نداریم؛ spinner.</li>
+<li><b>Success:</b> data داریم؛ لیست.</li>
+<li><b>Failure:</b> data نداریم و request شکست خورد؛ پیام و دکمه‌ی Retry.</li></ul>
+<p>→ «در کد یک sealed interface است. با سه boolean جدا (isLoading، data، error) هشت ترکیب ممکن داریم که بعضی بی‌معنی‌اند. با sealed فقط سه حالت، و compiler حالت جاافتاده را می‌گیرد. QueryContent یک when روی همین سه حالت است.»</p>` },
+
+  mutation: { time: '3′', html: `
+<p>«تا اینجا خواندیم. نوشتن چطور؟»</p>
+<p>→ کد: «useMutation با یک تابع که سرور را صدا می‌زند، و یک لیست invalidateKeys.»</p>
+<p>→ ۱: «کاربر Buy می‌زند؛ request می‌رود و سفارش ثبت می‌شود.»</p>
+<p>→ ۲: «بعد از موفقیت، جعبه‌ی wallet.balance.USDT کهنه علامت می‌خورد.»</p>
+<p>→ ۳: «هر screen که موجودی را نشان می‌دهد، خودکار refetch می‌شود.» (همان چیزی که در اسلاید جعبه دیدیم.)</p>
+<p>→ «screen خرید اصلاً نمی‌داند screen کیف پول وجود دارد. فقط می‌گوید کدام data عوض شد.»</p>` },
+
+  layers: { time: '2′', html: `
+<p>«آخرین تصویر امروز: هر تکه کجا زندگی می‌کند.» از پایین به بالا ظاهر می‌شود:</p>
+<ol><li>Api (Retrofit) در :core:network</li><li>Repository در :core:network</li><li>QueryClient و QueryEntry در :core:query</li><li>hook در :app/hooks</li><li>screen در :app/ui</li></ol>
+<p>→ «فقط دو لایه‌ی بالا Composable هستند. engine Kotlin خالص است؛ یعنی رفتارش را بدون emulator test می‌کنیم. جلسه‌ی بعد همین engine را باز می‌کنیم.»</p>` },
+
+  recap: { time: '2′', html: `
+<p>«سه چیز از امروز:»</p>
+<ol><li>server data مال ما نیست؛ یک کپی است.</li>
+<li>یک جعبه‌ی مشترک (QueryEntry)، با اسم (key)، در یک map (QueryClient).</li>
+<li>screen یعنی یک hook و QueryContent. بدون ViewModel.</li></ol>` },
+
+  next: { time: '2′', html: `
+<p>«ولی هنوز نگفتیم جعبه کِی به سرور می‌رود.» → «کِی پاک می‌شود؟ با error چه می‌کند؟ اگر دو request با هم برسند؟ این‌ها جلسه‌ی بعد است، دوشنبه.»</p>
+<p>→ تمرین: «این دو فایل را در ComposeCleanArch بخوانید، و به این فکر کنید: اگر دو screen همزمان useHeadlines("techcrunch") را صدا بزنند، چند request می‌رود؟» (جواب: یکی؛ ولی جلسه‌ی بعد دقیق می‌بینیم چرا.)</p>` },
+
+  thanks: { time: '—', html: `
+<p>سؤال‌ها. اگر سؤالی درباره‌ی جزئیات engine بود (staleTime، retry، cache پاک شدن): «سؤال خوبی است؛ دقیقاً موضوع جلسه‌ی بعد است.» و یادداشتش کنید.</p>` },
+};

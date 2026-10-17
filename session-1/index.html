@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Query Client · Session 1 · The idea</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Vazirmatn:wght@400;500;700;800;900&family=JetBrains+Mono:wght@400;500;700&display=swap">
+<style>
+/* Keynote direction: one idea per slide, huge type, diagrams that build on each → press. Nocturne palette, single dark world. */
+:root{
+  --bg:#0f1019; --surf:#1e2030; --surf-2:#262839; --line:rgba(233,233,237,.10);
+  --text:#ecedf3; --dim:#9da1b6; --faint:#5f6378;
+  --accent:#9184d9; --accent-hi:#c4bcff; --glow:rgba(145,132,217,.55);
+  --good:#7fd4ad; --bad:#f08f7c;
+  --display:'Inter','Vazirmatn',system-ui,sans-serif; --body:'Vazirmatn','Inter',system-ui,sans-serif; --mono:'JetBrains Mono',ui-monospace,monospace;
+  color-scheme:dark;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);font-family:var(--body)}
+#vp{position:fixed;inset:0;display:flex;align-items:center;justify-content:center}
+#stage{width:1600px;height:900px;position:relative;flex:none}
+.slide{position:absolute;inset:0;padding:80px 110px;opacity:0;visibility:hidden;transition:opacity .5s ease,visibility 0s linear .5s;direction:rtl;
+  background:radial-gradient(ellipse 60% 55% at 50% 45%,rgba(53,59,128,.26),transparent 70%),var(--bg)}
+.slide.on{opacity:1;visibility:visible;transition:opacity .5s ease}
+.col{display:flex;flex-direction:column}
+.center{justify-content:center}
+.eyebrow{font:600 18px var(--mono);letter-spacing:.14em;color:var(--accent);text-transform:uppercase;direction:ltr;text-align:right}
+.q{font:800 64px/1.3 var(--display);letter-spacing:-.01em;text-wrap:balance;margin-top:14px}
+.big{font:900 110px/1.15 var(--display);letter-spacing:-.02em}
+.huge{font:900 150px/1.12 var(--display);letter-spacing:-.02em}
+.lead{font:500 34px/1.7 var(--body);color:var(--dim)}
+.dim{color:var(--dim)} .faint{color:var(--faint)} .acc{color:var(--accent-hi)} .bad{color:var(--bad)} .good{color:var(--good)}
+.ltr{direction:ltr;unicode-bidi:isolate}
+.mono{font-family:var(--mono)}
+
+/* builds */
+[data-step],[data-only]{opacity:0;transform:translateY(18px);transition:opacity .55s ease,transform .55s ease}
+[data-step].shown,[data-only].shown{opacity:1;transform:none}
+[data-only]:not(.shown){pointer-events:none}
+@media (prefers-reduced-motion:reduce){[data-step],[data-only],.slide{transition:none}}
+
+/* cards & tiles */
+.tile{background:var(--surf);border:1px solid var(--line);border-radius:22px;padding:30px 32px;display:flex;flex-direction:column;gap:10px}
+.tile.hot{background:linear-gradient(160deg,#2a2850,#1b1c30);border-color:rgba(196,188,255,.45);box-shadow:0 0 60px rgba(145,132,217,.25)}
+.tile .tag{font:600 16px var(--mono);color:var(--accent);direction:ltr;text-align:right;letter-spacing:.06em}
+.tile h3{font:800 40px/1.25 var(--display)}
+.tile p{font:500 24px/1.7 var(--body);color:var(--dim)}
+.row3{display:grid;grid-template-columns:repeat(3,1fr);gap:28px}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:34px}
+.pill{display:inline-flex;align-items:center;gap:10px;font:600 20px var(--display);padding:8px 18px;border-radius:999px;border:1px solid var(--line);color:var(--dim)}
+.pill.on{border-color:rgba(196,188,255,.5);color:var(--accent-hi);background:rgba(145,132,217,.14)}
+
+/* phones */
+.phone{position:absolute;width:210px;height:380px;border-radius:34px;border:2px solid rgba(233,233,237,.22);background:linear-gradient(170deg,#202336,#151724);
+  box-shadow:0 30px 60px rgba(0,0,0,.45);display:flex;flex-direction:column;align-items:center;padding:26px 16px;gap:10px;direction:ltr}
+.phone.sm{transform:scale(.82);transform-origin:top left}
+.phone .notch{width:64px;height:8px;border-radius:4px;background:rgba(233,233,237,.18);margin-bottom:22px}
+.phone .name{font:600 18px var(--display);color:var(--dim)}
+.phone .val{font:800 34px var(--display);transition:color .5s}
+.phone .unit{font:500 15px var(--mono);color:var(--faint)}
+.phone.stale .val{color:var(--bad)} .phone.fresh .val{color:var(--good)}
+.chip{position:absolute;font:600 17px var(--mono);padding:10px 16px;border-radius:12px;background:var(--surf);border:1px solid var(--line);color:var(--dim);direction:ltr;white-space:nowrap}
+.chip.vm{border-color:rgba(240,143,124,.45);color:#f5b3a6}
+.server{position:absolute;width:260px;padding:22px;border-radius:20px;background:var(--surf);border:1px solid var(--line);text-align:center;direction:ltr}
+.server .t{font:600 16px var(--mono);color:var(--faint);letter-spacing:.1em}
+.server .v{font:800 40px var(--display);margin-top:6px}
+svg.wires{position:absolute;inset:0;overflow:visible;pointer-events:none}
+svg.wires path{fill:none;stroke-width:2.5;stroke-linecap:round}
+.wire{stroke:rgba(240,143,124,.6);stroke-dasharray:8 10;animation:flow 1.2s linear infinite}
+.wire.ok{stroke:rgba(145,132,217,.75)}
+@keyframes flow{to{stroke-dashoffset:-36}}
+.caption{position:absolute;left:110px;right:110px;bottom:60px;text-align:center;font:800 40px var(--display);letter-spacing:-.01em}
+
+/* the box */
+.box{position:absolute;width:420px;padding:28px 30px;border-radius:26px;background:linear-gradient(160deg,#2a2850,#1b1c30);border:1.5px solid rgba(196,188,255,.5);
+  box-shadow:0 0 0 1px rgba(145,132,217,.2),0 0 80px var(--glow);direction:ltr}
+.box .k{font:600 17px var(--mono);color:var(--accent-hi)}
+.box .title{font:800 30px var(--display);margin:6px 0 16px}
+.box .rowx{display:flex;justify-content:space-between;font:500 19px var(--mono);color:var(--dim);padding:8px 0;border-top:1px solid var(--line)}
+.box .rowx b{color:var(--text);font-weight:700}
+.box.pulse{animation:pulse 1.2s ease}
+@keyframes pulse{0%{box-shadow:0 0 0 1px rgba(145,132,217,.2),0 0 80px var(--glow)}40%{box-shadow:0 0 0 6px rgba(127,212,173,.35),0 0 140px rgba(127,212,173,.6)}100%{box-shadow:0 0 0 1px rgba(145,132,217,.2),0 0 80px var(--glow)}}
+
+/* code */
+.code{direction:ltr;text-align:left;font:15px/1.55 var(--mono);color:#cfd2e2;background:#0b0c14;border:1px solid var(--line);border-radius:18px;padding:24px 28px;white-space:pre;overflow:hidden}
+.code.big{font-size:27px;line-height:1.65;padding:32px 38px;box-shadow:0 0 90px rgba(145,132,217,.22);border-color:rgba(196,188,255,.3)}
+.code .k{color:#b5abfc}.code .t{color:#8cc8ec}.code .s{color:#9fd8b8}.code .c{color:#6d7189;font-style:italic}.code .n{color:#e6b98a}
+.code .ln{display:block;transition:opacity .4s,background .4s;border-radius:6px;margin:0 -10px;padding:0 10px}
+.code.hlmode .ln{opacity:.28}
+.code.hlmode .ln.hl{opacity:1;background:rgba(145,132,217,.16)}
+.count{font:900 96px/1 var(--display);letter-spacing:-.04em;direction:ltr}
+
+/* stacks (web slide) */
+.stack{display:flex;flex-direction:column;gap:10px}
+.stack .head{font:700 24px var(--mono);color:var(--accent-hi);direction:ltr;text-align:center;margin-bottom:6px}
+.card{font:600 20px var(--mono);direction:ltr;text-align:center;padding:14px 16px;border-radius:14px;background:var(--surf);border:1px solid var(--line);color:var(--dim)}
+.card.r{border-color:rgba(240,143,124,.35);color:#f5b3a6}
+
+/* map / pairs */
+.pair{display:grid;grid-template-columns:1fr 90px 1fr;align-items:center;gap:20px}
+.pair .a,.pair .b{font:700 36px var(--mono);direction:ltr;padding:20px 26px;border-radius:18px;background:var(--surf);border:1px solid var(--line);text-align:center}
+.pair .b{border-color:rgba(196,188,255,.45);color:var(--accent-hi);background:rgba(145,132,217,.10)}
+.pair .arrow{font:800 40px var(--display);color:var(--accent);text-align:center}
+.maprow{display:grid;grid-template-columns:1.2fr 60px 1fr;align-items:center;gap:16px;direction:ltr}
+.maprow .key{font:600 24px var(--mono);color:var(--accent-hi);padding:16px 20px;border-radius:14px;background:rgba(145,132,217,.10);border:1px solid rgba(196,188,255,.3)}
+.maprow .to{text-align:center;color:var(--accent);font:800 32px var(--display)}
+.maprow .val{font:600 22px var(--display);padding:16px 20px;border-radius:14px;background:var(--surf);border:1px solid var(--line);color:var(--text)}
+
+/* mini screens (QueryState) */
+.screen{width:290px;height:420px;border-radius:40px;border:2px solid rgba(233,233,237,.2);background:linear-gradient(170deg,#202336,#151724);padding:30px 22px;display:flex;flex-direction:column;align-items:center;gap:14px;direction:ltr}
+.screen .notch{width:70px;height:8px;border-radius:4px;background:rgba(233,233,237,.18);margin-bottom:16px}
+.spinner{width:70px;height:70px;border-radius:50%;border:6px solid rgba(145,132,217,.2);border-top-color:var(--accent-hi);margin-top:95px;animation:spin 1s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.line{width:100%;height:46px;border-radius:12px;background:var(--surf-2)}
+.err{margin-top:80px;font:700 24px var(--display);color:var(--bad);text-align:center}
+.btn{font:700 20px var(--display);padding:12px 26px;border-radius:12px;background:var(--accent);color:#141526}
+.statelabel{font:800 34px var(--mono);text-align:center;direction:ltr;margin-top:16px}
+
+/* layers */
+.layer{display:grid;grid-template-columns:1fr 250px;gap:22px;align-items:center}
+.layer .bx{display:flex;justify-content:space-between;align-items:center;padding:20px 28px;border-radius:18px;background:var(--surf);border:1px solid var(--line)}
+.layer .bx h3{font:800 30px var(--display);direction:ltr;unicode-bidi:isolate}
+.layer .bx .m{font:500 18px var(--mono);color:var(--faint);direction:ltr}
+.layer .bx.hot{border-color:rgba(196,188,255,.45);background:linear-gradient(90deg,var(--surf),rgba(145,132,217,.14))}
+.layer .tagc{font:700 20px var(--mono);text-align:center;padding:12px;border-radius:999px;direction:ltr}
+.tagc.compose{color:var(--accent-hi);background:rgba(145,132,217,.14);border:1px solid rgba(196,188,255,.4)}
+.tagc.kt{color:var(--good);background:rgba(127,212,173,.10);border:1px solid rgba(127,212,173,.4)}
+
+/* chrome */
+#bar{position:fixed;bottom:0;right:0;height:3px;background:var(--accent);transition:width .4s;z-index:5}
+#ctrl{position:fixed;left:16px;bottom:12px;display:flex;gap:8px;align-items:center;opacity:.25;transition:opacity .2s;direction:ltr;z-index:5}
+#ctrl:hover{opacity:1}
+#ctrl button{font:600 13px var(--mono);color:var(--text);background:var(--surf);border:1px solid var(--line);border-radius:8px;padding:6px 10px;cursor:pointer}
+#ctrl span{font:13px var(--mono);color:var(--faint);min-width:56px;text-align:center}
+</style>
+</head>
+<body>
+<div id="vp"><div id="stage">
+
+<!-- 1 · COVER -->
+<section class="slide col center" id="cover" data-title="Query Client — جلسه‌ی ۱" style="gap:26px">
+  <div class="eyebrow">Session 1 of 3 · The idea</div>
+  <p class="huge ltr" style="text-align:right">Query <span class="acc">Client</span></p>
+  <p class="q" style="font-size:52px;margin-top:0">screenهایی بدون ViewModel، در Jetpack Compose</p>
+  <div style="display:flex;gap:16px;margin-top:20px;align-items:center">
+    <span class="pill on">۱ · The idea</span><span class="pill">۲ · The engine</span><span class="pill">۳ · Building</span>
+    <span style="flex:1"></span>
+    <span class="ltr" style="font:600 22px var(--display)">Parisa Hazhir Ghader <span class="faint mono" style="font-size:18px;margin-left:10px">parisaghader.org</span></span>
+  </div>
+</section>
+
+<!-- 2 · SERIES MAP -->
+<section class="slide col" id="series" data-title="سه جلسه">
+  <div class="eyebrow">Three sessions</div>
+  <p class="q">سه جلسه، یک معماری</p>
+  <div class="row3" style="margin-top:50px">
+    <div class="tile hot" data-step="0"><span class="tag">SESSION 1 · TODAY</span><h3>The idea</h3><p>چرا screen به ViewModel نیاز ندارد؟ ایده، جعبه‌ی مشترک، و سه ابزار.</p></div>
+    <div class="tile" data-step="1"><span class="tag">SESSION 2 · NEXT MONDAY</span><h3>The engine</h3><p>درِ جعبه را باز می‌کنیم: کِی fetch، کِی پاک، با error چه می‌کند.</p></div>
+    <div class="tile" data-step="2"><span class="tag">SESSION 3</span><h3>Building</h3><p>معماری کامل، recipe، و ساختن یک feature واقعی با هم.</p></div>
+  </div>
+</section>
+
+<!-- 3 · COLD OPEN -->
+<section class="slide" id="open" data-title="چند کپی؟">
+  <div class="eyebrow">Question</div>
+  <p class="q" style="font-size:60px;white-space:nowrap">الان اپ ما چند کپی از <span class="acc">موجودی کیف پول</span> دارد؟</p>
+  <div data-step="1">
+    <div class="phone" style="left:560px;top:230px"><div class="notch"></div><div class="name">Dashboard</div><div class="val" id="op1">1,250</div><div class="unit">USDT</div></div>
+    <div class="phone" style="left:830px;top:230px"><div class="notch"></div><div class="name">Wallet</div><div class="val" id="op2">1,250</div><div class="unit">USDT</div></div>
+    <div class="phone" style="left:1100px;top:230px"><div class="notch"></div><div class="name">Buy</div><div class="val" id="op3">1,250</div><div class="unit">USDT</div></div>
+  </div>
+  <div data-step="2">
+    <div class="chip vm" style="left:552px;top:630px">DashboardViewModel</div>
+    <div class="chip vm" style="left:840px;top:630px">WalletViewModel</div>
+    <div class="chip vm" style="left:1124px;top:630px">BuyViewModel</div>
+  </div>
+  <div data-step="3">
+    <svg class="wires" viewBox="0 0 1600 900" aria-hidden="true">
+      <path class="wire" d="M552 652 C 440 652, 320 600, 320 484"/>
+      <path class="wire" d="M933 676 C 925 745, 250 760, 240 484"/>
+      <path class="wire" d="M1201 676 C 1195 800, 170 800, 160 484"/>
+    </svg>
+    <div class="server" style="left:110px;top:360px"><div class="t">SERVER</div><div class="v" id="osrv">1,250</div></div>
+  </div>
+  <div class="caption" data-only="3"><span class="ltr">3</span> ViewModel · <span class="ltr">3</span> request · برای یک عدد</div>
+  <div class="caption" data-only="4">خرید انجام شد. سرور <span class="good">1,230</span> دارد؛ هر سه screen هنوز <span class="bad">1,250</span>.</div>
+  <div data-step="4"></div>
+</section>
+
+<!-- 4 · REVEAL -->
+<section class="slide col center" id="reveal" data-title="server data مال شما نیست" style="gap:26px">
+  <div class="eyebrow">The idea</div>
+  <p class="huge">server data</p>
+  <p class="huge" data-step="1">مال شما <span class="acc">نیست.</span></p>
+  <p class="q dim" data-step="2" style="font-size:58px">یک کپی است — و کپی‌ها را باید مثل <span class="acc">cache</span> مدیریت کرد.</p>
+</section>
+
+<!-- 5 · TODAY'S DESTINATION -->
+<section class="slide col" id="destination" data-title="امروز سه چیز می‌سازیم">
+  <div class="eyebrow">Today</div>
+  <p class="q">امروز سه چیز را می‌سازیم</p>
+  <div class="row3" style="margin-top:56px">
+    <div class="tile hot" data-step="1"><span class="tag">QueryEntry</span><h3>جعبه</h3><p>یک جعبه برای یک تکه server data، مشترک بین همه‌ی screenها.</p></div>
+    <div class="tile hot" data-step="2"><span class="tag">key</span><h3>اسم جعبه</h3><p>مثل <span class="ltr mono acc" style="font-size:21px">"wallet.balance.USDT"</span>؛ screen با آن جعبه‌اش را پیدا می‌کند.</p></div>
+    <div class="tile hot" data-step="3"><span class="tag">QueryClient</span><h3>جای جعبه‌ها</h3><p>یک map که همه‌ی جعبه‌ها را با اسمشان نگه می‌دارد.</p></div>
+  </div>
+  <p class="lead" data-step="4" style="margin-top:50px">تا آخر جلسه، هر screen فقط می‌گوید <b style="color:var(--text)">چه data‌ای</b> می‌خواهد.</p>
+</section>
+
+<!-- 6 · THE WEB HAD IT FIRST -->
+<section class="slide col" id="web" data-title="وب همین مشکل را داشت">
+  <div class="eyebrow">Before React Query · ~2019</div>
+  <p class="q">وب همین مشکل را داشت</p>
+  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:34px;margin-top:40px;direction:ltr">
+    <div class="stack" data-step="1"><div class="head">articles</div><div class="card r">action: LOADING</div><div class="card r">action: SUCCESS</div><div class="card r">action: FAILURE</div><div class="card">reducer</div><div class="card">useEffect → load()</div></div>
+    <div class="stack" data-step="2"><div class="head">profile</div><div class="card r">action: LOADING</div><div class="card r">action: SUCCESS</div><div class="card r">action: FAILURE</div><div class="card">reducer</div><div class="card">useEffect → load()</div></div>
+    <div class="stack" data-step="2"><div class="head">orders</div><div class="card r">action: LOADING</div><div class="card r">action: SUCCESS</div><div class="card r">action: FAILURE</div><div class="card">reducer</div><div class="card">useEffect → load()</div></div>
+  </div>
+  <p class="lead" data-step="3" style="margin-top:40px;text-align:center">آشنا نیست؟ این همان <span class="ltr acc" style="font-weight:700">UiState + ViewModel + LaunchedEffect</span> ماست.</p>
+</section>
+
+<!-- 7 · REACT QUERY -->
+<section class="slide col" id="react-query" data-title="React Query">
+  <div class="eyebrow">TanStack Query · Tanner Linsley · 2019</div>
+  <p class="big" style="margin-top:20px">server data، state نیست؛ <span class="acc">cache</span> است.</p>
+  <div style="display:grid;grid-template-columns:1.25fr 1fr;gap:40px;margin-top:40px;align-items:start">
+<div class="code big" data-step="1" style="font-size:24px"><span class="k">const</span> { data, isLoading, error } = useQuery({
+  queryKey: [<span class="s">'articles'</span>, source],
+  queryFn: () =&gt; api.getHeadlines(source),
+})</div>
+    <div class="col" style="gap:14px" data-step="2">
+      <span class="pill on" style="font-size:24px">cache، مشترک بین componentها</span>
+      <span class="pill on" style="font-size:24px">فقط یک request همزمان</span>
+      <span class="pill on" style="font-size:24px">refetch بعد از تغییر</span>
+      <span class="pill on" style="font-size:24px">retry و polling</span>
+    </div>
+  </div>
+</section>
+
+<!-- 8 · WHY COMPOSE -->
+<section class="slide col" id="why-compose" data-title="چرا Compose">
+  <div class="eyebrow">Why Android</div>
+  <p class="q">Compose همان مدل React است</p>
+  <div class="col" style="gap:18px;margin-top:40px;direction:ltr">
+    <div class="pair" data-step="1"><div class="a">useMemo / useRef</div><div class="arrow">→</div><div class="b">remember</div></div>
+    <div class="pair" data-step="2"><div class="a">useEffect</div><div class="arrow">→</div><div class="b">DisposableEffect</div></div>
+    <div class="pair" data-step="3"><div class="a">Context</div><div class="arrow">→</div><div class="b">CompositionLocal</div></div>
+    <div class="pair" data-step="4"><div class="a">custom hook</div><div class="arrow">→</div><div class="b">@Composable fun useX()</div></div>
+  </div>
+  <p class="lead" data-step="5" style="margin-top:36px">پس hook در Compose طبیعی جا می‌افتد. ما library ی React را نمی‌آوریم؛ فقط <b style="color:var(--text)">ایده</b> را.</p>
+</section>
+
+<!-- 9 · TWO KINDS OF STATE -->
+<section class="slide col" id="two-states" data-title="دو جور state">
+  <div class="eyebrow">Two kinds of state</div>
+  <p class="q">دو جور state داریم</p>
+  <div class="row2" style="margin-top:44px">
+    <div class="tile" data-step="1"><span class="tag">SCREEN STATE</span><h3>مال screen است</h3><p>تب انتخاب‌شده، متن یک فرم، باز بودن یک bottom sheet.</p><p style="color:var(--good)">خودمان نوشتیم، پس همیشه درست است.</p></div>
+    <div class="tile hot" data-step="2"><span class="tag">SERVER DATA</span><h3>مال سرور است</h3><p>موجودی کیف پول، سفارش‌های باز، قیمت‌ها.</p><p style="color:var(--accent-hi)">یک کپی است: stale می‌شود، مشترک است، بعد از هر تغییر باید refetch شود.</p></div>
+  </div>
+  <p class="lead" data-step="3" style="margin-top:40px;text-align:center">ViewModel برای اولی عالی است. برای دومی یک <b class="acc">cache مشترک</b> لازم داریم.</p>
+</section>
+
+<!-- 10 · ONE SHARED BOX -->
+<section class="slide" id="box" data-title="یک جعبه‌ی مشترک">
+  <div class="eyebrow">One shared box · QueryEntry</div>
+  <p class="q">سه screen. <span class="acc">یک جعبه.</span></p>
+  <div class="phone sm" style="left:820px;top:230px"><div class="notch"></div><div class="name">Dashboard</div><div class="val" id="bx1">1,250</div><div class="unit">USDT</div></div>
+  <div class="phone sm" style="left:1060px;top:230px"><div class="notch"></div><div class="name">Wallet</div><div class="val" id="bx2">1,250</div><div class="unit">USDT</div></div>
+  <div class="phone sm" style="left:1300px;top:230px"><div class="notch"></div><div class="name">Buy</div><div class="val" id="bx3">1,250</div><div class="unit">USDT</div></div>
+  <div data-step="1">
+    <svg class="wires" viewBox="0 0 1600 900" aria-hidden="true">
+      <path class="wire ok" d="M906 545 C 900 640, 660 620, 532 600"/>
+      <path class="wire ok" d="M1146 545 C 1140 670, 700 650, 532 612"/>
+      <path class="wire ok" d="M1386 545 C 1380 700, 760 680, 532 624"/>
+    </svg>
+    <div class="box" id="thebox" style="left:110px;top:470px">
+      <div class="k">key = "wallet.balance.USDT"</div>
+      <div class="title">QueryEntry</div>
+      <div class="rowx"><span>data</span><b id="bxdata">1,250 USDT</b></div>
+      <div class="rowx"><span>observers</span><b>3 screens</b></div>
+      <div class="rowx"><span>requests</span><b id="bxreq">1</b></div>
+    </div>
+  </div>
+  <div class="caption" data-only="1" style="text-align:right;right:110px;left:auto;width:900px;bottom:70px">یک request، و هر سه screen <span class="acc">همان</span> را می‌خوانند.</div>
+  <div class="caption" data-only="2" style="text-align:right;right:110px;left:auto;width:1000px;bottom:70px">خرید → <span class="ltr">invalidate</span> → <span class="good">همه با هم</span> عوض می‌شوند</div>
+  <div data-step="2"></div>
+</section>
+
+<!-- 11 · INSIDE THE BOX -->
+<section class="slide" id="inside" data-title="داخل جعبه">
+  <div class="eyebrow">Inside the box</div>
+  <p class="q">داخل جعبه چه هست؟</p>
+  <div class="box" style="left:110px;top:270px;width:520px;padding:34px 36px">
+    <div class="k">QueryEntry · "wallet.balance.USDT"</div>
+    <div class="title" style="font-size:34px">the box</div>
+    <div class="rowx" style="font-size:24px;padding:14px 0"><span>data</span><b>StateFlow</b></div>
+    <div class="rowx" style="font-size:24px;padding:14px 0"><span>observers</span><b>3</b></div>
+    <div class="rowx" style="font-size:24px;padding:14px 0"><span>lastFetch</span><b>10:42</b></div>
+    <div class="rowx" style="font-size:24px;padding:14px 0"><span>inFlight</span><b>—</b></div>
+  </div>
+  <div class="col" style="position:absolute;right:110px;top:270px;width:760px;gap:22px">
+    <div class="tile" data-step="1" style="padding:20px 26px"><span class="tag">data</span><p style="color:var(--text)">خود data، در یک StateFlow که همه‌ی screenها می‌خوانند.</p></div>
+    <div class="tile" data-step="2" style="padding:20px 26px"><span class="tag">observers</span><p style="color:var(--text)">چند screen الان دارند نشانش می‌دهند.</p></div>
+    <div class="tile" data-step="3" style="padding:20px 26px"><span class="tag">lastFetch</span><p style="color:var(--text)">آخرین بار کِی از سرور گرفته شد.</p></div>
+    <div class="tile" data-step="4" style="padding:20px 26px"><span class="tag">inFlight</span><p style="color:var(--text)">request در جریان، اگر الان یکی در راه است.</p></div>
+  </div>
+  <div class="caption" data-step="5" style="bottom:50px;font-size:34px">قانون‌های این چهار تا؟ <span class="acc">جلسه‌ی بعد.</span></div>
+</section>
+
+<!-- 12 · THE KEY -->
+<section class="slide col" id="key" data-title="key: اسم جعبه">
+  <div class="eyebrow">key</div>
+  <p class="q">key یعنی اسم جعبه</p>
+  <div class="col" style="gap:16px;margin-top:34px" data-step="0">
+    <div class="maprow"><div class="key">"wallet.balance.USDT"</div><div class="to">→</div><div class="val">موجودی USDT</div></div>
+    <div class="maprow"><div class="key">"orders.open"</div><div class="to">→</div><div class="val">سفارش‌های باز</div></div>
+    <div class="maprow"><div class="key">"articles.headlines.techcrunch.2"</div><div class="to">→</div><div class="val">صفحه‌ی ۲ خبرهای TechCrunch</div></div>
+  </div>
+  <p class="lead" data-step="1" style="margin-top:34px">قانون: <b style="color:var(--text)">هر چیزی که نتیجه را عوض می‌کند، باید در key باشد.</b></p>
+  <div class="row2" style="margin-top:22px;direction:ltr">
+<div class="code" data-step="2" style="font-size:19px;border-color:rgba(240,143,124,.45)"><span class="c">// bug: page is not in the key</span>
+useQuery(key = <span class="s">"headlines"</span>) {
+    repo.getHeadlines(source, page)
+}   <span class="c">// page 2 shows page 1</span></div>
+<div class="code" data-step="3" style="font-size:19px;border-color:rgba(127,212,173,.45)"><span class="c">// fix</span>
+useQuery(key = ArticleKeys.headlines(source, page)) {
+    repo.getHeadlines(source, page)
+}</div>
+  </div>
+</section>
+
+<!-- 13 · QUERYCLIENT -->
+<section class="slide col" id="client" data-title="QueryClient: یک map">
+  <div class="eyebrow">QueryClient</div>
+  <p class="q">QueryClient: یک map از key به جعبه</p>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:40px;margin-top:40px;align-items:start">
+<div class="code big" style="font-size:22px" data-step="1"><span class="n">@Singleton</span>
+<span class="k">class</span> <span class="t">QueryClient</span> {
+  <span class="k">val</span> entries =
+    ConcurrentHashMap&lt;String, QueryEntry&gt;()
+
+  <span class="k">fun</span> getOrCreate(key: String) =
+    entries.computeIfAbsent(key) {
+      QueryEntry(key)
+    }
+}</div>
+    <div class="col" style="gap:20px">
+      <div class="tile" data-step="2"><h3 style="font-size:30px">key هست؟</h3><p>همان جعبه را برمی‌گرداند. پس screen دوم جعبه‌ی screen اول را می‌گیرد.</p></div>
+      <div class="tile" data-step="3"><h3 style="font-size:30px">key نیست؟</h3><p>یک جعبه‌ی جدید می‌سازد و در map می‌گذارد.</p></div>
+      <div class="tile hot" data-step="4"><h3 style="font-size:30px">یک Singleton در Hilt</h3><p>کل اپ یک map دارد. برای همین data بین screenها مشترک است.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- 14 · BEFORE / AFTER -->
+<section class="slide" id="before-after" data-title="قبل و بعد">
+  <div class="eyebrow">Before · After</div>
+  <p class="q">یک screen، <span class="acc">دو خط</span>.</p>
+  <div style="position:absolute;right:110px;top:250px;width:640px;display:flex;flex-direction:column;gap:14px">
+    <div style="display:flex;align-items:baseline;gap:16px"><span class="count dim">30</span><span class="q dim" style="font-size:34px;margin:0">خط · ViewModel + UiState</span></div>
+<div class="code" style="height:350px;opacity:.6;font-size:13.5px">data class HeadlinesUiState(
+    val isLoading: Boolean = false,
+    val articles: List&lt;Article&gt; = emptyList(),
+    val error: String? = null,
+)
+@HiltViewModel
+class HeadlinesViewModel @Inject constructor(
+    private val repo: ArticleRepository,
+) : ViewModel() {
+    private val _state = MutableStateFlow(HeadlinesUiState())
+    val state = _state.asStateFlow()
+    fun load() = viewModelScope.launch {
+        _state.update { it.copy(isLoading = true) }
+        runCatching { repo.getHeadlines() }
+            .onSuccess { l -&gt; _state.update { ... } }
+            .onFailure { e -&gt; _state.update { ... } }
+    }
+}
+@Composable
+fun HeadlinesScreen(vm: HeadlinesViewModel = hiltViewModel()) {
+    val state by vm.state.collectAsStateWithLifecycle()
+    LaunchedEffect(Unit) { vm.load() }
+    when { ... }
+}</div>
+  </div>
+  <div style="position:absolute;left:110px;top:250px;width:700px;display:flex;flex-direction:column;gap:14px" data-step="1">
+    <div style="display:flex;align-items:baseline;gap:16px"><span class="count acc">2</span><span class="q acc" style="font-size:34px;margin:0">خط · hook</span></div>
+<div class="code big" style="font-size:25px"><span class="k">val</span> headlines = useHeadlines()
+<span class="t">QueryContent</span>(headlines) {
+    ArticleList(it)
+}</div>
+  </div>
+  <div data-step="2" class="caption" style="font-size:36px;bottom:56px">بدون ViewModel · بدون UiState · بدون <span class="ltr">load()</span> · بدون boolean loading</div>
+</section>
+
+<!-- 15 · THREE TOOLS -->
+<section class="slide col" id="tools" data-title="سه ابزار">
+  <div class="eyebrow">Three tools</div>
+  <p class="q">screen فقط سه ابزار لازم دارد</p>
+  <div class="row3" style="margin-top:56px">
+    <div class="tile hot" data-step="1"><span class="tag">READ</span><h3 class="ltr" style="text-align:right">useQuery</h3><p>«این data را می‌خواهم.» key + یک fetcher. cache و refetch و retry با خودش.</p></div>
+    <div class="tile hot" data-step="2"><span class="tag">WRITE</span><h3 class="ltr" style="text-align:right">useMutation</h3><p>«این را عوض کن.» خرید، ویرایش، حذف. بعد از موفقیت keyهای مربوط را invalidate می‌کند.</p></div>
+    <div class="tile hot" data-step="3"><span class="tag">RENDER</span><h3 class="ltr" style="text-align:right">QueryContent</h3><p>«وقتی رسید، این را نشان بده.» loading و error را خودش می‌کشد.</p></div>
+  </div>
+</section>
+
+<!-- 16 · A HOOK, LINE BY LINE -->
+<section class="slide col" id="hook" data-title="یک hook، خط به خط">
+  <div class="eyebrow">A hook, line by line</div>
+  <p class="q">یک hook، خط به خط</p>
+  <div style="display:grid;grid-template-columns:1.35fr 1fr;gap:40px;margin-top:34px;align-items:start">
+<div class="code big hlmode" id="hookcode" style="font-size:22px"><span class="ln" data-hl="1"><span class="n">@Composable</span></span><span class="ln" data-hl="1"><span class="k">fun</span> useHeadlines(source: String, page: Int = 1)</span><span class="ln" data-hl="1">        : QueryResult&lt;List&lt;Article&gt;&gt; {</span><span class="ln" data-hl="2">    <span class="k">val</span> provider = hiltViewModel&lt;HookProvider&gt;()</span><span class="ln" data-hl="3,4">    <span class="k">return</span> useQuery(</span><span class="ln" data-hl="3">        key = ArticleKeys.headlines(source, page),</span><span class="ln" data-hl="4">        fetcher = { provider.articleRepository</span><span class="ln" data-hl="4">                      .getHeadlines(source, page) },</span><span class="ln" data-hl="3,4">    )</span><span class="ln" data-hl="1">}</span><span class="ln"> </span><span class="ln" data-hl="5"><span class="c">// the screen</span></span><span class="ln" data-hl="5"><span class="k">val</span> headlines = useHeadlines(<span class="s">"techcrunch"</span>)</span><span class="ln" data-hl="5"><span class="t">QueryContent</span>(headlines) { ArticleList(it) }</span></div>
+    <div style="position:relative;height:520px">
+      <div class="tile" data-only="1" style="position:absolute;inset:0 0 auto 0"><span class="tag">1 · THE HOOK</span><p style="color:var(--text)">یک تابع <span class="ltr mono">@Composable</span> که UI نمی‌کشد؛ یک مقدار برمی‌گرداند. اسمش با <span class="ltr mono">use</span> شروع می‌شود.</p></div>
+      <div class="tile" data-only="2" style="position:absolute;inset:0 0 auto 0"><span class="tag">2 · HOOKPROVIDER</span><p style="color:var(--text)">راه رسیدن به repositoryهای Hilt از داخل Compose. یک <span class="ltr mono">@HiltViewModel</span> بدون state و بدون منطق.</p></div>
+      <div class="tile" data-only="3" style="position:absolute;inset:0 0 auto 0"><span class="tag">3 · KEY</span><p style="color:var(--text)">کدام جعبه؟ <span class="ltr mono acc">"articles.headlines.techcrunch.1"</span>. source و page در key هستند چون نتیجه را عوض می‌کنند.</p></div>
+      <div class="tile" data-only="4" style="position:absolute;inset:0 0 auto 0"><span class="tag">4 · FETCHER</span><p style="color:var(--text)">جعبه را از کجا پر کنیم؟ یک lambda که repository را صدا می‌زند؛ data برمی‌گرداند یا throw می‌کند.</p></div>
+      <div class="tile hot" data-only="5" style="position:absolute;inset:0 0 auto 0"><span class="tag">5 · THE SCREEN</span><p style="color:var(--text)">دو خط. hook جعبه را می‌دهد؛ QueryContent وقتی data رسید لیست را نشان می‌دهد.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- 17 · QUERYSTATE -->
+<section class="slide col" id="states" data-title="سه حالت">
+  <div class="eyebrow">QueryState · QueryContent</div>
+  <p class="q">جعبه همیشه در یکی از سه حالت است</p>
+  <div style="display:flex;gap:70px;justify-content:center;margin-top:30px;direction:ltr">
+    <div class="col" data-step="1" style="align-items:center"><div class="screen"><div class="notch"></div><div class="spinner"></div></div><div class="statelabel acc">Loading</div></div>
+    <div class="col" data-step="2" style="align-items:center"><div class="screen"><div class="notch"></div><div class="line"></div><div class="line"></div><div class="line"></div><div class="line" style="width:70%"></div></div><div class="statelabel good">Success</div></div>
+    <div class="col" data-step="3" style="align-items:center"><div class="screen"><div class="notch"></div><div class="err">Couldn't load</div><div class="btn">Retry</div></div><div class="statelabel bad">Failure</div></div>
+  </div>
+  <p class="lead" data-step="4" style="text-align:center;margin-top:20px">یک <span class="ltr mono acc">sealed interface</span>؛ سه حالت، نه هشت ترکیب از سه boolean. QueryContent برای هر حالت یکی از این‌ها را می‌کشد.</p>
+</section>
+
+<!-- 18 · USEMUTATION -->
+<section class="slide" id="mutation" data-title="useMutation و invalidate">
+  <div class="eyebrow">useMutation · invalidate</div>
+  <p class="q">write: بعد از خرید، همه‌جا عوض می‌شود</p>
+<div class="code big" style="position:absolute;right:110px;top:250px;width:760px;font-size:22px" data-step="1"><span class="k">val</span> buy = useMutation&lt;BuyRequest, Order&gt;(
+    mutationFn = { req -&gt; repo.buy(req) },
+    options = MutationOptions(
+        invalidateKeys = listOf(
+            WalletKeys.balance(<span class="s">"USDT"</span>)),
+    ),
+)
+Button(onClick = { buy(request) }) { Text(<span class="s">"Buy"</span>) }</div>
+  <div class="col" style="position:absolute;left:110px;top:250px;width:560px;gap:16px">
+    <div class="tile" data-step="2" style="padding:20px 26px"><span class="tag">1 · BUY</span><p style="color:var(--text)">request به سرور؛ سفارش ثبت شد.</p></div>
+    <div class="tile hot" data-step="3" style="padding:20px 26px"><span class="tag">2 · INVALIDATE</span><p style="color:var(--text)">جعبه‌ی <span class="ltr mono acc">wallet.balance.USDT</span> «کهنه» علامت می‌خورد.</p></div>
+    <div class="tile" data-step="4" style="padding:20px 26px;border-color:rgba(127,212,173,.45)"><span class="tag" style="color:var(--good)">3 · REFETCH</span><p style="color:var(--text)">هر screen که موجودی را نشان می‌دهد، خودکار تازه می‌شود.</p></div>
+  </div>
+  <div class="caption" data-step="5" style="font-size:34px;bottom:50px">screen خرید نمی‌داند screen کیف پول وجود دارد. فقط می‌گوید <span class="acc">کدام data</span> عوض شد.</div>
+</section>
+
+<!-- 19 · LAYERS -->
+<section class="slide col" id="layers" data-title="هر تکه کجا زندگی می‌کند">
+  <div class="eyebrow">Where it lives</div>
+  <p class="q">هر تکه کجا زندگی می‌کند</p>
+  <div class="col" style="gap:14px;margin-top:30px">
+    <div class="layer" data-step="5"><div class="bx"><h3>Screen</h3><span class="m">:app/ui</span></div><span class="tagc compose">@Composable</span></div>
+    <div class="layer" data-step="4"><div class="bx"><h3>Hook · useHeadlines()</h3><span class="m">:app/hooks</span></div><span class="tagc compose">@Composable</span></div>
+    <div class="layer" data-step="3"><div class="bx hot"><h3>QueryClient · QueryEntry</h3><span class="m">:core:query</span></div><span class="tagc kt">pure Kotlin</span></div>
+    <div class="layer" data-step="2"><div class="bx"><h3>Repository</h3><span class="m">:core:network</span></div><span class="tagc kt">pure Kotlin</span></div>
+    <div class="layer" data-step="1"><div class="bx"><h3>Api · Retrofit</h3><span class="m">:core:network</span></div><span class="tagc kt">pure Kotlin</span></div>
+  </div>
+  <p class="lead" data-step="6" style="margin-top:24px">فقط دو لایه‌ی بالا Composable هستند. engine Kotlin خالص است؛ پس بدون emulator test می‌شود.</p>
+</section>
+
+<!-- 20 · RECAP -->
+<section class="slide col" id="recap" data-title="جمع‌بندی">
+  <div class="eyebrow">Recap</div>
+  <p class="q">امروز سه چیز یاد گرفتیم</p>
+  <div class="col" style="gap:26px;margin-top:50px">
+    <p class="q" data-step="1" style="font-size:42px;margin:0"><span class="acc ltr">1</span> &nbsp;server data مال ما نیست؛ یک کپی است.</p>
+    <p class="q" data-step="2" style="font-size:42px;margin:0"><span class="acc ltr">2</span> &nbsp;یک جعبه‌ی مشترک، با یک اسم، در یک map: <span class="ltr acc">QueryEntry · key · QueryClient</span></p>
+    <p class="q" data-step="3" style="font-size:42px;margin:0"><span class="acc ltr">3</span> &nbsp;screen = یک hook + QueryContent. بدون ViewModel.</p>
+  </div>
+</section>
+
+<!-- 21 · NEXT TIME -->
+<section class="slide col" id="next" data-title="جلسه‌ی بعد">
+  <div class="eyebrow">Next Monday · Session 2 · The engine</div>
+  <p class="big" style="margin-top:20px">جعبه <span class="acc">کِی</span> به سرور می‌رود؟</p>
+  <p class="q dim" data-step="1" style="font-size:48px">کِی پاک می‌شود؟ با error چه می‌کند؟ اگر دو request با هم برسند؟</p>
+  <div class="tile" data-step="2" style="margin-top:40px;max-width:1100px">
+    <span class="tag">HOMEWORK</span>
+    <p style="color:var(--text)">در <span class="ltr mono acc">ComposeCleanArch</span> این دو فایل را بخوانید: <span class="ltr mono">ArticleHooks.kt</span> و <span class="ltr mono">ArticleListScreen.kt</span>.</p>
+    <p>و به این فکر کنید: اگر دو screen همزمان <span class="ltr mono">useHeadlines("techcrunch")</span> را صدا بزنند، چند request می‌رود؟</p>
+  </div>
+</section>
+
+<!-- 22 · Q&A -->
+<section class="slide col center" id="thanks" data-title="پرسش و پاسخ" style="gap:24px">
+  <div class="eyebrow">Q&amp;A</div>
+  <p class="huge">سؤال؟</p>
+  <p class="lead ltr" style="text-align:right">github.com/lumoradevlab/ComposeCleanArch</p>
+  <p class="lead faint ltr" style="text-align:right">Parisa Hazhir Ghader · parisaghader.org</p>
+</section>
+
+</div></div>
+<div id="bar"></div>
+<div id="ctrl"><button id="b-prev" type="button">‹</button><span id="ctr">1 / 1</span><button id="b-next" type="button">›</button><button id="b-notes" type="button">notes (N)</button><button id="b-full" type="button">full (F)</button></div>
+
+<script>
+(function(){
+  var slides=[].slice.call(document.querySelectorAll('.slide'));
+  var total=slides.length, cur=0, step=0;
+  var chan=('BroadcastChannel' in window)?new BroadcastChannel('qc-s1'):null, notesWin=null;
+  function maxStep(s){var m=0;s.querySelectorAll('[data-step],[data-only]').forEach(function(e){m=Math.max(m,+(e.dataset.step||e.dataset.only))});return m}
+  function setVal(id,txt,cls){var e=document.getElementById(id);if(!e)return;e.textContent=txt;var p=e.closest('.phone');if(p){p.classList.remove('stale','fresh');if(cls)p.classList.add(cls)}}
+  var ACT={
+    open:function(st){var b=st>=4;setVal('osrv',b?'1,230':'1,250');['op1','op2','op3'].forEach(function(id){setVal(id,'1,250',b?'stale':'')})},
+    box:function(st){var b=st>=2;['bx1','bx2','bx3'].forEach(function(id){setVal(id,b?'1,230':'1,250',b?'fresh':'')});
+      document.getElementById('bxdata').textContent=b?'1,230 USDT':'1,250 USDT';document.getElementById('bxreq').textContent=b?'2':'1';
+      var bx=document.getElementById('thebox');bx.classList.remove('pulse');if(b){void bx.offsetWidth;bx.classList.add('pulse')}},
+    hook:function(st){var code=document.getElementById('hookcode');code.classList.toggle('hlmode',st>0);
+      code.querySelectorAll('.ln').forEach(function(l){var h=(l.dataset.hl||'').split(',');l.classList.toggle('hl',h.indexOf(String(st))>-1)})}
+  };
+  function state(){return{type:'state',index:cur,total:total,id:slides[cur].id,title:slides[cur].dataset.title,next:cur+1<total?slides[cur+1].dataset.title:null,step:step,steps:maxStep(slides[cur])}}
+  function broadcast(){var m=state();if(chan)chan.postMessage(m);if(notesWin&&!notesWin.closed){try{notesWin.postMessage(m,'*')}catch(e){}}}
+  function render(){
+    slides.forEach(function(s,i){s.classList.toggle('on',i===cur)});
+    var s=slides[cur];
+    s.querySelectorAll('[data-step]').forEach(function(e){e.classList.toggle('shown',+e.dataset.step<=step)});
+    s.querySelectorAll('[data-only]').forEach(function(e){e.classList.toggle('shown',+e.dataset.only===step)});
+    if(ACT[s.id])ACT[s.id](step);
+    document.getElementById('bar').style.width=((cur+1)/total*100)+'%';
+    document.getElementById('ctr').textContent=(cur+1)+' / '+total;
+    try{history.replaceState(null,'','#'+(cur+1))}catch(e){}
+    broadcast();
+  }
+  function go(i){cur=Math.max(0,Math.min(total-1,i));step=0;render()}
+  function next(){if(step<maxStep(slides[cur]))step++;else if(cur<total-1){cur++;step=0}render()}
+  function prev(){if(step>0)step--;else if(cur>0){cur--;step=maxStep(slides[cur])}render()}
+  function fit(){var k=Math.min(innerWidth/1600,innerHeight/900);document.getElementById('stage').style.transform='scale('+k+')'}
+  function openNotes(){if(notesWin&&!notesWin.closed){notesWin.focus();broadcast();return}notesWin=window.open('notes.html','qc-s1-notes','width=960,height=780');setTimeout(broadcast,500);setTimeout(broadcast,1300)}
+  function full(){if(!document.fullscreenElement)document.documentElement.requestFullscreen&&document.documentElement.requestFullscreen();else document.exitFullscreen&&document.exitFullscreen()}
+  function remote(d){if(!d||typeof d!=='object')return;if(d.type==='nav')(d.dir>0?next:prev)();if(d.type==='hello')broadcast()}
+  if(chan)chan.onmessage=function(e){remote(e.data)};
+  addEventListener('message',function(e){remote(e.data)});
+  addEventListener('keydown',function(e){
+    if(e.metaKey||e.ctrlKey||e.altKey)return;
+    if(['ArrowRight','ArrowDown',' ','PageDown','Enter'].indexOf(e.key)>-1){e.preventDefault();next()}
+    else if(['ArrowLeft','ArrowUp','PageUp','Backspace'].indexOf(e.key)>-1){e.preventDefault();prev()}
+    else if(e.key==='Home')go(0);else if(e.key==='End')go(total-1);
+    else if(e.key==='n'||e.key==='N')openNotes();else if(e.key==='f'||e.key==='F')full();
+  });
+  document.getElementById('stage').addEventListener('click',next);
+  document.getElementById('b-next').onclick=next;document.getElementById('b-prev').onclick=prev;
+  document.getElementById('b-notes').onclick=openNotes;document.getElementById('b-full').onclick=full;
+  var tx=null;addEventListener('touchstart',function(e){tx=e.touches[0].clientX},{passive:true});
+  addEventListener('touchend',function(e){if(tx===null)return;var dx=e.changedTouches[0].clientX-tx;tx=null;if(Math.abs(dx)>50)(dx>0?next:prev)()});
+  addEventListener('resize',fit);fit();
+  var h=parseInt(location.hash.slice(1),10);cur=(h>0&&h<=total)?h-1:0;render();
+})();
+</script>
+</body>
+</html>

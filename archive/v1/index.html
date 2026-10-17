@@ -1,0 +1,1538 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>معماری Query Client در Compose</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Vazirmatn:wght@300..800&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Nocturne — the parisaghader.org palette, extended for a 16:9 deck */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#161826; --surf:#232532; --surf2:#2c2f3f; --line:rgba(233,233,237,.13);
+  --text:#e9e9ed; --dim:#a3a7b9; --faint:#75798c;
+  --accent:#9184d9; --accent-2:#b5abfc; --accent-soft:rgba(145,132,217,.14); --accent-line:rgba(145,132,217,.38);
+  --good:#86d3ad; --good-soft:rgba(134,211,173,.12); --bad:#e8a090; --bad-soft:rgba(232,160,144,.12);
+  --code-bg:#10121b; --code-line:rgba(233,233,237,.08);
+  --section:#262a60; --section-glow:#353b80; --section-ghost:#4c5397;
+  --fs:1;
+  --font:'Inter','Vazirmatn',system-ui,sans-serif;
+  --mono:'JetBrains Mono','Vazirmatn',ui-monospace,monospace;
+}
+html[data-theme="light"]{
+  --bg:#f3f5fe; --surf:#e6e9f6; --surf2:#d8dcee; --line:rgba(22,24,38,.13);
+  --text:#161826; --dim:#4b4f60; --faint:#6b6f80;
+  --accent:#5d5294; --accent-2:#5d5294; --accent-soft:rgba(93,82,148,.10); --accent-line:rgba(93,82,148,.35);
+  --good:#1f6b4b; --good-soft:rgba(31,107,75,.10); --bad:#9c3b2b; --bad-soft:rgba(156,59,43,.09);
+  --code-bg:#1b1d2b;
+}
+html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(--text);font-family:var(--font)}
+body{transition:background .3s,color .3s}
+
+/* ── stage: a fixed 1600×900 canvas scaled to the window ── */
+#viewport{position:fixed;inset:0;display:flex;align-items:center;justify-content:center}
+#stage{width:1600px;height:900px;position:relative;flex:none;transform-origin:center center}
+.slide{position:absolute;inset:0;display:flex;flex-direction:column;padding:58px 84px 66px;
+  background:var(--bg);opacity:0;visibility:hidden;transform:translateY(14px);
+  transition:opacity .35s ease,transform .35s ease,visibility 0s linear .35s}
+.slide.active{opacity:1;visibility:visible;transform:none;transition:opacity .35s ease,transform .35s ease}
+
+/* ── type ── */
+.hd{margin-bottom:26px;flex:none}
+.kicker{display:flex;gap:12px;align-items:center;font-size:17px;font-weight:600;color:var(--accent);letter-spacing:.02em;margin-bottom:10px}
+.kicker .en{font-family:var(--mono);font-weight:500;font-size:15px;color:var(--faint);direction:ltr;unicode-bidi:isolate}
+.kicker::before{content:"";width:28px;height:2px;background:var(--accent);border-radius:2px}
+h1{font-size:82px;font-weight:700;line-height:1.15;letter-spacing:-.01em}
+h2{font-size:46px;font-weight:650;line-height:1.3}
+h3{font-size:26px;font-weight:600;line-height:1.4;margin-bottom:8px}
+p,li{font-size:calc(22px * var(--fs));line-height:1.8;color:var(--dim)}
+p b,li b,td b{color:var(--text);font-weight:600}
+.lead{font-size:calc(27px * var(--fs));line-height:1.75;color:var(--dim)}
+.small{font-size:calc(18px * var(--fs));line-height:1.7;color:var(--faint)}
+ul.plain{list-style:none;display:flex;flex-direction:column;gap:10px}
+ul.plain li{position:relative;padding-right:26px}
+ul.plain li::before{content:"";position:absolute;right:2px;top:.75em;width:9px;height:9px;border-radius:50%;background:var(--accent)}
+.ic{font-family:var(--mono);font-size:.84em;direction:ltr;unicode-bidi:isolate;background:var(--accent-soft);
+  color:var(--accent-2);padding:1px 8px;border-radius:6px;white-space:nowrap}
+.ltr{direction:ltr;unicode-bidi:isolate}
+.accent{color:var(--accent)}
+.good{color:var(--good)} .bad{color:var(--bad)}
+
+/* ── layout ── */
+.bd{flex:1;min-height:0;display:flex;flex-direction:column;gap:22px;overflow:auto}
+.bd::-webkit-scrollbar,pre.code::-webkit-scrollbar,.log::-webkit-scrollbar{width:5px;height:5px}
+.bd::-webkit-scrollbar-thumb,pre.code::-webkit-scrollbar-thumb,.log::-webkit-scrollbar-thumb{background:var(--accent-line);border-radius:3px}
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:26px;min-height:0}
+.cols.c3{grid-template-columns:repeat(3,1fr)}
+.cols.c4{grid-template-columns:repeat(4,1fr)}
+.cols.w60{grid-template-columns:1.3fr 1fr}
+.cols.w40{grid-template-columns:1fr 1.3fr}
+.cols>*{min-width:0}
+.fill{flex:1;min-height:0}
+.row{display:flex;gap:14px;align-items:center;flex-wrap:wrap}
+.card{background:var(--surf);border:1px solid var(--line);border-radius:14px;padding:22px 26px;min-width:0}
+.card.accent-card{border-color:var(--accent-line);background:linear-gradient(160deg,var(--accent-soft),transparent 70%),var(--surf)}
+.card.bad-card{border-color:color-mix(in srgb,var(--bad) 40%,transparent);background:var(--bad-soft)}
+.card.good-card{border-color:color-mix(in srgb,var(--good) 40%,transparent);background:var(--good-soft)}
+.card .tag{display:inline-block;font-family:var(--mono);font-size:14px;color:var(--faint);direction:ltr;margin-bottom:6px}
+.pill{display:inline-flex;align-items:center;gap:8px;font-size:17px;font-weight:600;padding:5px 14px;border-radius:999px;
+  border:1px solid var(--accent-line);color:var(--accent);background:var(--accent-soft)}
+.pill.g{border-color:color-mix(in srgb,var(--good) 45%,transparent);color:var(--good);background:var(--good-soft)}
+.pill.b{border-color:color-mix(in srgb,var(--bad) 45%,transparent);color:var(--bad);background:var(--bad-soft)}
+.pill.n{border-color:var(--line);color:var(--dim);background:transparent}
+.quote{border-right:4px solid var(--accent);background:var(--accent-soft);border-radius:4px 12px 12px 4px;padding:18px 26px}
+.quote p{color:var(--text);font-size:calc(23px * var(--fs))}
+
+/* ── code ── */
+pre.code{direction:ltr;text-align:left;background:var(--code-bg);border:1px solid var(--code-line);border-radius:12px;
+  padding:18px 22px;font:calc(16.5px * var(--fs))/1.6 var(--mono);color:#d9dbe6;overflow:auto;tab-size:4;min-height:0}
+pre.code.sm{font-size:calc(13.5px * var(--fs));line-height:1.45}
+pre.code .k{color:#b5abfc} pre.code .s{color:#9fd8b8} pre.code .c{color:#7d8196;font-style:italic}
+pre.code .a{color:#e6b98a} pre.code .t{color:#8cc8ec} pre.code .n{color:#e6b98a}
+.code-title{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.code-title .file{font-family:var(--mono);font-size:15px;color:var(--faint);direction:ltr}
+
+/* ── tables ── */
+table.tbl{width:100%;border-collapse:collapse;font-size:calc(19.5px * var(--fs))}
+.tbl th{text-align:right;color:var(--accent);font-weight:600;font-size:calc(18px * var(--fs));border-bottom:1.5px solid var(--accent-line);padding:11px 14px}
+.tbl td{padding:11px 14px;border-bottom:1px solid var(--line);color:var(--dim);line-height:1.6;vertical-align:top}
+.tbl td:first-child{color:var(--text);font-weight:500}
+.tbl td.v2{color:var(--text)}
+.tbl tr:last-child td{border-bottom:none}
+
+/* ── stats ── */
+.stat{background:var(--surf);border:1px solid var(--line);border-radius:14px;padding:22px 24px}
+.stat .num{font-family:var(--font);font-size:64px;font-weight:700;color:var(--accent);line-height:1.1;direction:ltr;text-align:right}
+.stat .lab{font-size:calc(19px * var(--fs));color:var(--dim);margin-top:6px;line-height:1.6}
+
+/* ── section dividers & cover ── */
+.slide.sec{background:radial-gradient(ellipse 70% 60% at 30% 40%,var(--section-glow),transparent 70%),var(--section);justify-content:center}
+.slide.sec .ghost{position:absolute;left:70px;bottom:10px;font-size:340px;font-weight:700;color:var(--section-ghost);opacity:.45;line-height:1;direction:ltr}
+.slide.sec .kicker{color:#cfd3e5}.slide.sec .kicker::before{background:#cfd3e5}.slide.sec .kicker .en{color:#9397ab}
+.slide.sec h1{color:#f3f5fe;position:relative;max-width:1100px}
+.slide.sec .lead{color:#cfd3e5;max-width:1000px;margin-top:20px;position:relative}
+.slide.cover{background:radial-gradient(ellipse 60% 70% at 18% 30%,var(--accent-soft),transparent 70%),
+  radial-gradient(ellipse 50% 50% at 90% 90%,rgba(53,59,128,.35),transparent 70%),var(--bg);justify-content:center}
+.cover .meta{margin-top:46px;display:flex;gap:28px;align-items:center;flex-wrap:wrap}
+.cover .who{font-size:23px;color:var(--text);font-weight:600}
+.cover .who span{display:block;font-size:18px;color:var(--faint);font-weight:400;font-family:var(--mono);direction:ltr;text-align:right}
+
+/* ── diagrams ── */
+.flow{display:flex;flex-direction:column;gap:0}
+.flow .layer{display:grid;grid-template-columns:1fr 210px;gap:18px;align-items:center}
+.flow .box{background:var(--surf);border:1px solid var(--line);border-radius:12px;padding:14px 22px;display:flex;justify-content:space-between;align-items:center;gap:18px}
+.flow .box.hot{border-color:var(--accent-line);background:linear-gradient(90deg,transparent,var(--accent-soft)),var(--surf)}
+.flow .box h3{margin:0;font-size:23px}
+.flow .box p{font-size:calc(18px * var(--fs));line-height:1.55}
+.flow .box .mod{font-family:var(--mono);font-size:15px;color:var(--faint);direction:ltr;white-space:nowrap}
+.flow .arrow{height:26px;display:flex;align-items:center;padding-right:60px;color:var(--accent);font-size:20px}
+.flow .side{font-size:16px;font-weight:600;text-align:center;padding:8px 10px;border-radius:999px}
+.flow .side.compose{color:var(--accent);background:var(--accent-soft);border:1px solid var(--accent-line)}
+.flow .side.kt{color:var(--good);background:var(--good-soft);border:1px solid color-mix(in srgb,var(--good) 40%,transparent)}
+.mods{display:flex;flex-direction:column;gap:14px;align-items:stretch}
+.mods .lvl{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+.mods .m{font-family:var(--mono);font-size:18px;direction:ltr;padding:12px 18px;border-radius:10px;background:var(--surf);border:1px solid var(--line);color:var(--text)}
+.mods .m.hot{border-color:var(--accent-line);background:var(--accent-soft);color:var(--accent-2)}
+.mods .m.leaf{border-style:dashed}
+.mods .down{text-align:center;color:var(--accent);font-size:20px;line-height:1}
+
+/* ── simulators ── */
+.sim{background:var(--surf);border:1px solid var(--line);border-radius:14px;padding:20px 24px;display:flex;flex-direction:column;gap:16px;min-height:0}
+.btn{font-family:var(--font);font-size:18px;font-weight:500;color:var(--text);background:var(--surf2);border:1px solid var(--line);
+  padding:9px 18px;border-radius:10px;cursor:pointer;transition:all .15s}
+.btn:hover{border-color:var(--accent);color:var(--accent-2)}
+.btn.primary{background:var(--accent);color:#161826;border-color:var(--accent);font-weight:600}
+html[data-theme="light"] .btn.primary{color:#f3f5fe}
+.btn.primary:hover{filter:brightness(1.1);color:#161826}
+html[data-theme="light"] .btn.primary:hover{color:#f3f5fe}
+.btn:disabled{opacity:.45;cursor:default}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.seg button{font-family:var(--font);font-size:17px;padding:8px 16px;background:transparent;color:var(--dim);border:none;cursor:pointer}
+.seg button.on{background:var(--accent-soft);color:var(--accent-2);font-weight:600}
+.kv{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.kv div{background:var(--surf2);border-radius:10px;padding:12px 16px}
+.kv .k{font-size:15px;color:var(--faint)}
+.kv .v{font-size:22px;font-weight:600;color:var(--text);margin-top:2px}
+.log{font:15px/1.7 var(--mono);direction:ltr;text-align:left;background:var(--code-bg);color:#c9ccd9;border-radius:10px;padding:12px 16px;overflow:auto;min-height:0}
+.log div{white-space:pre-wrap}
+.log.fa{direction:rtl;text-align:right;font-family:var(--font);font-size:16px}
+.log.fa .t{direction:ltr;unicode-bidi:isolate;font-family:var(--mono)}
+.log .t{color:#7d8196}
+.bar{height:10px;border-radius:5px;background:var(--surf2);overflow:hidden}
+.bar i{display:block;height:100%;background:var(--good);transition:width .3s}
+.bar i.stale{background:var(--bad)}
+.lane{display:flex;align-items:center;gap:14px;padding:12px 16px;border-radius:10px;background:var(--surf2);border:1px solid transparent;transition:all .25s}
+.lane.on{border-color:var(--accent-line);background:var(--accent-soft)}
+.lane .who{font-weight:600;min-width:150px}
+.lane .st{color:var(--dim);font-size:18px}
+.chips{display:flex;flex-wrap:wrap;gap:10px}
+.chip{font-family:var(--mono);font-size:17px;padding:8px 14px;border-radius:9px;background:var(--surf2);border:1px solid var(--line);color:var(--text);cursor:pointer;direction:ltr}
+.chip.on{border-color:var(--accent);background:var(--accent-soft);color:var(--accent-2)}
+.order{display:flex;justify-content:space-between;padding:10px 16px;border-radius:10px;background:var(--surf2);font-size:18px}
+.flash{animation:flash .6s ease}
+@keyframes flash{from{background:var(--accent-soft)}to{background:var(--surf2)}}
+
+/* ── steps / recipe ── */
+.steps{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+.step{background:var(--surf);border:1px solid var(--line);border-radius:12px;padding:16px 18px;position:relative}
+.step .no{font-size:15px;font-weight:700;color:var(--accent);font-family:var(--mono)}
+.step h3{font-size:21px;margin:4px 0 6px}
+.step p{font-size:calc(17px * var(--fs));line-height:1.6}
+.step .mod{font-family:var(--mono);font-size:14px;color:var(--faint);direction:ltr;display:block;text-align:right}
+
+/* ── chrome ── */
+#prog{position:fixed;bottom:0;right:0;height:3px;background:linear-gradient(270deg,var(--accent),var(--accent-2));transition:width .3s;z-index:50}
+#ctrl{position:fixed;bottom:16px;left:20px;display:flex;align-items:center;gap:8px;z-index:50;opacity:.35;transition:opacity .2s;direction:ltr}
+#ctrl:hover{opacity:1}
+.nb{width:38px;height:38px;border-radius:50%;border:1px solid var(--line);background:var(--surf);color:var(--text);
+  font:15px var(--font);cursor:pointer;display:flex;align-items:center;justify-content:center}
+.nb:hover{border-color:var(--accent);color:var(--accent-2)}
+#ctr{font:13px var(--mono);color:var(--faint);min-width:56px;text-align:center}
+#help{position:fixed;inset:0;background:rgba(10,11,18,.7);display:none;align-items:center;justify-content:center;z-index:60}
+#help.on{display:flex}
+#help .card{max-width:620px}
+#help td{padding:6px 12px;font-size:18px;color:var(--dim)}
+#help td:first-child{font-family:var(--mono);color:var(--accent-2);direction:ltr;text-align:left}
+</style>
+</head>
+<body>
+<div id="viewport"><div id="stage">
+
+<!-- ═════════════ 1 · COVER ═════════════ -->
+<section class="slide cover active" id="cover" data-title="معماری Query Client">
+  <div class="kicker">Jetpack Compose <span class="en">Android · Architecture</span></div>
+  <h1>معماری <span class="ltr accent">Query Client</span></h1>
+  <p class="lead" style="margin-top:22px;max-width:1150px">screenهایی بدون ViewModel — cache برای server data به سبک React Query، دست‌نویس برای Compose</p>
+  <div class="meta">
+    <div class="who">Parisa Hazhir Ghader<span>parisaghader.org</span></div>
+    <span class="pill">الهام از React Query</span>
+    <span class="pill n">ComposeCleanArch</span>
+  </div>
+</section>
+
+<!-- ═════════════ 2 · AGENDA ═════════════ -->
+<section class="slide" id="agenda" data-title="دستور جلسه">
+  <div class="hd"><div class="kicker">دستور جلسه <span class="en">Agenda</span></div><h2>امروز چه می‌بینیم</h2></div>
+  <div class="bd">
+    <div class="cols c3" style="gap:20px">
+      <div class="card"><span class="tag">01</span><h3>ایده از کجا آمد</h3><p>React Query: چه مشکلی را حل کرد و چرا به Compose آمد</p></div>
+      <div class="card"><span class="tag">02</span><h3>مشکل</h3><p>چرا ViewModel برای server data زیادی است</p></div>
+      <div class="card"><span class="tag">03</span><h3>ایده در Compose</h3><p>یک جعبه‌ی مشترک، key، و سه ابزار: <span class="ic">useQuery</span>، <span class="ic">useMutation</span>، <span class="ic">QueryContent</span></p></div>
+      <div class="card"><span class="tag">04</span><h3>Engine</h3><p>قانون‌های جعبه: staleTime، observers، fetch، invalidate، retry، polling — با simulator</p></div>
+      <div class="card"><span class="tag">05</span><h3>Traps</h3><p>آنچه یک پیاده‌سازی ساده اشتباه می‌کند</p></div>
+      <div class="card accent-card"><span class="tag">06</span><h3>شروع کار</h3><p>recipe ساخت feature، rules و یک تمرین عملی</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" id="destination" data-title="مقصد امروز">
+  <div class="hd"><div class="kicker">مقصد <span class="en">Where we are going</span></div><h2>مقصد امروز، در یک جمله</h2></div>
+  <div class="bd" style="justify-content:center;gap:34px">
+    <div class="quote"><p style="font-size:calc(30px * var(--fs));line-height:1.75">server data مال ما نیست؛ یک کپی است. پس به جای اینکه هر screen کپی خودش را در یک ViewModel نگه دارد، <b>یک cache مشترک</b> داریم و screen فقط می‌گوید چه data‌ای می‌خواهد.</p></div>
+    <div class="cols c3">
+      <div class="card accent-card"><span class="tag">QueryEntry</span><h3>جعبه</h3><p>یک جعبه برای یک تکه server data، مشترک بین همه‌ی screenها.</p></div>
+      <div class="card accent-card"><span class="tag">key</span><h3>اسم جعبه</h3><p>مثل <span class="ic">"wallet.balance.USDT"</span>؛ screen با آن جعبه‌اش را پیدا می‌کند.</p></div>
+      <div class="card accent-card"><span class="tag">QueryClient</span><h3>جای جعبه‌ها</h3><p>یک map که همه‌ی جعبه‌ها را با اسمشان نگه می‌دارد.</p></div>
+    </div>
+    <p class="small">هر چیز دیگری امروز — staleTime، retry، invalidate — فقط یک قانون درباره‌ی همین جعبه است.</p>
+  </div>
+</section>
+
+
+<!-- ═════════════ SECTION 01 · REACT QUERY ═════════════ -->
+<section class="slide sec" id="sec-react" data-title="بخش ۱ — ایده از کجا آمد">
+  <div class="ghost">01</div>
+  <div class="kicker">بخش اول <span class="en">Where it comes from</span></div>
+  <h1>React Query</h1>
+  <p class="lead">قبل از هر خط کد اندرویدی: این ایده در دنیای وب چه مشکلی را حل کرد، و چرا به Compose می‌آید.</p>
+</section>
+
+<section class="slide" id="react-origin" data-title="مشکلی که وب داشت">
+  <div class="hd"><div class="kicker">قبل از React Query <span class="en">Redux era · ~2019</span></div><h2>مشکلی که وب داشت</h2></div>
+  <div class="bd">
+    <div class="cols w60 fill">
+<pre class="code sm"><code>// Redux — one request, by hand
+dispatch({ type: 'ARTICLES_LOADING' })
+try {
+  const data = await api.getHeadlines(source)
+  dispatch({ type: 'ARTICLES_SUCCESS', data })
+} catch (e) {
+  dispatch({ type: 'ARTICLES_FAILURE', error: e.message })
+}
+
+function articlesReducer(state, action) {
+  switch (action.type) {
+    case 'ARTICLES_LOADING':
+      return { ...state, isLoading: true, error: null }
+    case 'ARTICLES_SUCCESS':
+      return { ...state, isLoading: false, articles: action.data }
+    case 'ARTICLES_FAILURE':
+      return { ...state, isLoading: false, error: action.error }
+  }
+}
+
+useEffect(() =&gt; { loadArticles() }, [])</code></pre>
+      <div style="display:flex;flex-direction:column;gap:16px">
+        <div class="card accent-card"><h3>آشنا نیست؟</h3><p><b class="ltr">action + reducer + isLoading</b> در وب همان <b class="ltr">UiState + ViewModel + load()</b> ماست، و <span class="ic">useEffect</span> همان <span class="ic">LaunchedEffect</span>.</p></div>
+        <div class="card bad-card"><h3>و همان مشکل‌ها</h3><ul class="plain">
+          <li>کد تکراری برای هر request</li>
+          <li>stale data، بدون cache واقعی</li>
+          <li>request تکراری از چند component</li>
+          <li>screen‌ای که بعد از ویرایش refetch نمی‌شود</li>
+        </ul></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" id="react-idea" data-title="ایده‌ی React Query">
+  <div class="hd"><div class="kicker">ایده <span class="en">TanStack Query · Tanner Linsley</span></div><h2>Server data، state نیست؛ cache است</h2></div>
+  <div class="bd">
+    <div class="cols">
+      <div style="display:flex;flex-direction:column;gap:16px">
+<pre class="code"><code>// React Query
+const { data, isLoading, error } = useQuery({
+  queryKey: ['articles', source, page],
+  queryFn: () =&gt; api.getHeadlines(source, page),
+})
+
+const bookmark = useMutation({
+  mutationFn: (id) =&gt; api.bookmark(id),
+  onSuccess: () =&gt;
+    queryClient.invalidateQueries({ queryKey: ['bookmarks'] }),
+})</code></pre>
+        <p class="small">component فقط می‌گوید «چه data‌ای» و «از کجا». بقیه کار با یک <span class="ic">QueryClient</span> مرکزی است.</p>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:14px">
+        <div class="card"><h3>یک cache مرکزی، یک بار و درست</h3><ul class="plain">
+          <li>cache با key، مشترک بین componentها</li>
+          <li>de-duplication requestها</li>
+          <li>stale-while-revalidate: data قبلی را نشان بده، پشت صحنه refetch کن</li>
+          <li>retry، polling و invalidate بعد از write</li>
+          <li>پاک کردن data‌ای که کسی نگاهش نمی‌کند</li>
+        </ul></div>
+        <div class="quote"><p>component دیگر server data را «مدیریت» نمی‌کند؛ فقط آن را «request» می‌کند.</p></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" id="react-why" data-title="چرا به اندروید آوردیم">
+  <div class="hd"><div class="kicker">چرا اندروید <span class="en">Why bring it to Compose</span></div><h2>چرا این ایده را به اندروید آوردیم</h2></div>
+  <div class="bd">
+    <div class="cols">
+      <div class="card accent-card"><h3>Compose همان مدل React است</h3>
+        <table class="tbl" style="font-size:calc(18px * var(--fs))">
+          <tr><th>React</th><th>Compose</th></tr>
+          <tr><td class="ltr" style="text-align:right">useMemo / useRef</td><td class="ltr" style="text-align:right">remember</td></tr>
+          <tr><td class="ltr" style="text-align:right">useEffect</td><td class="ltr" style="text-align:right">LaunchedEffect / DisposableEffect</td></tr>
+          <tr><td class="ltr" style="text-align:right">Context</td><td class="ltr" style="text-align:right">CompositionLocal</td></tr>
+          <tr><td class="ltr" style="text-align:right">custom hook</td><td class="ltr" style="text-align:right">@Composable fun useX()</td></tr>
+        </table>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:14px">
+        <div class="card"><h3>مشکل یکی است</h3><p>ViewModel + StateFlow همان Redux + thunk است: هر screen cache خودش را می‌سازد.</p></div>
+        <div class="card"><h3>option‌های اندروید حلش نمی‌کردند</h3><p>Store5 cache را در Repository می‌گذارد و از screen روی صفحه خبر ندارد؛ Apollo فقط برای GraphQL است.</p></div>
+        <div class="card good-card"><h3>کوچک و مال خودمان</h3><p>حدود ۸۸۰ خط Kotlin با Coroutines و StateFlow، بدون dependency بیرونی، با ۱۲ test.</p></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═════════════ SECTION 02 · PROBLEM ═════════════ -->
+<section class="slide sec" id="sec-problem" data-title="بخش ۲ — مشکل">
+  <div class="ghost">02</div>
+  <div class="kicker">بخش دوم <span class="en">The problem</span></div>
+  <h1>یک screen ساده، این همه کد</h1>
+  <p class="lead">بیشتر screenهای ما فقط data‌ای را از سرور نشان می‌دهند. اما برای هر کدام یک ViewModel، یک UiState و یک load() می‌نویسیم.</p>
+</section>
+
+<section class="slide" id="boilerplate" data-title="ViewModel در برابر hook">
+  <div class="hd"><div class="kicker">مقایسه <span class="en">MVVM vs hooks</span></div><h2>همان screen، دو روش</h2></div>
+  <div class="bd">
+    <div class="cols w60 fill">
+      <div style="display:flex;flex-direction:column;min-height:0">
+        <div class="code-title"><span class="pill b">روش معمول · MVVM</span><span class="file">~30 lines</span></div>
+<pre class="code sm fill"><code class="kt">data class HeadlinesUiState(
+    val isLoading: Boolean = false,
+    val articles: List&lt;Article&gt; = emptyList(),
+    val error: String? = null,
+)
+@HiltViewModel
+class HeadlinesViewModel @Inject constructor(
+    private val repo: ArticleRepository,
+) : ViewModel() {
+    private val _state = MutableStateFlow(HeadlinesUiState())
+    val state = _state.asStateFlow()
+
+    fun load() = viewModelScope.launch {
+        _state.update { it.copy(isLoading = true, error = null) }
+        runCatching { repo.getHeadlines() }
+            .onSuccess { l -&gt; _state.update { it.copy(isLoading = false, articles = l) } }
+            .onFailure { e -&gt; _state.update { it.copy(isLoading = false, error = e.message) } }
+    }
+}
+@Composable
+fun HeadlinesScreen(vm: HeadlinesViewModel = hiltViewModel()) {
+    val state by vm.state.collectAsStateWithLifecycle()
+    LaunchedEffect(Unit) { vm.load() }
+    when {
+        state.isLoading -&gt; Loading()
+        state.error != null -&gt; ErrorView(state.error!!, onRetry = vm::load)
+        else -&gt; ArticleList(state.articles)
+    }
+}</code></pre>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:16px;min-height:0">
+        <div class="code-title"><span class="pill g">با Query Client</span><span class="file">ArticleListScreen.kt</span></div>
+<pre class="code sm"><code class="kt">@Composable
+fun useHeadlines(source: String, page: Int = 1)
+        : QueryResult&lt;List&lt;Article&gt;&gt; {
+    val provider = hiltViewModel&lt;HookProvider&gt;()
+    return useQuery(
+        key = ArticleKeys.headlines(source, page),
+        fetcher = {
+            provider.articleRepository.getHeadlines(source, page)
+        },
+    )
+}
+
+@Composable
+fun ArticleListScreen() {
+    val headlines = useHeadlines(DEFAULT_SOURCE)
+    QueryContent(headlines) { articles -&gt; ArticleList(articles) }
+}</code></pre>
+        <div class="card bad-card"><p>و نسخه‌ی MVVM هنوز <b>cache ندارد</b>، data را <b>بین screenها به اشتراک نمی‌گذارد</b>، با هر ورود دوباره request می‌زند و <b>retry ندارد</b>.</p></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" id="two-screens" data-title="دو screen، دو کپی">
+  <div class="hd"><div class="kicker">مشکل <span class="en">Two screens, two copies</span></div><h2>دو screen، دو کپی از یک data</h2></div>
+  <div class="bd">
+    <div class="cols w60">
+<pre class="code"><code class="kt">class WalletViewModel(...) : ViewModel() {
+    val balance = MutableStateFlow&lt;String?&gt;(null)
+
+    fun load() = viewModelScope.launch {
+        balance.value = repo.getBalance()
+    }
+}
+
+class DashboardViewModel(...) : ViewModel() {
+    val balance = MutableStateFlow&lt;String?&gt;(null)
+
+    fun load() = viewModelScope.launch {
+        balance.value = repo.getBalance()
+    }
+}</code></pre>
+      <div class="card bad-card"><h3>نتیجه</h3><ul class="plain">
+        <li><b>دو جعبه</b> که یک عدد را نگه می‌دارند</li>
+        <li><b>دو request</b> برای یک چیز</li>
+        <li>بعد از خرید، <b>هر دو عدد قدیمی</b> را نشان می‌دهند تا دستی بگوییم reload کنند</li>
+        <li>و هیچ‌کدام cache یا retry ندارند</li>
+      </ul></div>
+    </div>
+    <div class="quote"><p>مشکل فقط تعداد خط نیست: هر ViewModel یک کپی جدا از یک data دارد، و ما مسئولیم این کپی‌ها را دستی هماهنگ نگه داریم.</p></div>
+  </div>
+</section>
+
+
+<section class="slide" id="server-state" data-title="server data در برابر state screen">
+  <div class="hd"><div class="kicker">ایده‌ی کلیدی <span class="en">Server state ≠ client state</span></div><h2>Server data با screen state فرق دارد</h2></div>
+  <div class="bd">
+    <table class="tbl">
+      <tr><th style="width:20%">ویژگی</th><th style="width:38%">Client state</th><th>Server state</th></tr>
+      <tr><td>مالک</td><td>خود screen</td><td class="v2">سرور — ما فقط یک کپی داریم</td></tr>
+      <tr><td>stale شدن</td><td>stale نمی‌شود</td><td class="v2">هر لحظه ممکن است stale شود</td></tr>
+      <tr><td>اشتراک</td><td>معمولاً یک screen</td><td class="v2">چند screen همان data را می‌خواهند</td></tr>
+      <tr><td>چه لازم دارد</td><td>نگه‌داری ساده</td><td class="v2">cache، refetch، de-duplication، retry، invalidate</td></tr>
+      <tr><td>مثال</td><td>متن فرم، تب انتخاب‌شده، باز بودن bottom sheet</td><td class="v2">موجودی کیف پول، سفارش‌های باز، قیمت‌ها</td></tr>
+    </table>
+    <div class="quote"><p>ViewModel برای screen state ابزار خوبی است. اما برای server data، هر screen دوباره همان cache ناقص را از نو می‌نویسد.</p></div>
+  </div>
+</section>
+
+<!-- ═════════════ SECTION 02 ═════════════ -->
+<section class="slide sec" id="sec-idea" data-title="بخش ۳ — ایده در Compose">
+  <div class="ghost">03</div>
+  <div class="kicker">بخش سوم <span class="en">The idea, in Compose</span></div>
+  <h1>همان ایده، در Compose</h1>
+  <p class="lead">یک cache layer مشترک برای همه‌ی server data؛ screen فقط می‌گوید «چه data‌ای» و «success state چه شکلی است».</p>
+</section>
+
+<section class="slide" id="box" data-title="یک جعبه‌ی مشترک">
+  <div class="hd"><div class="kicker">ایده <span class="en">One shared box · QueryEntry</span></div><h2>یک جعبه‌ی مشترک برای هر data</h2></div>
+  <div class="bd">
+    <div class="cols w40" style="align-items:center">
+      <div style="display:flex;flex-direction:column;gap:14px">
+        <div class="lane on"><span class="who">Wallet</span><span class="st">← همان جعبه را می‌خواند</span></div>
+        <div class="lane on"><span class="who">Dashboard</span><span class="st">← همان جعبه را می‌خواند</span></div>
+        <div class="lane on"><span class="who">Buy</span><span class="st">← همان جعبه را می‌خواند</span></div>
+      </div>
+      <div class="card accent-card">
+        <span class="tag">QueryEntry · key = "wallet.balance.USDT"</span>
+        <div class="kv" style="grid-template-columns:1fr 1fr;margin-top:10px">
+          <div><div class="k">data</div><div class="v ltr" style="text-align:right">StateFlow · 1,250 USDT</div></div>
+          <div><div class="k">observers</div><div class="v">۳ screen</div></div>
+          <div><div class="k">lastFetch</div><div class="v ltr" style="text-align:right">10:42</div></div>
+          <div><div class="k">in-flight request</div><div class="v">ندارد</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="cols c3">
+      <div class="card good-card"><p><b>یک جعبه</b>، پس عدد هیچ‌وقت بین screenها فرق نمی‌کند.</p></div>
+      <div class="card good-card"><p><b>یک request</b> جعبه را پر می‌کند و همه نتیجه را می‌بینند.</p></div>
+      <div class="card good-card"><p>بعد از خرید، <b>همین یک جعبه</b> refresh می‌شود و همه‌ی screenها با هم عوض می‌شوند.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" id="key-client" data-title="key و QueryClient">
+  <div class="hd"><div class="kicker">اسم و جای جعبه <span class="en">key · QueryClient</span></div><h2>هر جعبه یک اسم دارد؛ همه در یک map</h2></div>
+  <div class="bd">
+    <div class="cols">
+      <div style="display:flex;flex-direction:column;gap:16px">
+<pre class="code"><code class="kt">@Singleton
+class QueryClient @Inject constructor(...) {
+    private val entries =
+        ConcurrentHashMap&lt;String, QueryEntry&lt;*&gt;&gt;()
+
+    fun getOrCreate(key: String, ...) =
+        entries.computeIfAbsent(key) { QueryEntry(key, ...) }
+}</code></pre>
+<pre class="code"><code class="kt">object ArticleKeys {
+    fun headlines(source: String, page: Int) =
+        "articles.headlines.$source.$page"
+}</code></pre>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:14px">
+        <div class="card"><h3>key هست؟</h3><p>همان جعبه را برمی‌گرداند، پس screen دوم جعبه‌ی screen اول را می‌گیرد. نیست؟ یک جعبه‌ی جدید می‌سازد.</p></div>
+        <div class="card accent-card"><h3>سه قانون key</h3><ul class="plain">
+          <li>هر چیزی که نتیجه‌ی request را عوض می‌کند (page، فیلتر، id) <b>باید در key باشد</b></li>
+          <li>key سلسله‌مراتبی است، تا یک گروه را با هم invalidate کنیم</li>
+          <li>keyها در یک <span class="ic">object XxxKeys</span> کنار Api؛ نه رشته‌ی دستی</li>
+        </ul></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<section class="slide" id="react-map" data-title="نقشه‌ی React به Compose">
+  <div class="hd"><div class="kicker">Mapping <span class="en">React Query → ComposeCleanArch</span></div><h2>از React به Compose، تکه به تکه</h2></div>
+  <div class="bd">
+    <table class="tbl" style="font-size:calc(18px * var(--fs))">
+      <tr><th style="width:30%">React Query</th><th style="width:32%">ComposeCleanArch</th><th>تفاوت و دلیل</th></tr>
+      <tr><td class="ltr" style="text-align:right">QueryClient + QueryClientProvider</td><td class="ltr" style="text-align:right">QueryClient (@Singleton) + LocalQueryClient</td><td>DI مالک cache است</td></tr>
+      <tr><td class="ltr" style="text-align:right">useQuery({ queryKey, queryFn })</td><td class="ltr" style="text-align:right">useQuery(key, fetcher, options)</td><td class="v2">همان contract</td></tr>
+      <tr><td class="ltr" style="text-align:right">['articles', id]</td><td class="ltr" style="text-align:right">"articles.headlines.$id"</td><td>invalidate گروهی با regex</td></tr>
+      <tr><td>staleTime default ۰</td><td>staleTime default ۵ دقیقه</td><td class="v2">موبایل: باتری و اینترنت گران‌تر است</td></tr>
+      <tr><td>gcTime (قبلاً cacheTime)، ۵ دقیقه</td><td>cacheTime، ۱۰ دقیقه</td><td>همان مفهوم</td></tr>
+      <tr><td>retry ۳ بار، روی هر error</td><td>۳ attempt، فقط transient error</td><td class="v2">4xx تکرار نمی‌شود</td></tr>
+      <tr><td class="ltr" style="text-align:right">refetchOnWindowFocus</td><td>polling فقط در STARTED</td><td>lifecycle اندروید جای focus پنجره</td></tr>
+      <tr><td>isLoading / Suspense</td><td><span class="ltr">QueryState</span> sealed + <span class="ltr">QueryContent</span></td><td class="v2">compiler case جاافتاده را می‌گیرد</td></tr>
+      <tr><td class="ltr" style="text-align:right">useMutation + invalidateQueries</td><td class="ltr" style="text-align:right">useMutation + invalidateKeys</td><td class="v2">write single-flight، بدون retry default</td></tr>
+    </table>
+  </div>
+</section>
+
+<section class="slide" id="primitives" data-title="سه ابزار اصلی">
+  <div class="hd"><div class="kicker">Primitives <span class="en">The primitives</span></div><h2>سه primitive، یک data flow</h2></div>
+  <div class="bd">
+    <div class="cols c3">
+      <div class="card accent-card"><span class="tag">read</span><h3 class="ltr" style="text-align:right">useQuery</h3><p>یک <b>key</b> و یک <b>fetch function</b>. cache، freshness، de-duplication و retry را خودش انجام می‌دهد.</p></div>
+      <div class="card accent-card"><span class="tag">write</span><h3 class="ltr" style="text-align:right">useMutation</h3><p>ثبت، حذف، ویرایش. بعد از موفقیت، keyهای مربوط را <b>invalidate</b> می‌کند تا screenها refetch شوند.</p></div>
+      <div class="card accent-card"><span class="tag">render</span><h3 class="ltr" style="text-align:right">QueryContent</h3><p>Loading و Error را یک‌جا render می‌کند. screen <b>فقط success state</b> را توصیف می‌کند.</p></div>
+    </div>
+    <div class="cols w40">
+      <div class="card"><span class="tag">engine</span><h3 class="ltr" style="text-align:right">QueryClient</h3><p>یک <span class="ic">@Singleton</span> در Hilt؛ مالک واقعی cache. برای invalidate بین featureها، <span class="ic">setData</span> و <span class="ic">prefetch</span>.</p></div>
+<pre class="code"><code class="kt">val headlines = useHeadlines()
+QueryContent(headlines) { list -&gt; ArticleList(list) }
+
+// no ViewModel · no UiState · no LaunchedEffect { load() }
+// no loading boolean · no error string</code></pre>
+    </div>
+    <p class="small">الهام از TanStack Query (React Query)؛ دست‌نویس با Coroutines و StateFlow — بدون Store5 و بدون library بیرونی.</p>
+  </div>
+</section>
+
+<section class="slide" id="flow" data-title="مسیر data">
+  <div class="hd"><div class="kicker">معماری <span class="en">Data flow</span></div><h2>Data flow، از screen تا network</h2></div>
+  <div class="bd">
+    <div class="flow">
+      <div class="layer"><div class="box"><div><h3>Screen · Composable</h3><p>فقط success state را می‌سازد</p></div><span class="mod">:app/ui</span></div><span class="side compose"><span class="ltr">@Composable</span></span></div>
+      <div class="arrow">↓</div>
+      <div class="layer"><div class="box"><div><h3>Hook · <span class="ltr">useHeadlines()</span></h3><p>key + repository از طریق <span class="ic">HookProvider</span></p></div><span class="mod">:app/hooks</span></div><span class="side compose"><span class="ltr">@Composable</span></span></div>
+      <div class="arrow">↓</div>
+      <div class="layer"><div class="box hot"><div><h3>QueryClient → QueryEntry</h3><p>cache، staleTime، de-duplication، retry، polling، evict</p></div><span class="mod">:core:query</span></div><span class="side kt">Kotlin خالص · testable</span></div>
+      <div class="arrow">↓</div>
+      <div class="layer"><div class="box"><div><h3>Repository</h3><p>Resource را باز می‌کند؛ domain model برمی‌گرداند یا throw می‌کند</p></div><span class="mod">:core:network</span></div><span class="side kt">Kotlin خالص</span></div>
+      <div class="arrow">↓</div>
+      <div class="layer"><div class="box"><div><h3>Api (Retrofit) + Resource call adapter</h3><p>هر responseی — ۲xx، error با هر شکلی، JSON خراب، connection drop — بدون throw به Resource تبدیل می‌شود. <b>safeApiCall لازم نیست.</b></p></div><span class="mod">:core:network</span></div><span class="side kt">Kotlin خالص</span></div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" id="modules" data-title="moduleها">
+  <div class="hd"><div class="kicker">ساختار <span class="en">9 modules · downward only</span></div><h2>۹ module، dependency فقط رو به پایین</h2></div>
+  <div class="bd">
+    <div class="cols w60 fill">
+      <div class="mods" style="justify-content:center">
+        <div class="lvl"><span class="m hot">:app</span></div>
+        <div class="down">↓</div>
+        <div class="lvl"><span class="m hot">:core:ui</span><span class="m hot">:core:query</span><span class="m">:core:network</span></div>
+        <div class="lvl"><span class="m">:core:datastore</span><span class="m">:core:database</span><span class="m">:core:designsystem</span></div>
+        <div class="down">↓</div>
+        <div class="lvl"><span class="m">:core:common</span></div>
+        <div class="down">↓</div>
+        <div class="lvl"><span class="m leaf">:core:model</span></div>
+        <div class="lvl" style="margin-top:8px"><span class="m leaf" style="opacity:.75">:core:testing</span></div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:16px;justify-content:center">
+        <div class="card"><h3>بدون feature module</h3><p>همه‌ی UI در <span class="ic">:app</span>، همه‌ی data در <span class="ic">:core:network</span>. plugin convention برای روزی که یک feature واقعاً بزرگ شود آماده است.</p></div>
+        <div class="card"><h3><span class="ltr">:core:model</span> برگ خالص است</h3><p>بدون Android، Retrofit یا Gson. mapperهای DTO→model در <span class="ic">:core:network</span> هستند، چون به DTO اشاره می‌کنند — وگرنه circular dependency می‌شد.</p></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" id="state" data-title="QueryState">
+  <div class="hd"><div class="kicker">state <span class="en">QueryState</span></div><h2>یک state، فقط سه حالت</h2></div>
+  <div class="bd">
+    <div class="cols">
+      <div style="display:flex;flex-direction:column;gap:16px">
+<pre class="code"><code class="kt">sealed interface QueryState&lt;out T&gt; {
+    data object Loading : QueryState&lt;Nothing&gt;
+    data class Success&lt;out T&gt;(
+        val data: T,
+        val refreshing: Boolean = false,
+    ) : QueryState&lt;T&gt;
+    data class Failure(val error: AppError) : QueryState&lt;Nothing&gt;
+}</code></pre>
+<pre class="code"><code class="kt">when (state) {
+    is QueryState.Loading -&gt; AppLoading()
+    is QueryState.Failure -&gt; AppErrorState(state.error.message, onRetry)
+    is QueryState.Success -&gt; content(state.data)
+}   // ← this is QueryContent</code></pre>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:16px">
+        <div class="card bad-card"><h3>نسخه‌ی ساده: سه فیلد جدا</h3><p>سه فیلد جدا: <span class="ic">data</span>، <span class="ic">error</span>، <span class="ic">isLoading</span>. یعنی ۸ combination، که بعضی‌شان بی‌معنی‌اند — data و error با هم؟</p></div>
+        <div class="card good-card"><h3>ComposeCleanArch: <span class="ltr">sealed</span></h3><p>دقیقاً یکی از سه حالت. <span class="ic">when</span> کامل است و compiler case جاافتاده را یادآوری می‌کند.</p></div>
+        <div class="card"><h3><span class="ltr">refreshing = true</span></h3><p>stale-while-revalidate: data روی صفحه می‌ماند و spinner چشمک نمی‌زند، تا response جدید برسد.</p></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═════════════ SECTION 03 ═════════════ -->
+<section class="slide sec" id="sec-engine" data-title="بخش ۴ — Engine">
+  <div class="ghost">04</div>
+  <div class="kicker">بخش چهارم <span class="en">The engine</span></div>
+  <h1>زیر کاپوت</h1>
+  <p class="lead">هر key یک <span class="ltr">QueryEntry</span> دارد. بیایید با simulator ببینیم در طول زمان با آن چه اتفاقی می‌افتد.</p>
+</section>
+
+<section class="slide" id="stale-rule" data-title="قانون ۱: staleTime">
+  <div class="hd"><div class="kicker">قانون ۱ <span class="en">staleTime · lastFetch</span></div><h2>جعبه کِی به سرور می‌رود؟</h2></div>
+  <div class="bd">
+    <div class="cols">
+      <div style="display:flex;flex-direction:column;gap:18px">
+        <table class="tbl">
+          <tr><th>داخل جعبه</th><th>کار جعبه</th></tr>
+          <tr><td>خالی</td><td class="v2">به سرور برو</td></tr>
+          <tr><td>data دارد و fresh است</td><td class="v2">همان را بده؛ request نزن</td></tr>
+          <tr><td>data دارد ولی stale است</td><td class="v2">به سرور برو</td></tr>
+        </table>
+<pre class="code"><code class="kt">private fun shouldFetch(): Boolean =
+    current == null ||                  // empty box
+    (now() - lastFetch) &gt; staleTime     // or old data</code></pre>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:16px">
+        <div class="card accent-card"><h3>staleTime = ۵ دقیقه (default)</h3><p>۲ دقیقه پیش گرفته شده: <b>fresh</b>، بدون request.<br>۷ دقیقه پیش: <b>stale</b>، دوباره fetch.</p></div>
+        <div class="card bad-card"><h3>اشتباه رایج</h3><p>stale شدن به‌تنهایی request نمی‌زند. جعبه فقط علامت می‌خورد؛ دفعه‌ی بعد که screenی بازش کند refetch می‌شود. data زنده = <span class="ic">refetchInterval</span>.</p></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" id="observers" data-title="قانون ۲: observers و cacheTime">
+  <div class="hd"><div class="kicker">قانون ۲ <span class="en">observers · cacheTime</span></div><h2>جعبه می‌شمارد چه کسی نگاهش می‌کند</h2></div>
+  <div class="bd">
+    <div class="cols">
+      <div style="display:flex;flex-direction:column;gap:14px">
+<pre class="code"><code class="kt">fun observe() {
+    observers++
+    cancelEvictTimer()
+    if (observers == 1 &amp;&amp; shouldFetch()) fetch()
+}
+
+fun unobserve() {
+    observers--
+    if (observers == 0) startEvictTimer(cacheTime)
+}</code></pre>
+<pre class="code"><code class="kt">// inside useQuery
+DisposableEffect(key) {
+    entry.observe()                    // screen appeared: +1
+    onDispose { entry.unobserve() }    // screen left: -1
+}</code></pre>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:14px">
+        <div class="log" style="font-size:17px;line-height:1.9">Wallet opens      → observers = 1   (fetch)<br>Dashboard opens   → observers = 2   (no request)<br>Wallet closes     → observers = 1<br>Dashboard closes  → observers = 0   (evict timer)</div>
+        <div class="card"><h3>دو زمان، کنار هم</h3><p><b>staleTime (۵ دقیقه):</b> تا کی data fresh است.<br><b>cacheTime (۱۰ دقیقه):</b> جعبه‌ای که کسی نگاهش نمی‌کند تا کی نگه داشته می‌شود.</p></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<section class="slide" id="lifecycle" data-title="simulator: lifecycle key">
+  <div class="hd"><div class="kicker">Simulator <span class="en">staleTime = 5 min · cacheTime = 10 min</span></div><h2>lifecycle یک key در cache</h2></div>
+  <div class="bd">
+    <div class="cols w60 fill">
+      <div class="sim">
+        <div class="row">
+          <button class="btn primary" onclick="LC.open()">باز کردن screen</button>
+          <button class="btn" onclick="LC.close()">بستن screen</button>
+          <button class="btn" onclick="LC.tick()">یک دقیقه بعد</button>
+          <button class="btn" onclick="LC.invalidate()">invalidate</button>
+          <button class="btn" onclick="LC.reset()">از نو</button>
+        </div>
+        <div class="small ltr" style="text-align:left" id="lc-key">key = "articles.headlines.techcrunch.1"</div>
+        <div class="kv">
+          <div><div class="k">state</div><div class="v ltr" id="lc-state" style="text-align:right">—</div></div>
+          <div><div class="k">data</div><div class="v ltr" id="lc-data" style="text-align:right">—</div></div>
+          <div><div class="k">simulated time</div><div class="v" id="lc-now">۰ دقیقه</div></div>
+          <div><div class="k">screenهای بازِ این key</div><div class="v" id="lc-obs">۰</div></div>
+          <div><div class="k">network requestها</div><div class="v" id="lc-calls">۰</div></div>
+          <div><div class="k">حذف از cache</div><div class="v" id="lc-evict" style="font-size:18px">—</div></div>
+        </div>
+        <div>
+          <div class="row" style="justify-content:space-between"><span class="small">سن data نسبت به staleTime</span><span class="small" id="lc-fresh">—</span></div>
+          <div class="bar"><i id="lc-bar" style="width:0"></i></div>
+        </div>
+      </div>
+      <div class="log fa" id="lc-log"></div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" id="fetch-steps" data-title="قانون ۳: fetch">
+  <div class="hd"><div class="kicker">قانون ۳ <span class="en">fetch · de-duplication</span></div><h2>fetch: سه کار، و فقط یک request در هر لحظه</h2></div>
+  <div class="bd">
+    <div class="cols w40">
+      <div class="flow">
+        <div class="box"><div><h3>۱. نشان بده که load می‌کنی</h3><p>جعبه خالی: <span class="ic">Loading</span>. data دارد: <span class="ic">Success(old, refreshing)</span>؛ spinner نمی‌آید</p></div></div>
+        <div class="arrow">↓</div>
+        <div class="box"><div><h3>۲. fetcher را صدا بزن</h3><p>همان lambdaی که در hook دادید</p></div></div>
+        <div class="arrow">↓</div>
+        <div class="box hot"><div><h3>۳. نتیجه را ذخیره کن</h3><p>موفق: <span class="ic">Success(new)</span> و lastFetch = now. ناموفق: <span class="ic">Failure</span>، یا اگر data قبلی بود همان می‌ماند</p></div></div>
+      </div>
+<pre class="code"><code class="kt">fun fetch() {
+    if (inFlight != null) return     // already fetching → join it
+
+    inFlight = scope.launch {
+        state = if (data == null) Loading
+                else Success(data, refreshing = true)
+        try {
+            val newData = fetcher()
+            state = Success(newData)
+            lastFetch = now()
+        } catch (e: Exception) {
+            state = if (data != null) Success(data)
+                    else Failure(AppError.from(e))
+        } finally {
+            inFlight = null
+        }
+    }
+}</code></pre>
+    </div>
+  </div>
+</section>
+
+
+<section class="slide" id="dedup" data-title="simulator: de-duplication">
+  <div class="hd"><div class="kicker">Simulator <span class="en">Request de-duplication</span></div><h2>سه screen، یک request</h2></div>
+  <div class="bd">
+    <div class="row">
+      <div class="seg" id="dd-mode"><button class="on" data-m="naive">هر screen جدا</button><button data-m="client">با QueryClient</button></div>
+      <button class="btn primary" onclick="DD.run()">هر سه همزمان باز شوند</button>
+    </div>
+    <div class="cols w60 fill">
+      <div class="sim">
+        <p class="small ltr" style="text-align:left">useWalletBalance("USDT") → key "wallet.balance.USDT.spot"</p>
+        <div class="lane" id="dd-0"><span class="who">داشبورد</span><span class="st">—</span></div>
+        <div class="lane" id="dd-1"><span class="who">کیف پول</span><span class="st">—</span></div>
+        <div class="lane" id="dd-2"><span class="who">Header موجودی</span><span class="st">—</span></div>
+      </div>
+      <div class="sim">
+        <div class="row" style="justify-content:space-between"><h3 style="margin:0">network</h3><span class="pill" id="dd-count">۰ request</span></div>
+        <div class="log fill" id="dd-log" style="min-height:220px"></div>
+      </div>
+    </div>
+    <p class="small">QueryEntry برای هر key فقط یک in-flight request نگه می‌دارد؛ بقیه به همان وصل می‌شوند و همه یک StateFlow مشترک را می‌بینند.</p>
+  </div>
+</section>
+
+<section class="slide" id="mutation" data-title="write و invalidate">
+  <div class="hd"><div class="kicker">write <span class="en">useMutation + invalidateKeys</span></div><h2>Write، و refetch خودکار screenها</h2></div>
+  <div class="bd">
+    <div class="cols">
+      <div style="display:flex;flex-direction:column;gap:16px">
+<pre class="code"><code class="kt">val buy = useMutation&lt;BuyRequest, Order&gt;(
+    mutationFn = { request -&gt; repo.buy(request) },
+    options = MutationOptions(
+        invalidateKeys = listOf(WalletKeys.balance("USDT")),
+    ),
+)
+
+Button(onClick = { buy(request) }, enabled = !buy.isLoading) {
+    Text("Buy")
+}</code></pre>
+<pre class="code"><code class="kt">// QueryEntry
+fun invalidate() {
+    lastFetch = 0L                  // now counts as old
+    if (observers &gt; 0)
+        fetch(force = true)         // someone is watching
+}</code></pre>
+      </div>
+      <div class="flow">
+        <div class="box"><div><h3>۱. کاربر دکمه را می‌زند</h3><p>mutate فقط یک بار اجرا می‌شود (single-flight)</p></div></div>
+        <div class="arrow">↓</div>
+        <div class="box"><div><h3>۲. request به API</h3><p>error به <span class="ic">AppError</span> تبدیل می‌شود؛ retry فقط برای transient error</p></div></div>
+        <div class="arrow">↓</div>
+        <div class="box hot"><div><h3>۳. موفق → <span class="ltr">invalidate(keys)</span></h3><p>keyهایی که یک screen باز دارند همین حالا refetch می‌شوند</p></div></div>
+        <div class="arrow">↓</div>
+        <div class="box"><div><h3>۴. بقیه فقط stale می‌شوند</h3><p>دفعه‌ی بعد که screenشان باز شود، fresh data می‌گیرند</p></div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" id="retry" data-title="simulator: سیاست retry">
+  <div class="hd"><div class="kicker">Simulator <span class="en">RetryPolicy.isRetryable()</span></div><h2>کدام error ارزش retry دارد؟</h2></div>
+  <div class="bd">
+    <p class="small">روی یک error بزنید:</p>
+    <div class="chips" id="rt-chips"></div>
+    <div class="cols fill">
+      <div class="sim" id="rt-out" style="justify-content:flex-start">
+        <p class="small">یک error را انتخاب کنید.</p>
+      </div>
+<pre class="code"><code class="kt">internal fun isRetryable(t: Throwable): Boolean = when (t) {
+    is IOException -&gt; true                 // no connection
+    is HttpStatusException -&gt; when (t.httpStatusCode) {
+        NETWORK_ERROR_CODE -&gt; true
+        408 -&gt; true                        // timeout
+        in 500..599 -&gt; true                // server error
+        else -&gt; false                      // 4xx: same error again
+    }
+    else -&gt; false
+}
+// 429 is handled in the network layer, with backoff</code></pre>
+    </div>
+  </div>
+</section>
+
+<section class="slide" id="race" data-title="simulator: late response">
+  <div class="hd"><div class="kicker">Simulator <span class="en">Out-of-order responses · epoch</span></div><h2>response قدیمی نباید data جدید را بپوشاند</h2></div>
+  <div class="bd">
+    <div class="row">
+      <div class="seg" id="rc-mode"><button class="on" data-m="v1">نسخه‌ی ساده</button><button data-m="v2">با epoch</button></div>
+      <button class="btn" onclick="RC.prev()">قدم قبل</button>
+      <button class="btn primary" onclick="RC.next()">قدم بعد</button>
+      <button class="btn" onclick="RC.reset()">از نو</button>
+      <span class="pill n" id="rc-step">قدم ۰ از ۴</span>
+    </div>
+    <div class="cols w40 fill">
+      <div class="sim">
+        <div class="kv" style="grid-template-columns:1fr 1fr">
+          <div><div class="k">موجودی در سرور</div><div class="v" id="rc-server">100</div></div>
+          <div><div class="k">موجودی روی صفحه</div><div class="v" id="rc-cache">100</div></div>
+        </div>
+        <div class="lane" id="rc-f1"><span class="who ltr">fetch #1</span><span class="st">—</span></div>
+        <div class="lane" id="rc-f2"><span class="who ltr">fetch #2</span><span class="st">—</span></div>
+        <div class="small ltr" style="text-align:left" id="rc-epoch">latestEpoch = 0</div>
+      </div>
+      <div class="sim">
+        <h3 id="rc-title" style="margin:0">شروع</h3>
+        <p id="rc-text" class="lead" style="font-size:24px"></p>
+        <div id="rc-verdict"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" id="polling" data-title="Polling با refetchInterval">
+  <div class="hd"><div class="kicker">Live data <span class="en">refetchInterval</span></div><h2>Polling، فقط وقتی کسی نگاه می‌کند</h2></div>
+  <div class="bd">
+    <div class="cols">
+      <div style="display:flex;flex-direction:column;gap:14px">
+        <div class="code-title"><span class="pill">مثال</span><span class="file">examples/WalletHooks.kt</span></div>
+<pre class="code"><code class="kt">return useQuery(
+    key = WalletKeys.balance(symbol, market),
+    fetcher = { provider.walletRepository.getBalance(symbol, market) },
+    options = QueryOptions(
+        enabled = enabled &amp;&amp; symbol.isNotEmpty(),
+        staleTime = 30.seconds.inWholeMilliseconds,
+        cacheTime = 1.minutes.inWholeMilliseconds,
+        refetchInterval = 15.seconds.inWholeMilliseconds,
+    ),
+)</code></pre>
+        <ul class="plain">
+          <li>فقط وقتی screen <b>STARTED</b> است (<span class="ic">repeatOnLifecycle</span>) — در background متوقف می‌شود</li>
+          <li>ComposeCleanArch: اگر request قبلی هنوز تمام نشده، این دور <b>رد می‌شود</b>، نه اینکه request جدید زده شود</li>
+          <li>live price با <b>WebSocket</b> و <span class="ic">useTickerPrice</span>، نه polling</li>
+        </ul>
+      </div>
+      <div>
+        <table class="tbl">
+          <tr><th>نوع data</th><th>interval پیشنهادی</th></tr>
+          <tr><td>سفارش‌های باز</td><td class="ltr" style="text-align:right">5s</td></tr>
+          <tr><td>تاریخچه‌ی معاملات</td><td class="ltr" style="text-align:right">10s</td></tr>
+          <tr><td>خلاصه‌ی داشبورد</td><td class="ltr" style="text-align:right">30s</td></tr>
+          <tr><td>موجودی کیف پول</td><td class="ltr" style="text-align:right">15s</td></tr>
+          <tr><td>اعلان‌ها و پیام‌ها</td><td class="ltr" style="text-align:right">60s</td></tr>
+        </table>
+        <p class="small" style="margin-top:14px">هر چه data سریع‌تر عوض شود، interval کوتاه‌تر؛ برای هر ثانیه، WebSocket.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" id="ticker" data-title="hook برای WebSocket">
+  <div class="hd"><div class="kicker">فراتر از REST <span class="en">WebSocket hooks</span></div><h2>همان الگو، برای live price</h2></div>
+  <div class="bd">
+    <div class="cols">
+      <div style="display:flex;flex-direction:column;gap:14px">
+        <div class="code-title"><span class="pill">مثال</span><span class="file">examples/TickerHooks.kt</span></div>
+<pre class="code"><code class="kt">@Composable
+fun useTickerPrice(symbol: String): Ticker? {
+    val stream = LocalPriceStream.current
+    val ticker by remember(symbol) { stream.prices(symbol) }
+        .collectAsStateWithLifecycle()
+    return ticker
+}
+
+@Composable
+fun usePriceStreamLifecycle() {
+    // ON_START -&gt; stream.resume()
+    // ON_STOP  -&gt; stream.pause()
+}</code></pre>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:16px;justify-content:center">
+        <div class="card"><h3>hook یعنی «یک contract»</h3><p>برای screen فرقی ندارد data از REST با cache می‌آید یا از WebSocket: یک function <span class="ic">useX()</span> صدا می‌زند و مقدار می‌گیرد.</p></div>
+        <div class="card"><h3>lifecycle در خود hook</h3><p>connection در background می‌خوابد و با برگشت کاربر دوباره وصل می‌شود؛ هیچ screen‌ای لازم نیست این را بداند.</p></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" id="persistent" data-title="layer ماندگار با Room">
+  <div class="hd"><div class="kicker">offline <span class="en">useCachedQuery · Room tier</span></div><h2>وقتی data باید بماند</h2></div>
+  <div class="bd">
+    <div class="cols">
+<pre class="code"><code class="kt">val profile = useCachedQuery(
+    key     = ProfileKeys.PROFILE,
+    fetcher = { api.getProfile() },   // network -&gt; ProfileEntity
+    reader  = { dao.observe() },      // Room -&gt; Flow&lt;ProfileEntity?&gt;
+    writer  = { dao.upsert(it) },
+)   // default: QueryOptions.OfflineForever</code></pre>
+      <ul class="plain">
+        <li><b>Room source of truth است:</b> مقدار از <span class="ic">reader</span> می‌آید و هر fetch موفق با <span class="ic">writer</span> ذخیره می‌شود</li>
+        <li>بعد از بسته شدن اپ (process death) و بدون اینترنت هم data هست</li>
+        <li>default <span class="ic">OfflineForever</span>: خودبه‌خود stale نمی‌شود؛ فقط با invalidate refetch می‌شود</li>
+        <li>اگر fetch شکست بخورد، همان مقدار ذخیره‌شده نمایش داده می‌شود</li>
+        <li>وقتی کسی نگاه نمی‌کند، اشتراک Room هم قطع می‌شود</li>
+      </ul>
+    </div>
+    <div class="quote"><p>بیشتر keyها in-memory هستند (<span class="ic">useQuery</span>). Room layer فقط برای data‌ای که واقعاً باید offline بماند.</p></div>
+  </div>
+</section>
+
+<!-- ═════════════ SECTION 05 ═════════════ -->
+<section class="slide sec" id="sec-lessons" data-title="بخش ۵ — Traps">
+  <div class="ghost">05</div>
+  <div class="kicker">بخش پنجم <span class="en">Traps</span></div>
+  <h1>Traps: نسخه‌ی ساده</h1>
+  <p class="lead">useQuery ساده را می‌شود یک عصره نوشت. کار می‌کند — تا وقتی network کند شود، کاربر سریع بزند، یا اپ ساعت‌ها باز بماند.</p>
+</section>
+
+<section class="slide" id="lessons" data-title="نسخه‌ی ساده در برابر ComposeCleanArch">
+  <div class="hd"><div class="kicker">مقایسه <span class="en">naive → ComposeCleanArch :core:query</span></div><h2>نسخه‌ی ساده در برابر ComposeCleanArch</h2></div>
+  <div class="bd">
+    <table class="tbl" style="font-size:calc(17.5px * var(--fs))">
+      <tr><th style="width:17%">موضوع</th><th style="width:41%">نسخه‌ی ساده</th><th>ComposeCleanArch</th></tr>
+      <tr><td>state</td><td><span class="ic">Resource</span> با سه فیلد جدا</td><td class="v2"><span class="ic">QueryState</span> sealed: Loading / Success / Failure</td></tr>
+      <tr><td>Loading و Error</td><td>هر screen خودش</td><td class="v2"><span class="ic">QueryContent</span> یک‌جا</td></tr>
+      <tr><td>retry در read</td><td>یا همه‌ی errorها، یا هیچ‌کدام</td><td class="v2">۳ attempt، فقط transient error، با delay ۱ و ۲ ثانیه</td></tr>
+      <tr><td>retry در write</td><td>روی هر error — حتی 4xx</td><td class="v2">فقط transient error؛ default بدون retry</td></tr>
+      <tr><td>دو بار زدن دکمه</td><td>دو request</td><td class="v2">single-flight: دومی نادیده گرفته می‌شود</td></tr>
+      <tr><td>late response</td><td>data جدیدتر را می‌پوشاند</td><td class="v2">epoch: response قدیمی دور ریخته می‌شود</td></tr>
+      <tr><td>refetch ناموفق</td><td>data خوب با error جایگزین می‌شود</td><td class="v2">data خوب روی صفحه می‌ماند</td></tr>
+      <tr><td>dynamic keys</td><td>کارها لغو می‌شوند ولی entry در map می‌ماند</td><td class="v2">بعد از cacheTime واقعاً از map حذف می‌شود</td></tr>
+      <tr><td>polling روی network کند</td><td>هر دور request جدید، حتی اگر قبلی تمام نشده</td><td class="v2">دوری که روی in-flight request بیفتد رد می‌شود</td></tr>
+      <tr><td>test و keyها</td><td><span class="ic">Dispatchers.IO</span> مستقیم، بدون test؛ key رشته‌ی پراکنده</td><td class="v2">dispatcher تزریقی، ۱۲ engine test؛ <span class="ic">object XxxKeys</span></td></tr>
+    </table>
+  </div>
+</section>
+
+<section class="slide" id="doubletap" data-title="simulator: دو بار زدن دکمه">
+  <div class="hd"><div class="kicker">Simulator <span class="en">Single-flight mutation</span></div><h2>دو بار زدن دکمه‌ی خرید</h2></div>
+  <div class="bd">
+    <div class="row">
+      <div class="seg" id="dt-mode"><button class="on" data-m="v1">نسخه‌ی ساده</button><button data-m="v2">با single-flight</button></div>
+      <button class="btn" onclick="DT.reset()">از نو</button>
+    </div>
+    <div class="cols w40 fill">
+      <div class="sim" style="justify-content:center;align-items:center;gap:20px">
+        <p class="small">سریع دو یا سه بار بزنید</p>
+        <button class="btn primary" style="font-size:24px;padding:18px 36px" onclick="DT.tap()">خرید 0.01 BTC</button>
+        <span class="pill n" id="dt-inflight">in-flight: ۰</span>
+      </div>
+      <div class="sim">
+        <div class="row" style="justify-content:space-between"><h3 style="margin:0">سفارش‌های ثبت‌شده در سرور</h3><span class="pill" id="dt-count">۰</span></div>
+        <div id="dt-orders" style="display:flex;flex-direction:column;gap:8px"></div>
+        <div class="log fill" id="dt-log" style="min-height:120px"></div>
+      </div>
+    </div>
+    <p class="small">در نسخه‌ی ساده اگر UI دکمه را به‌موقع غیرفعال نکند، هر ضربه یک coroutine جدا می‌سازد. ComposeCleanArch این را در خود <span class="ic">useMutation</span> تضمین می‌کند، نه در هر screen.</p>
+  </div>
+</section>
+
+<!-- ═════════════ SECTION 06 ═════════════ -->
+<section class="slide sec" id="sec-start" data-title="بخش ۶ — شروع کار">
+  <div class="ghost">06</div>
+  <div class="kicker">بخش ششم <span class="en">Getting started</span></div>
+  <h1>از فردا چطور بنویسیم</h1>
+  <p class="lead">Rules، recipe ساخت یک feature، و یک تمرین روی ComposeCleanArch.</p>
+</section>
+
+<section class="slide" id="when-vm" data-title="کی هنوز state holder لازم است">
+  <div class="hd"><div class="kicker">مرزها <span class="en">Where a state holder belongs</span></div><h2>کِی هنوز state holder لازم است؟</h2></div>
+  <div class="bd">
+    <div class="cols">
+      <div class="card good-card"><h3>بله، state holder بسازید</h3><ul class="plain">
+        <li>فرم و validation (ورود، ثبت‌نام، برداشت)</li>
+        <li>جریان چندمرحله‌ای (KYC، تبدیل، خرید سریع)</li>
+        <li>state محلی که باید از تغییر configuration جان سالم به در ببرد</li>
+      </ul></div>
+      <div class="card"><h3>نه، فقط hook</h3><ul class="plain">
+        <li>screen read-only، لیست، جزئیات</li>
+        <li>data‌ای که چند screen مشترک می‌بینند</li>
+        <li>هر چیزی که فقط «بگیر و نشان بده» است</li>
+      </ul></div>
+    </div>
+    <div class="quote"><p>state holder <b>خودش fetch نمی‌کند</b>. screen state و validation را نگه می‌دارد و همان hookها و mutationها را صدا می‌زند — نه یک راه دوم برای گرفتن data.</p></div>
+  </div>
+</section>
+
+<section class="slide" id="rules" data-title="قانون‌های سخت">
+  <div class="hd"><div class="kicker">Rules <span class="en">ARCHITECTURE.md · hard rules</span></div><h2>Ruleهایی که کد را maintainable نگه می‌دارند</h2></div>
+  <div class="bd">
+    <div class="cols c3" style="gap:18px">
+      <div class="card"><h3>یک نوع نتیجه</h3><p><span class="ic">AppResult</span> و <span class="ic">AppError</span>. Resource فقط داخل <span class="ic">:core:network</span>؛ از Repository بیرون نمی‌آید.</p></div>
+      <div class="card"><h3>screen غول نداریم</h3><p>Composable بالای ~۲۵۰ خط به componentهای کوچک‌تر تقسیم می‌شود.</p></div>
+      <div class="card"><h3>یک Api برای هر حوزه</h3><p>نه یک interface با ۲۰۰ endpoint. keyها در <span class="ic">object XxxKeys</span> کنار همان Api.</p></div>
+      <div class="card"><h3>Domain خالص می‌ماند</h3><p>در <span class="ic">:core:model</span> هیچ Android، Retrofit، Compose یا Gson.</p></div>
+      <div class="card"><h3>dispatcher تزریقی</h3><p><span class="ic">@IoDispatcher</span>، نه <span class="ic">Dispatchers.IO</span> — تا test بتواند TestDispatcher بدهد.</p></div>
+      <div class="card"><h3>پول با BigDecimal</h3><p>پشت یک domain type به اسم <span class="ic">Money</span>. هرگز Double یا Float برای موجودی و کارمزد.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" id="recipe" data-title="recipe یک feature">
+  <div class="hd"><div class="kicker">Recipe <span class="en">Adding a feature · 8 steps</span></div><h2>Recipe: ساخت یک feature، قدم به قدم</h2></div>
+  <div class="bd">
+    <div class="steps">
+      <div class="step"><span class="no">01</span><h3>domain model</h3><p>data class خالص؛ منطق قابل‌محاسبه به‌صورت property</p><span class="mod">:core:model</span></div>
+      <div class="step"><span class="no">02</span><h3>Api + Keys</h3><p><span class="ic">XxxApi</span> با خروجی <span class="ic">Resource&lt;…&gt;</span> و <span class="ic">object XxxKeys</span></p><span class="mod">:core:network/apis</span></div>
+      <div class="step"><span class="no">03</span><h3>DTO + mapper</h3><p>همه‌چیز روی سیم nullable؛ نرمال‌سازی در mapper</p><span class="mod">:core:network/data</span></div>
+      <div class="step"><span class="no">04</span><h3>Repository</h3><p>Resource را باز می‌کند؛ domain model یا throw</p><span class="mod">:core:network/repositories</span></div>
+      <div class="step"><span class="no">05</span><h3>module Hilt</h3><p>Api را از Retrofit مشترک فراهم می‌کند</p><span class="mod">:core:network/di</span></div>
+      <div class="step"><span class="no">06</span><h3>Hookها</h3><p><span class="ic">useXxx()</span> با useQuery / useMutation؛ Repository را به HookProvider اضافه کنید</p><span class="mod">:app/hooks</span></div>
+      <div class="step"><span class="no">07</span><h3>screen</h3><p>Composableهای کوچک با QueryContent؛ route در Routes.kt</p><span class="mod">:app/ui/&lt;area&gt;</span></div>
+      <div class="step"><span class="no">08</span><h3>test</h3><p>mapper، validation و domain logic</p><span class="mod">src/test</span></div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" id="cheatsheet" data-title="Cheat sheet QueryOptions">
+  <div class="hd"><div class="kicker">مرجع سریع <span class="en">QueryOptions · QueryClient</span></div><h2>Cheat sheet</h2></div>
+  <div class="bd">
+    <div class="cols">
+      <table class="tbl">
+        <tr><th>option</th><th>default</th><th>یعنی</th></tr>
+        <tr><td class="ltr" style="text-align:right">staleTime</td><td>۵ دقیقه</td><td>تا این مدت از cache، بدون request</td></tr>
+        <tr><td class="ltr" style="text-align:right">cacheTime</td><td>۱۰ دقیقه</td><td>عمر entry بعد از بسته شدن آخرین screen</td></tr>
+        <tr><td class="ltr" style="text-align:right">enabled</td><td class="ltr" style="text-align:right">true</td><td>false تا وقتی id یا dependency آماده نیست</td></tr>
+        <tr><td class="ltr" style="text-align:right">refetchInterval</td><td class="ltr" style="text-align:right">0</td><td>polling وقتی screen STARTED است</td></tr>
+        <tr><td class="ltr" style="text-align:right">maxAttempts</td><td class="ltr" style="text-align:right">3</td><td>کل attemptها برای transient error</td></tr>
+        <tr><td class="ltr" style="text-align:right">retryDelayMs</td><td class="ltr" style="text-align:right">1000</td><td>linear backoff: ۱×، ۲×، …</td></tr>
+      </table>
+      <div style="display:flex;flex-direction:column;gap:14px">
+<pre class="code"><code class="kt">QueryOptions.freshFor(60_000)   // feed-style
+QueryOptions.OfflineForever     // only via invalidate
+
+queryClient.invalidate(key)
+queryClient.invalidateMatching("articles\\..*")
+queryClient.invalidateAll(listOf(a, b))
+queryClient.setData(key, value)     // optimistic
+queryClient.prefetch(key) { repo.load() }
+queryClient.clear()                 // on logout
+queryClient.metricsSnapshot()       // hit rate, errors</code></pre>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" id="testing" data-title="engine test">
+  <div class="hd"><div class="kicker">test <span class="en">core/query · QueryTest.kt</span></div><h2>Engine بدون Compose test می‌شود</h2></div>
+  <div class="bd">
+    <div class="cols w40">
+      <div class="card"><h3>۱۲ engine test</h3><ul class="plain ltr" style="text-align:left;direction:ltr">
+        <li class="small" style="padding-right:0;padding-left:22px">serves cache within staleTime</li>
+        <li class="small" style="padding-right:0;padding-left:22px">de-duplicates concurrent reads</li>
+        <li class="small" style="padding-right:0;padding-left:22px">runs fetcher once across threads</li>
+        <li class="small" style="padding-right:0;padding-left:22px">persistent tier survives failed fetch</li>
+        <li class="small" style="padding-right:0;padding-left:22px">retries transient, not 4xx</li>
+        <li class="small" style="padding-right:0;padding-left:22px">skips a tick on a running fetch</li>
+        <li class="small" style="padding-right:0;padding-left:22px">evicts unobserved slots</li>
+        <li class="small" style="padding-right:0;padding-left:22px">invalidate forces a refetch</li>
+      </ul></div>
+<pre class="code"><code class="kt">@Test
+fun `concurrent reads are de-duplicated to a single fetch`() =
+    runTest(UnconfinedTestDispatcher()) {
+        val gate = CompletableDeferred&lt;Unit&gt;()
+        var fetches = 0
+        val entry = QueryEntry(
+            key = "headlines",
+            fetcher = { gate.await(); "value-${++fetches}" },
+            staleTime = 0L,
+            cacheTime = Long.MAX_VALUE,
+            scope = backgroundScope,
+        )
+        entry.observe()
+        entry.fetch()
+        entry.fetch()
+        assertEquals(0, fetches)   // still gated
+
+        gate.complete(Unit)
+        assertEquals(1, fetches)
+    }</code></pre>
+    </div>
+  </div>
+</section>
+
+<section class="slide" id="exercise" data-title="تمرین">
+  <div class="hd"><div class="kicker">تمرین <span class="en">Hands-on · ComposeCleanArch</span></div><h2>تمرین: screen «منابع خبری»</h2></div>
+  <div class="bd">
+    <div class="cols w60">
+      <div class="card accent-card">
+        <h3>هدف: لیست منابع NewsAPI، و با کلیک، تیترهای همان منبع</h3>
+        <ol style="padding-right:26px;display:flex;flex-direction:column;gap:6px">
+          <li>مدل <span class="ic">Source</span> در <span class="ic">:core:model</span></li>
+          <li><span class="ic">SourceApi</span> برای <span class="ic">GET top-headlines/sources</span> + <span class="ic">SourceKeys</span></li>
+          <li>DTO و mapper — و یک test برای mapper</li>
+          <li><span class="ic">SourceRepository</span> و module Hilt؛ اضافه به <span class="ic">HookProvider</span></li>
+          <li><span class="ic">useSources()</span> با <span class="ic">QueryOptions.freshFor(1h)</span></li>
+          <li><span class="ic">SourcesScreen</span> با <span class="ic">QueryContent</span> و route جدید</li>
+          <li>کلیک روی منبع → <span class="ic">useHeadlines(source = id)</span></li>
+        </ol>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:16px">
+        <div class="card"><h3>امتیازی</h3><ul class="plain">
+          <li><span class="ic">refetchInterval</span> بگذارید و ببینید در background متوقف می‌شود</li>
+          <li>با <span class="ic">prefetch</span> تیترها را قبل از navigation گرم کنید</li>
+          <li>با <span class="ic">metricsSnapshot()</span> نرخ cache hit را log کنید</li>
+        </ul></div>
+        <div class="card"><h3>چک‌لیست بازبینی</h3><p>screen ViewModel ندارد؟ Loading/Error دستی نیست؟ key در <span class="ic">SourceKeys</span> است؟ Resource از Repository بیرون نیامده؟</p></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" id="recap" data-title="جمع‌بندی">
+  <div class="hd"><div class="kicker">جمع‌بندی <span class="en">Recap</span></div><h2>همان جمله‌ی اول، حالا با معنی</h2></div>
+  <div class="bd" style="gap:26px">
+    <div class="quote"><p style="font-size:calc(26px * var(--fs))">server data مال ما نیست؛ یک کپی است. پس یک جعبه‌ی مشترک برایش داریم، و screen فقط می‌گوید چه data‌ای می‌خواهد.</p></div>
+    <div class="steps" style="grid-template-columns:repeat(5,1fr)">
+      <div class="step"><span class="no">01</span><h3>وب</h3><p>همین مشکل را داشت و React Query حلش کرد</p></div>
+      <div class="step"><span class="no">02</span><h3>ما</h3><p>ViewModelها: کپی‌های جدا از یک data</p></div>
+      <div class="step"><span class="no">03</span><h3>جعبه</h3><p>QueryEntry با key، در QueryClient</p></div>
+      <div class="step"><span class="no">04</span><h3>قانون‌ها</h3><p>staleTime، observers، یک request، retry، invalidate</p></div>
+      <div class="step"><span class="no">05</span><h3>از فردا</h3><p>recipe هشت‌قدمی؛ ViewModel فقط برای screen state</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="slide cover" id="thanks" data-title="ممنون — پرسش و پاسخ">
+  <div class="kicker">پرسش و پاسخ <span class="en">Q&amp;A</span></div>
+  <h1>ممنون 🙏</h1>
+  <p class="lead" style="margin-top:20px">سؤال‌ها، نقدها، و اینکه از کدام ViewModel شروع کنیم.</p>
+  <div class="cols" style="margin-top:44px;max-width:1150px">
+    <div class="card"><span class="tag">base app</span><p class="ltr" style="text-align:left;color:var(--text)">github.com/lumoradevlab/ComposeCleanArch</p><p class="small">README.md · ARCHITECTURE.md</p></div>
+    <div class="card"><span class="tag">contact</span><p class="ltr" style="text-align:left;color:var(--text)">parisaghader.org</p><p class="small">Parisa Hazhir Ghader</p></div>
+  </div>
+</section>
+
+</div></div>
+
+<div id="prog"></div>
+<div id="ctrl">
+  <button class="nb" id="b-prev" title="Previous (←)">‹</button>
+  <span id="ctr">1 / 1</span>
+  <button class="nb" id="b-next" title="Next (→)">›</button>
+  <button class="nb" id="b-theme" title="Theme (T)">◐</button>
+  <button class="nb" id="b-notes" title="Speaker notes (N)">✎</button>
+  <button class="nb" id="b-fs-" title="Smaller text (−)">A−</button>
+  <button class="nb" id="b-fs+" title="Larger text (+)">A+</button>
+  <button class="nb" id="b-full" title="Fullscreen (F)">⛶</button>
+  <button class="nb" id="b-help" title="Shortcuts (?)">?</button>
+</div>
+<div id="help"><div class="card">
+  <h3>کلیدهای میان‌بر</h3>
+  <table>
+    <tr><td>→  ↓  Space  PgDn</td><td>اسلاید بعد</td></tr>
+    <tr><td>←  ↑  PgUp</td><td>اسلاید قبل</td></tr>
+    <tr><td>Home / End</td><td>اول / آخر</td></tr>
+    <tr><td>N</td><td>پنجره‌ی یادداشت گوینده</td></tr>
+    <tr><td>T</td><td>تم روشن / تیره</td></tr>
+    <tr><td>+  −  0</td><td>بزرگ / کوچک / عادی کردن متن</td></tr>
+    <tr><td>F</td><td>تمام‌صفحه</td></tr>
+    <tr><td>?  Esc</td><td>این راهنما</td></tr>
+  </table>
+</div></div>
+
+<script>
+/* ── Kotlin highlighter (tiny, for slides only) ── */
+(function(){
+  const esc = s => s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  const re = /(\/\/[^\n]*)|("(?:[^"\\\n]|\\.)*"|`[^`\n]*`)|(@[A-Za-z]+)|\b(fun|val|var|class|data|object|sealed|interface|return|if|else|when|is|in|true|false|null|override|private|internal|suspend|companion|const|by|try|catch|finally|while|for|break|throw|out)\b|\b([A-Z][A-Za-z0-9_]*)\b|\b(\d[\d_]*L?)\b/g;
+  const cls = [null,'c','s','a','k','t','n'];
+  document.querySelectorAll('code.kt').forEach(el => {
+    const src = el.textContent; let out = '', last = 0, m;
+    while ((m = re.exec(src))) {
+      out += esc(src.slice(last, m.index));
+      const g = m.findIndex((v,i) => i > 0 && v !== undefined);
+      out += '<span class="'+cls[g]+'">'+esc(m[0])+'</span>';
+      last = re.lastIndex;
+    }
+    el.innerHTML = out + esc(src.slice(last));
+  });
+})();
+
+/* ── deck ── */
+const slides = [...document.querySelectorAll('.slide')];
+const total = slides.length;
+let cur = 0;
+const fa = n => String(n).replace(/\d/g, d => '۰۱۲۳۴۵۶۷۸۹'[d]);
+const CHANNEL = 'qc-presentation';
+const chan = ('BroadcastChannel' in window) ? new BroadcastChannel(CHANNEL) : null;
+let notesWin = null;
+
+function fit(){
+  const s = Math.min(innerWidth / 1600, innerHeight / 900);
+  document.getElementById('stage').style.transform = 'scale(' + s + ')';
+}
+function state(){
+  return { type:'state', index:cur, total, id:slides[cur].id, title:slides[cur].dataset.title,
+    next: cur + 1 < total ? slides[cur + 1].dataset.title : null,
+    theme: document.documentElement.dataset.theme || 'dark' };
+}
+function broadcast(){
+  const msg = state();
+  if (chan) chan.postMessage(msg);
+  if (notesWin && !notesWin.closed) { try { notesWin.postMessage(msg, '*'); } catch(e){} }
+}
+function go(i){
+  i = Math.max(0, Math.min(total - 1, i));
+  slides[cur].classList.remove('active');
+  cur = i;
+  slides[cur].classList.add('active');
+  document.getElementById('ctr').textContent = (cur + 1) + ' / ' + total;
+  document.getElementById('prog').style.width = ((cur + 1) / total * 100) + '%';
+  history.replaceState(null, '', '#' + (cur + 1));
+  broadcast();
+}
+function setTheme(t){
+  if (t === 'light') document.documentElement.dataset.theme = 'light';
+  else delete document.documentElement.dataset.theme;
+  try { localStorage.setItem('qc-theme', t); } catch(e){}
+  broadcast();
+}
+function toggleTheme(){ setTheme(document.documentElement.dataset.theme === 'light' ? 'dark' : 'light'); }
+let fs = 1;
+function setFs(v){
+  fs = Math.max(.8, Math.min(1.4, Math.round(v * 100) / 100));
+  document.documentElement.style.setProperty('--fs', fs);
+  try { localStorage.setItem('qc-fs', fs); } catch(e){}
+}
+function openNotes(){
+  if (notesWin && !notesWin.closed) { notesWin.focus(); broadcast(); return; }
+  notesWin = window.open('notes.html', 'qc-notes', 'width=960,height=780');
+  setTimeout(broadcast, 400); setTimeout(broadcast, 1200);
+}
+function fullscreen(){
+  if (!document.fullscreenElement) document.documentElement.requestFullscreen?.();
+  else document.exitFullscreen?.();
+}
+function onRemote(d){
+  if (!d || typeof d !== 'object') return;
+  if (d.type === 'nav') go(cur + (d.dir > 0 ? 1 : -1));
+  if (d.type === 'goto') go(d.index);
+  if (d.type === 'hello') broadcast();
+}
+if (chan) chan.onmessage = e => onRemote(e.data);
+addEventListener('message', e => onRemote(e.data));
+
+document.getElementById('b-prev').onclick = () => go(cur - 1);
+document.getElementById('b-next').onclick = () => go(cur + 1);
+document.getElementById('b-theme').onclick = toggleTheme;
+document.getElementById('b-notes').onclick = openNotes;
+document.getElementById('b-fs-').onclick = () => setFs(fs - .1);
+document.getElementById('b-fs+').onclick = () => setFs(fs + .1);
+document.getElementById('b-full').onclick = fullscreen;
+const help = document.getElementById('help');
+document.getElementById('b-help').onclick = () => help.classList.toggle('on');
+help.onclick = () => help.classList.remove('on');
+
+addEventListener('keydown', e => {
+  if (e.metaKey || e.ctrlKey || e.altKey) return;
+  const k = e.key;
+  if (['ArrowRight','ArrowDown','PageDown',' '].includes(k)) { e.preventDefault(); go(cur + 1); }
+  else if (['ArrowLeft','ArrowUp','PageUp'].includes(k)) { e.preventDefault(); go(cur - 1); }
+  else if (k === 'Home') go(0);
+  else if (k === 'End') go(total - 1);
+  else if (k === 'n' || k === 'N') openNotes();
+  else if (k === 't' || k === 'T') toggleTheme();
+  else if (k === 'f' || k === 'F') fullscreen();
+  else if (k === '+' || k === '=') setFs(fs + .1);
+  else if (k === '-' || k === '_') setFs(fs - .1);
+  else if (k === '0') setFs(1);
+  else if (k === '?') help.classList.toggle('on');
+  else if (k === 'Escape') help.classList.remove('on');
+});
+let tx = null;
+addEventListener('touchstart', e => { tx = e.touches[0].clientX; }, {passive:true});
+addEventListener('touchend', e => {
+  if (tx === null) return;
+  const dx = e.changedTouches[0].clientX - tx; tx = null;
+  if (Math.abs(dx) > 50) go(cur + (dx > 0 ? 1 : -1));   // RTL: swipe right = next
+});
+addEventListener('resize', fit);
+
+try { if (localStorage.getItem('qc-theme') === 'light') document.documentElement.dataset.theme = 'light'; } catch(e){}
+try { const v = parseFloat(localStorage.getItem('qc-fs')); if (v) setFs(v); } catch(e){}
+fit();
+go(Math.max(0, (parseInt(location.hash.slice(1)) || 1) - 1));
+
+/* ── helpers for simulators ── */
+const $ = id => document.getElementById(id);
+function seg(id, onChange){
+  const el = $(id); let mode = el.querySelector('.on').dataset.m;
+  el.querySelectorAll('button').forEach(b => b.onclick = () => {
+    el.querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b));
+    mode = b.dataset.m; onChange(mode);
+  });
+  return () => mode;
+}
+function logTo(id, html){
+  const el = $(id); const d = document.createElement('div'); d.innerHTML = html;
+  el.prepend(d);
+}
+
+/* ── 1. cache lifecycle ── */
+const LC = (() => {
+  const STALE = 5, CACHE = 10;
+  let S, gen = 0;
+  function init(){ gen++; S = {exists:false, data:null, ver:0, lastFetch:null, now:0, obs:0, evictAt:null, fetching:false, calls:0, invalid:false}; $('lc-log').innerHTML=''; log('screen‌ای باز نیست؛ key هنوز در cache نیست.'); render(); }
+  const age = () => S.data ? S.now - S.lastFetch : null;
+  const stale = () => !S.data || S.invalid || age() > STALE;
+  function log(m){ logTo('lc-log', '<span class="t">[t=' + S.now + 'm]</span> ' + m); }
+  function render(){
+    $('lc-state').textContent = !S.exists ? 'no entry' : S.fetching ? (S.data ? 'Success · refreshing' : 'Loading') : S.data ? 'Success' : 'Loading';
+    $('lc-data').textContent = S.data ? 'headlines v' + S.ver : '—';
+    $('lc-now').textContent = fa(S.now) + ' دقیقه';
+    $('lc-obs').textContent = fa(S.obs);
+    $('lc-calls').textContent = fa(S.calls);
+    $('lc-evict').textContent = S.evictAt !== null ? 'دقیقه‌ی ' + fa(S.evictAt) + ' (' + fa(S.evictAt - S.now) + ' دقیقه‌ی دیگر)' : S.obs > 0 ? 'در حال استفاده' : '—';
+    const a = age();
+    $('lc-fresh').textContent = a === null ? '—' : (stale() ? 'stale' : 'fresh') + ' · ' + fa(a) + ' از ' + fa(STALE) + ' دقیقه';
+    const bar = $('lc-bar');
+    bar.style.width = a === null ? '0' : Math.min(100, (S.invalid ? STALE : a) / STALE * 100) + '%';
+    bar.classList.toggle('stale', a !== null && stale());
+  }
+  function fetch(){
+    if (S.fetching) { log('in-flight request است → به همان وصل شد (dedup)'); return; }
+    S.fetching = true; S.calls++;
+    log(S.data ? 'network request — data قبلی روی صفحه می‌ماند (refreshing)' : 'network request → Loading');
+    render();
+    const g = gen;
+    setTimeout(() => {
+      if (g !== gen || !S.exists) return;
+      S.fetching = false; S.ver++; S.data = true; S.lastFetch = S.now; S.invalid = false;
+      log('Success → headlines v' + S.ver + ' در cache');
+      render();
+    }, 900);
+  }
+  return {
+    open(){
+      if (!S.exists) { S.exists = true; log('entry برای این key ساخته شد'); }
+      S.obs++;
+      if (S.evictAt !== null) { S.evictAt = null; log('eviction لغو شد — یک screen برگشت'); }
+      if (S.obs === 1) { stale() ? fetch() : log('data fresh است → مستقیم از cache، بدون request'); }
+      else log('screen ' + fa(S.obs) + ' همان data را مشترک می‌بیند — بدون request');
+      render();
+    },
+    close(){
+      if (S.obs === 0) { log('screen بازی نیست'); return; }
+      S.obs--;
+      if (S.obs === 0) { S.evictAt = S.now + CACHE; log('آخرین screen بسته شد → evict بعد از cacheTime (' + fa(CACHE) + ' دقیقه)'); }
+      else log('یک screen بسته شد؛ هنوز ' + fa(S.obs) + ' screen نگاه می‌کند');
+      render();
+    },
+    tick(){
+      S.now++;
+      if (S.evictAt !== null && S.now >= S.evictAt && S.obs === 0) {
+        Object.assign(S, {exists:false, data:null, lastFetch:null, evictAt:null, fetching:false, invalid:false});
+        log('evict: entry از cache حذف شد. دفعه‌ی بعد از صفر شروع می‌شود.');
+      } else if (S.data && !S.invalid && age() === STALE + 1) {
+        log('staleTime گذشت → data stale است؛ دفعه‌ی بعد که screen‌ای باز شود refetch می‌شود');
+      }
+      render();
+    },
+    invalidate(){
+      if (!S.exists) { log('keyای در cache نیست'); return; }
+      S.invalid = true;
+      if (S.obs > 0) { log('invalidate → یک screen نگاه می‌کند، پس همین حالا refetch'); S.fetching = false; fetch(); }
+      else { log('invalidate → کسی نگاه نمی‌کند؛ فقط stale شد'); render(); }
+    },
+    reset: init, init
+  };
+})();
+LC.init();
+
+/* ── 2. de-duplication ── */
+const DD = (() => {
+  let gen = 0;
+  const mode = seg('dd-mode', () => reset());
+  function reset(){ gen++; $('dd-log').innerHTML=''; $('dd-count').textContent = '۰ request';
+    [0,1,2].forEach(i => { $('dd-'+i).classList.remove('on'); $('dd-'+i).querySelector('.st').textContent = '—'; }); }
+  function run(){
+    reset(); const g = gen; let calls = 0;
+    [0,1,2].forEach(i => setTimeout(() => {
+      if (g !== gen) return;
+      const lane = $('dd-'+i); lane.classList.add('on');
+      if (mode() === 'naive' || i === 0) {
+        calls++; $('dd-count').textContent = fa(calls) + ' request';
+        logTo('dd-log', 'GET /wallet/balance?symbol=USDT   <span class="t">(#' + calls + ')</span>');
+        lane.querySelector('.st').textContent = 'request خودش را زد…';
+      } else {
+        logTo('dd-log', '<span class="t">screen ' + (i+1) + ' → joined in-flight request #1</span>');
+        lane.querySelector('.st').textContent = 'به in-flight request وصل شد…';
+      }
+    }, i * 220));
+    setTimeout(() => {
+      if (g !== gen) return;
+      [0,1,2].forEach(i => { $('dd-'+i).querySelector('.st').textContent = '✓ USDT 1,250.00'; });
+      logTo('dd-log', mode() === 'naive' ? '<span class="t">3 responses · 3 copies of the same data</span>' : '<span class="t">1 response · one shared StateFlow</span>');
+    }, 1500);
+  }
+  return {run};
+})();
+
+/* ── 3. retry policy ── */
+(() => {
+  const E = [
+    {c:'IOException', t:'بدون اینترنت', r:true, why:'transient است؛ شاید چند ثانیه بعد وصل شود.'},
+    {c:'408', t:'Timeout', r:true, why:'سرور دیر جواب داد؛ retry منطقی است.'},
+    {c:'500', t:'Server error', r:true, why:'مشکل سمت سرور، معمولاً موقت.'},
+    {c:'503', t:'Unavailable', r:true, why:'سرور موقتاً در دسترس نیست.'},
+    {c:'400', t:'Bad request', r:false, why:'خود request اشتباه است؛ تکرار همان error را می‌دهد.'},
+    {c:'401', t:'Unauthorized', r:false, why:'اینجا retry نمی‌شود. TokenAuthenticator یک بار token را refresh می‌کند (single-flight)؛ اگر نشد session پاک می‌شود و اپ خودش به ورود برمی‌گردد.'},
+    {c:'404', t:'Not found', r:false, why:'چیزی که نیست با تکرار پیدا نمی‌شود.'},
+    {c:'409', t:'Conflict', r:false, why:'تداخل state در سرور؛ برای write، تکرار یعنی ریسک عملیات تکراری.'},
+    {c:'422', t:'Validation', r:false, why:'validation error؛ باید به کاربر نشان داده شود، نه تکرار.'},
+    {c:'429', t:'Too many requests', r:'net', why:'در network layer با backoff مدیریت می‌شود، نه در query engine.'},
+  ];
+  const box = $('rt-chips'), out = $('rt-out');
+  E.forEach((e, i) => {
+    const b = document.createElement('button'); b.className = 'chip'; b.textContent = e.c + ' · ' + e.t;
+    b.onclick = () => { box.querySelectorAll('.chip').forEach(x => x.classList.toggle('on', x === b)); show(e); };
+    box.appendChild(b);
+  });
+  function show(e){
+    const read = e.r === 'net' ? '<span class="pill n">network layer</span>' : e.r ? '<span class="pill g">بله · تا ۳ attempt، delay ۱ث و ۲ث</span>' : '<span class="pill b">نه · error فوراً نمایش داده می‌شود</span>';
+    const write = e.r === 'net' ? '<span class="pill n">network layer</span>' : e.r ? '<span class="pill">فقط اگر retryCount &gt; 0 (default ۰)</span>' : '<span class="pill b">هرگز</span>';
+    out.innerHTML =
+      '<h3 class="ltr" style="text-align:right;margin:0">' + e.c + ' · ' + e.t + '</h3>' +
+      '<div class="row"><span style="min-width:170px">read · <span class="ic">useQuery</span></span>' + read + '</div>' +
+      '<div class="row"><span style="min-width:170px">write · <span class="ic">useMutation</span></span>' + write + '</div>' +
+      '<p>' + e.why + '</p>' +
+      (e.r === true ? '<p class="small">برای write حتی transient error هم خطرناک است: شاید سرور سفارش را ثبت کرده و فقط response گم شده. برای همین retry write default خاموش است.</p>' : '') +
+      '<p class="small">اگر data قبلی در cache باشد، روی صفحه می‌ماند و فقط refetch شکست می‌خورد.</p>';
+  }
+})();
+
+/* ── 4. out-of-order responses ── */
+const RC = (() => {
+  const mode = seg('rc-mode', () => render());
+  let step = 0;
+  const steps = {
+    v1: [
+      {t:'شروع', x:'موجودی USDT در سرور ۱۰۰ است و screen هم ۱۰۰ نشان می‌دهد.', s:100, c:100, f1:'—', f2:'—', e:0},
+      {t:'۱. polling شروع می‌شود', x:'fetch #1 راه می‌افتد. network کند است و جواب دیر می‌آید.', s:100, c:100, f1:'in-flight · کند', f2:'—', e:0, on:1},
+      {t:'۲. کاربر ۲۰ USDT خرج می‌کند', x:'mutation موفق است، سرور حالا ۸۰ دارد. invalidate → fetch #2 با force. fetch #1 هنوز in-flight است.', s:80, c:100, f1:'هنوز in-flight', f2:'in-flight · سریع', e:0, on:2},
+      {t:'۳. fetch #2 زودتر می‌رسد', x:'جواب درست، ۸۰، روی صفحه می‌نشیند.', s:80, c:80, f1:'هنوز in-flight', f2:'✓ رسید: 80', e:0},
+      {t:'۴. fetch #1 دیر می‌رسد', x:'جواب قدیمی، ۱۰۰، بدون هیچ بررسی‌ای روی data جدید نوشته می‌شود.', s:80, c:100, f1:'✓ رسید: 100 (stale)', f2:'✓ رسید: 80', e:0, bad:true},
+    ],
+    v2: [
+      {t:'شروع', x:'موجودی USDT در سرور ۱۰۰ است و screen هم ۱۰۰ نشان می‌دهد.', s:100, c:100, f1:'—', f2:'—', e:0},
+      {t:'۱. polling شروع می‌شود', x:'fetch #1 جای in-flight را می‌گیرد و epoch = 1 دریافت می‌کند.', s:100, c:100, f1:'in-flight · epoch 1', f2:'—', e:1, on:1},
+      {t:'۲. کاربر ۲۰ USDT خرج می‌کند', x:'invalidate → fetch #2 با force. جای in-flight را می‌گیرد، fetch #1 را لغو می‌کند و epoch = 2 می‌گیرد.', s:80, c:100, f1:'لغو شد', f2:'in-flight · epoch 2', e:2, on:2},
+      {t:'۳. fetch #2 می‌رسد', x:'epoch 2 == latestEpoch، پس نتیجه ثبت می‌شود.', s:80, c:80, f1:'لغو شد', f2:'✓ رسید: 80', e:2},
+      {t:'۴. اگر fetch #1 هم برسد…', x:'حتی اگر لغو به‌موقع نرسد، epoch 1 ≠ 2 است و نتیجه دور ریخته می‌شود. setData هم epoch را بالا می‌برد.', s:80, c:80, f1:'دور ریخته شد', f2:'✓ رسید: 80', e:2, good:true},
+    ]
+  };
+  function render(){
+    const m = mode(), st = steps[m][step];
+    $('rc-step').textContent = 'قدم ' + fa(step) + ' از ' + fa(4);
+    $('rc-server').textContent = st.s; $('rc-cache').textContent = st.c;
+    $('rc-cache').style.color = st.bad ? 'var(--bad)' : st.good ? 'var(--good)' : '';
+    $('rc-f1').querySelector('.st').textContent = st.f1; $('rc-f2').querySelector('.st').textContent = st.f2;
+    $('rc-f1').classList.toggle('on', st.on === 1); $('rc-f2').classList.toggle('on', st.on === 2);
+    $('rc-epoch').textContent = m === 'v2' ? 'latestEpoch = ' + st.e : 'no epoch check';
+    $('rc-title').textContent = st.t; $('rc-text').textContent = st.x;
+    $('rc-verdict').innerHTML = st.bad ? '<span class="pill b">screen ۱۰۰ نشان می‌دهد، سرور ۸۰ دارد</span>' : st.good ? '<span class="pill g">screen درست می‌ماند: ۸۰</span>' : '';
+  }
+  return { next(){ step = Math.min(4, step + 1); render(); }, prev(){ step = Math.max(0, step - 1); render(); }, reset(){ step = 0; render(); }, render };
+})();
+RC.render();
+
+/* ── 5. double tap ── */
+const DT = (() => {
+  let inflight = 0, orders = 0, gen = 0;
+  const mode = seg('dt-mode', () => reset());
+  function reset(){ gen++; inflight = 0; orders = 0; $('dt-orders').innerHTML=''; $('dt-log').innerHTML=''; upd(); }
+  function upd(){ $('dt-inflight').textContent = 'in-flight: ' + fa(inflight); $('dt-count').textContent = fa(orders); }
+  function tap(){
+    if (mode() === 'v2' && inflight > 0) { logTo('dt-log', '<span class="t">tap ignored — a mutation is already in flight</span>'); return; }
+    inflight++; upd(); const g = gen;
+    logTo('dt-log', 'POST /orders  {side: buy, amount: 0.01}');
+    setTimeout(() => {
+      if (g !== gen) return;
+      inflight--; orders++; upd();
+      const d = document.createElement('div'); d.className = 'order flash';
+      d.innerHTML = '<span>سفارش #' + fa(orders) + ' · خرید</span><span class="ltr">0.01 BTC</span>';
+      if (orders > 1) d.style.color = 'var(--bad)';
+      $('dt-orders').appendChild(d);
+    }, 1400);
+  }
+  return {tap, reset};
+})();
+</script>
+</body>
+</html>
