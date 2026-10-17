@@ -90,6 +90,12 @@ window.NOTES = {
 <p>→ سمت چپ: «همان screen. دو خط.»</p>
 <p>→ «بدون ViewModel، بدون UiState، بدون load()، بدون boolean loading.» مکث کنید.</p>` },
 
+  production: { time: '2′', html: `
+<p>«ممکن است بپرسید: این روی کاغذ خوب است، در یک اپ واقعی هم کار می‌کند؟» با هر → یک عدد:</p>
+<ul><li><b>۱۷۰+ hook</b> در یک اپ واقعی.</li><li><b>۷۶ useQuery</b> برای خواندن.</li><li><b>۵۶ useMutation</b> برای نوشتن.</li><li><b>۴ اپ white-label</b> روی همین یک engine.</li></ul>
+<p>→ «یک اپ معاملاتی رمزارز، بیش از یک سال در production. ComposeCleanArch نسخه‌ی تمیز و تست‌شده‌ی همان engine است؛ درس‌هایی که آنجا یاد گرفتیم جلسه‌ی بعد.»</p>
+<p>اسم اپ را نگویید. اگر پرسیدند: «یک اپ معاملاتی که روی آن کار کرده‌ام.»</p>` },
+
   tools: { time: '2′', html: `
 <p>«screen فقط سه ابزار لازم دارد.» با هر → یکی:</p>
 <ul><li><b>useQuery:</b> برای خواندن. key + fetcher.</li>
