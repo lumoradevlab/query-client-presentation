@@ -91,7 +91,7 @@ window.NOTES = {
 <p>→ «یک جعبه به اسم QueryEntry، با key "wallet.balance.USDT". هر سه screen همین را می‌خوانند. یک request.»</p>
 <p>→ «حالا خرید. جعبه invalidate می‌شود، یک بار refetch می‌کند، و هر سه screen <b>با هم</b> سبز می‌شوند. هیچ‌کس دستی کاری نکرد.»</p>
 <p>به requests نگاه کنید: ۱ بود، ۲ شد. نه ۶.</p>
-<p><b>اگر پرسیدند «فرقش با shared ViewModel چیست؟»:</b> «shared ViewModel فقط بین screenهایی مشترک است که در یک Activity یا nav graph کنار هم هستند، و load و loading و refresh را هنوز دستی می‌نویسید. جعبه با key پیدا می‌شود، بین هر screenی در اپ مشترک است، و بعد از خرید خودش تازه می‌شود. shared ViewModel برای screen state خوب است، مثل فرم چندمرحله‌ای.»</p>` },
+<p><b>اگر پرسیدند «فرقش با shared ViewModel چیست؟»:</b> «shared ViewModel یک state holder است که با owner و key پیدا می‌شود و عمرش به همان owner بسته است؛ cache و staleTime و refetch و invalidate را باید خودتان بنویسید. جعبه یک cache از server data است که با key پیدا می‌شود، بعد از رفتن screen هم تا cacheTime می‌ماند، و این‌ها را از قبل دارد. shared ViewModel برای UI state مشترک عالی است، مثل فرم چندمرحله‌ای.» (جواب کامل: فصل ۹ راهنما)</p>` },
 
   inside: { time: '3′', html: `
 <p>«داخل جعبه فقط چهار چیز هست.» با هر → یکی:</p>
