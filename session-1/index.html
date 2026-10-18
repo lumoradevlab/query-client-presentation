@@ -127,6 +127,16 @@ svg.wires path{fill:none;stroke-width:2.5;stroke-linecap:round}
 .tagc.compose{color:var(--accent-hi);background:rgba(145,132,217,.14);border:1px solid rgba(196,188,255,.4)}
 .tagc.kt{color:var(--good);background:rgba(127,212,173,.10);border:1px solid rgba(127,212,173,.4)}
 
+/* heads-up flow */
+.hflow{display:flex;align-items:center;gap:22px;direction:ltr;margin-top:46px}
+.hnode{flex:none;padding:24px 28px;border-radius:20px;background:var(--surf);border:1px solid var(--line);text-align:center;min-width:220px}
+.hnode .t{font:600 15px var(--mono);letter-spacing:.1em;color:var(--faint)}
+.hnode .v{font:800 30px var(--display);margin-top:6px}
+.hnode.hot{background:linear-gradient(160deg,#2a2850,#1b1c30);border-color:rgba(196,188,255,.5);box-shadow:0 0 70px rgba(145,132,217,.35)}
+.harrow{flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;min-width:0}
+.harrow .lbl{font:600 20px var(--mono);color:var(--accent-hi);white-space:nowrap}
+.harrow .ln{width:100%;height:2px;background:linear-gradient(90deg,transparent,var(--accent),transparent)}
+
 /* chrome */
 #bar{position:fixed;bottom:0;right:0;height:3px;background:var(--accent);transition:width .4s;z-index:5}
 #ctrl{position:fixed;left:16px;bottom:12px;display:flex;gap:8px;align-items:center;opacity:.25;transition:opacity .2s;direction:ltr;z-index:5}
@@ -158,6 +168,87 @@ svg.wires path{fill:none;stroke-width:2.5;stroke-linecap:round}
     <div class="tile hot" data-step="0"><span class="tag">SESSION 1 · TODAY</span><h3>The idea</h3><p>چرا screen به ViewModel نیاز ندارد؟ ایده، جعبه‌ی مشترک، و سه ابزار.</p></div>
     <div class="tile" data-step="1"><span class="tag">SESSION 2 · NEXT MONDAY</span><h3>The engine</h3><p>درِ جعبه را باز می‌کنیم: کِی fetch، کِی پاک، با error چه می‌کند.</p></div>
     <div class="tile" data-step="2"><span class="tag">SESSION 3</span><h3>Building</h3><p>معماری کامل، recipe، و ساختن یک feature واقعی با هم.</p></div>
+  </div>
+</section>
+
+<!-- HEADS UP 1 · A SIMPLE STORY -->
+<section class="slide col" id="hu-story" data-title="یک داستان ساده: تابلوی دفتر">
+  <div class="eyebrow">Heads up · a simple story</div>
+  <p class="q">قبل از شروع، یک داستان ساده: تابلوی دفتر</p>
+  <div class="row2" style="margin-top:40px">
+    <div class="tile" data-step="1" style="border-color:rgba(240,143,124,.4)">
+      <span class="tag" style="color:var(--bad)">WITHOUT A BOARD</span>
+      <h3 style="font-size:34px">هر کس خودش به بانک زنگ می‌زند</h3>
+      <div class="col" style="gap:10px;margin-top:6px">
+        <div class="card r" style="text-align:right;direction:rtl;font:600 22px var(--body)">همکار ۱ ← تماس با بانک</div>
+        <div class="card r" style="text-align:right;direction:rtl;font:600 22px var(--body)">همکار ۲ ← تماس با بانک</div>
+        <div class="card r" style="text-align:right;direction:rtl;font:600 22px var(--body)">همکار ۳ ← تماس با بانک</div>
+      </div>
+      <p>سه تماس برای یک عدد. و بعد از یک خرید، هر کس عدد قدیمی خودش را دارد.</p>
+    </div>
+    <div class="tile hot" data-step="2">
+      <span class="tag">WITH A BOARD</span>
+      <h3 style="font-size:34px">یک نفر می‌پرسد، همه تابلو را می‌خوانند</h3>
+      <div style="margin-top:6px;padding:26px;border-radius:16px;background:#0b0c14;border:1px solid rgba(196,188,255,.35);text-align:center">
+        <div class="mono faint" style="font-size:16px;letter-spacing:.1em">BOARD</div>
+        <div style="font:800 40px var(--display);margin-top:6px">موجودی: <span class="ltr acc">1,250</span></div>
+      </div>
+      <p data-step="3" style="color:var(--text)">بعد از خرید، تابلو پاک می‌شود و فقط یک بار دوباره پرسیده می‌شود.</p>
+    </div>
+  </div>
+  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:18px;margin-top:30px" data-step="4">
+    <span class="pill on" style="justify-content:center;font-size:22px">تابلو = cache</span>
+    <span class="pill on" style="justify-content:center;font-size:22px">خواندن تابلو = query</span>
+    <span class="pill on" style="justify-content:center;font-size:22px">خرید = mutation</span>
+    <span class="pill on" style="justify-content:center;font-size:22px">پاک کردن تابلو = invalidate</span>
+  </div>
+</section>
+
+<!-- HEADS UP 2 · REACT QUERY IN ONE MINUTE -->
+<section class="slide col" id="heads-up" data-title="React Query در یک دقیقه">
+  <div class="eyebrow">Heads up · React Query in one minute</div>
+  <p class="q">اسم این ایده در وب: React Query</p>
+  <div class="hflow">
+    <div class="hnode" data-step="1"><div class="t">SCREEN</div><div class="v">Screen</div></div>
+    <div class="harrow" data-step="2"><span class="lbl">useQuery(key, fetch)</span><span class="ln"></span></div>
+    <div class="hnode hot" data-step="3"><div class="t">SHARED COPY</div><div class="v">cache</div></div>
+    <div class="harrow" data-step="4"><span class="lbl">only when needed</span><span class="ln"></span></div>
+    <div class="hnode" data-step="4"><div class="t">BACKEND</div><div class="v">Server</div></div>
+  </div>
+  <div class="row3" style="margin-top:46px" data-step="5">
+    <div class="tile"><span class="tag">QUERY</span><p style="color:var(--text)">خواندن data؛ مثلاً لیست خبرها یا موجودی.</p></div>
+    <div class="tile"><span class="tag">MUTATION</span><p style="color:var(--text)">عوض کردن data؛ مثلاً خرید یا ویرایش.</p></div>
+    <div class="tile hot"><span class="tag">CACHE</span><p style="color:var(--text)">یک کپی مشترک از data که خودش تازه می‌شود.</p></div>
+  </div>
+  <p class="lead" data-step="6" style="margin-top:36px">یک library معروف در دنیای وب (TanStack Query، از ۲۰۱۹). امروز همین ایده را در <b style="color:var(--text)">Compose</b> می‌بینیم.</p>
+</section>
+
+<!-- HEADS UP 3 · WHAT THE CODE LOOKS LIKE -->
+<section class="slide col" id="hu-code" data-title="در کد فقط دو چیز می‌گویید">
+  <div class="eyebrow">Heads up · what the code looks like</div>
+  <p class="q">در کد، فقط دو چیز می‌گویید</p>
+  <div style="display:grid;grid-template-columns:1.55fr 1fr;gap:36px;margin-top:40px;align-items:start">
+<div class="code big hlmode" data-hl-code style="font-size:23px"><span class="ln" data-hl="3,4"><span class="k">const</span> { data, isLoading, error } = useQuery({</span><span class="ln" data-hl="1,4">  queryKey: [<span class="s">'balance'</span>, <span class="s">'USDT'</span>],</span><span class="ln" data-hl="2,4">  queryFn: () =&gt; api.getBalance(<span class="s">'USDT'</span>),</span><span class="ln" data-hl="3,4">})</span></div>
+    <div style="position:relative;height:380px">
+      <div class="tile hot" data-only="1" style="position:absolute;inset:0 0 auto 0"><span class="tag">1 · QUERYKEY</span><h3 style="font-size:32px">چه data‌ای؟</h3><p style="color:var(--text)">اسم data، مثل اسم روی تابلو: «موجودی USDT».</p></div>
+      <div class="tile hot" data-only="2" style="position:absolute;inset:0 0 auto 0"><span class="tag">2 · QUERYFN</span><h3 style="font-size:32px">از کجا بگیرم؟</h3><p style="color:var(--text)">تابعی که از سرور می‌گیرد؛ مثل تماس با بانک.</p></div>
+      <div class="tile hot" data-only="3" style="position:absolute;inset:0 0 auto 0"><span class="tag">3 · WHAT YOU GET</span><h3 style="font-size:32px">چه چیزی پس می‌گیرید؟</h3><p style="color:var(--text)"><span class="ltr mono">data</span>: خود data · <span class="ltr mono">isLoading</span>: هنوز در راه است · <span class="ltr mono">error</span>: اگر نشد.</p></div>
+    </div>
+  </div>
+  <p class="lead" data-step="4" style="margin-top:20px">همین. بقیه‌ی کارها را خودش انجام می‌دهد.</p>
+</section>
+
+<!-- HEADS UP 4 · WHAT IT DOES FOR YOU -->
+<section class="slide col" id="hu-does" data-title="بقیه را خودش انجام می‌دهد">
+  <div class="eyebrow">Heads up · what it does for you</div>
+  <p class="q">و بقیه را خودش انجام می‌دهد</p>
+  <div class="row3" style="margin-top:40px">
+    <div class="tile" data-step="1"><span class="tag">CACHE</span><h3 style="font-size:32px">یادش می‌ماند</h3><p>data را نگه می‌دارد؛ دفعه‌ی بعد فوراً نشانش می‌دهد.</p></div>
+    <div class="tile" data-step="2"><span class="tag">DE-DUPLICATION</span><h3 style="font-size:32px">فقط یک بار می‌پرسد</h3><p>اگر سه screen با هم بخواهند، فقط یک request.</p></div>
+    <div class="tile" data-step="3"><span class="tag">REFETCH</span><h3 style="font-size:32px">وقتی کهنه شد، دوباره می‌پرسد</h3><p>data قدیمی را نشان می‌دهد تا جدید برسد.</p></div>
+    <div class="tile" data-step="4"><span class="tag">RETRY</span><h3 style="font-size:32px">اگر نشد، دوباره امتحان می‌کند</h3><p>مثلاً وقتی اینترنت یک لحظه قطع شد.</p></div>
+    <div class="tile" data-step="5"><span class="tag">INVALIDATE</span><h3 style="font-size:32px">بعد از تغییر، خبردار می‌شود</h3><p>بعد از خرید، موجودی همه‌جا خودش عوض می‌شود.</p></div>
+    <div class="tile hot" data-step="6"><span class="tag">YOU</span><h3 style="font-size:32px">شما فقط می‌گویید چه data‌ای</h3><p style="color:var(--text)">امروز همین ایده را در Compose می‌سازیم.</p></div>
   </div>
 </section>
 
@@ -538,6 +629,8 @@ Button(onClick = { buy(request) }) { Text(<span class="s">"Buy"</span>) }</div>
     var s=slides[cur];
     s.querySelectorAll('[data-step]').forEach(function(e){e.classList.toggle('shown',+e.dataset.step<=step)});
     s.querySelectorAll('[data-only]').forEach(function(e){e.classList.toggle('shown',+e.dataset.only===step)});
+    s.querySelectorAll('[data-hl-code]').forEach(function(code){code.classList.toggle('hlmode',step>0);
+      code.querySelectorAll('.ln').forEach(function(l){var h=(l.dataset.hl||'').split(',');l.classList.toggle('hl',h.indexOf(String(step))>-1)})});
     if(ACT[s.id])ACT[s.id](step);
     document.getElementById('bar').style.width=((cur+1)/total*100)+'%';
     document.getElementById('ctr').textContent=(cur+1)+' / '+total;
