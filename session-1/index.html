@@ -422,6 +422,47 @@ useQuery(key = ArticleKeys.headlines(source, page)) {
   </div>
 </section>
 
+<!-- KEY · TWO MORE RULES -->
+<section class="slide col" id="key-rules" data-title="key: دو قانون دیگر">
+  <div class="eyebrow">key · two more rules</div>
+  <p class="q">دو قانون دیگر برای key</p>
+  <div class="row2" style="margin-top:26px;align-items:start">
+    <div class="col" style="gap:16px">
+      <div class="tile" data-step="1">
+        <span class="tag">RULE 2 · HIERARCHICAL, LIKE FOLDERS</span>
+<div class="code" style="font-size:21px;line-height:1.7;background:transparent;border:none;padding:6px 0">articles
+├── headlines
+│   ├── techcrunch.1
+│   └── techcrunch.2
+└── bookmarks</div>
+      </div>
+      <div class="tile hot" data-step="2">
+        <p style="color:var(--text)">یک گروه کامل را با هم refetch کن:</p>
+<div class="code" style="font-size:19px">queryClient.invalidateMatching(<span class="s">"articles\\..*"</span>)</div>
+        <p>یعنی: «هر key که با <span class="ltr mono">articles.</span> شروع می‌شود.»</p>
+      </div>
+    </div>
+    <div class="col" style="gap:16px">
+      <div class="tile" data-step="3" style="border-color:rgba(240,143,124,.45);padding:20px 24px;gap:8px">
+        <span class="tag" style="color:var(--bad)">RULE 3 · NO HAND-TYPED STRINGS</span>
+<div class="code" style="font-size:16px;padding:16px 20px"><span class="c">// hook reads</span>
+useQuery(key = <span class="s">"wallet.balance.usdt"</span>) { ... }
+
+<span class="c">// buy invalidates</span>
+invalidateKeys = listOf(<span class="s">"wallet.balance.USDT"</span>)</div>
+        <p class="bad" style="font-size:21px">دو رشته‌ی متفاوت = دو جعبه. خرید موفق، ولی موجودی هیچ‌وقت تازه نمی‌شود؛ بدون هیچ error.</p>
+      </div>
+      <div class="tile" data-step="4" style="border-color:rgba(127,212,173,.45);padding:20px 24px;gap:8px">
+<div class="code" style="font-size:16px;padding:16px 20px"><span class="k">object</span> <span class="t">WalletKeys</span> {
+    <span class="k">fun</span> balance(symbol: String) = <span class="s">"wallet.balance.$symbol"</span>
+}
+<span class="c">// hook + mutation: WalletKeys.balance("USDT")</span></div>
+        <p class="good" style="font-size:21px">یک تعریف، یک جا. typo دیگر ممکن نیست.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
 <!-- 13 · QUERYCLIENT -->
 <section class="slide col" id="client" data-title="QueryClient: یک map">
   <div class="eyebrow">QueryClient</div>

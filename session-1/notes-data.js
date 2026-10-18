@@ -107,6 +107,13 @@ window.NOTES = {
 <p>→ باگ: «اینجا page در fetcher هست ولی در key نیست. صفحه‌ی ۱ و ۲ یک key دارند، پس یک جعبه. صفحه‌ی ۲ همان data‌ی صفحه‌ی ۱ را نشان می‌دهد.» بپرسید: «باگ کجاست؟» قبل از اینکه fix را نشان دهید.</p>
 <p>→ fix: «keyها را در یک object کنار Api تعریف می‌کنیم: ArticleKeys.headlines(source, page). هیچ رشته‌ی دستی.»</p>` },
 
+  'key-rules': { time: '3′', html: `
+<p>«دو قانون دیگر برای key.»</p>
+<p>→ قانون ۲: «key سلسله‌مراتبی است، مثل پوشه‌ها: articles، داخلش headlines، داخلش هر منبع و هر صفحه؛ و کنارش bookmarks.»</p>
+<p>→ «فایده‌اش: می‌توانیم یک گروه کامل را با هم refetch کنیم. invalidateMatching با این الگو یعنی: هر key که با articles. شروع می‌شود.» (اگر پرسیدند: یک regex است؛ \\. یعنی یک نقطه‌ی واقعی و .* یعنی هر چیزی بعدش.)</p>
+<p>→ قانون ۳، باگ: «hook می‌خواند wallet.balance.usdt با حروف کوچک. خرید invalidate می‌کند wallet.balance.USDT با حروف بزرگ. دو رشته‌ی متفاوت، یعنی دو جعبه. خرید موفق است، ولی موجودی هیچ‌وقت تازه نمی‌شود، و هیچ error‌ی هم نمی‌بینید.» بپرسید: «این باگ را چطور پیدا می‌کردید؟»</p>
+<p>→ fix: «keyها را فقط در یک object کنار Api می‌سازیم. hook و mutation هر دو WalletKeys.balance("USDT") را صدا می‌زنند. یک تعریف، یک جا.»</p>` },
+
   client: { time: '2′', html: `
 <p>«همه‌ی جعبه‌ها کجا هستند؟ در یک map. اسمش QueryClient است.»</p>
 <p>→ کد ساده‌شده: «یک ConcurrentHashMap از key به QueryEntry. computeIfAbsent یعنی: اگر هست بده، اگر نیست بساز.»</p>
