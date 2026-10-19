@@ -15,6 +15,8 @@ state goes through a shared, React-Query-style cache (`useQuery` / `useMutation`
 Each session is about 45 minutes, opens with a recap and the one-sentence destination, and ends with a bridge to
 the next session.
 
+**Teacher's guide (Persian):** [session-1/guide.html](https://lumoradevlab.github.io/query-client-presentation/session-1/guide.html), slide by slide and build by build: what to say, what to ask, and the bridge to the next step.
+
 ---
 
 ## Presenting

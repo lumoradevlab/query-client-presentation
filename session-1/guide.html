@@ -1,0 +1,487 @@
+<!doctype html><html lang="fa" dir="rtl"><head><meta charset=utf-8><title>راهنمای مدرس Query Client</title><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Vazirmatn:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: reading column with a sticky lesson index on the start (right) side. Nocturne palette, dark-first. */
+:root{
+  --bg:#161826;--surface:#1e2030;--surface-2:#262839;--line:rgba(233,233,237,.12);
+  --text:#e9e9ed;--dim:#b2b6ca;--faint:#8b8fa3;--accent:#9184d9;--accent-2:#b5abfc;--accent-soft:rgba(145,132,217,.14);
+  --code-bg:#10121b;--code-fg:#d9dbe6;
+  --font:'Vazirmatn','Inter',system-ui,sans-serif;--mono:'JetBrains Mono','Vazirmatn',ui-monospace,monospace;
+  color-scheme:dark;
+}
+@media (prefers-color-scheme: light){:root:not([data-theme="dark"]){--bg:#f3f5fe;--surface:#ffffff;--surface-2:#e8ebf7;--line:rgba(22,24,38,.12);--text:#161826;--dim:#3f4252;--faint:#5f6374;--accent:#5d5294;--accent-2:#5d5294;--accent-soft:rgba(93,82,148,.10);--code-bg:#1b1d2b;--code-fg:#d9dbe6;color-scheme:light}}
+:root[data-theme="light"]{--bg:#f3f5fe;--surface:#ffffff;--surface-2:#e8ebf7;--line:rgba(22,24,38,.12);--text:#161826;--dim:#3f4252;--faint:#5f6374;--accent:#5d5294;--accent-2:#5d5294;--accent-soft:rgba(93,82,148,.10);--code-bg:#1b1d2b;--code-fg:#d9dbe6;color-scheme:light}
+body{background:var(--bg);color:var(--text);font-family:var(--font)}
+.page{direction:rtl;max-width:1180px;margin:0 auto;padding-inline:20px;padding-block:40px 80px;display:grid;grid-template-columns:240px minmax(0,1fr);gap:48px}
+header.top{grid-column:1/-1;display:flex;flex-direction:column;gap:8px;border-bottom:1px solid var(--line);padding-bottom:24px}
+.eyebrow{font:600 13px/1 var(--mono);letter-spacing:.08em;color:var(--accent);text-transform:uppercase;direction:ltr;text-align:right}
+h1{font-size:clamp(28px,4vw,40px);font-weight:800;line-height:1.3;text-wrap:balance;margin:0}
+.sub{color:var(--dim);font-size:16px;line-height:1.9;margin:0}
+nav.toc{position:sticky;top:calc(env(safe-area-inset-top,0px) + 20px);align-self:start;max-height:calc(100vh - 40px);overflow:auto}
+nav.toc ol{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:2px}
+nav.toc a{display:block;padding:7px 12px;border-radius:8px;color:var(--dim);text-decoration:none;font-size:14px;line-height:1.6;border-inline-start:2px solid transparent}
+nav.toc a:hover,nav.toc a:focus-visible{background:var(--accent-soft);color:var(--text);outline:none}
+nav.toc a.on{border-inline-start-color:var(--accent);color:var(--text);background:var(--accent-soft)}
+main{min-width:0;display:flex;flex-direction:column;gap:56px}
+section{display:flex;flex-direction:column;gap:14px;scroll-margin-top:20px}
+h2{font-size:26px;font-weight:800;line-height:1.5;margin:0;text-wrap:balance;padding-bottom:10px;border-bottom:1px solid var(--line)}
+h3{font-size:18px;font-weight:700;color:var(--accent-2);margin:14px 0 0}
+p,li{font-size:17px;line-height:2.05;color:var(--dim);margin:0;max-width:68ch}
+strong{color:var(--text);font-weight:700}
+p.meta{font-size:14px;color:var(--faint)}
+p.goal{background:var(--accent-soft);border-inline-start:3px solid var(--accent);padding:12px 16px;border-radius:4px 10px 10px 4px;color:var(--text)}
+ul,ol{margin:0;padding-inline-start:26px;display:flex;flex-direction:column;gap:6px}
+li::marker{color:var(--accent)}
+ul.check{list-style:none;padding:0}
+ul.check label{display:flex;gap:10px;align-items:baseline;cursor:pointer}
+ul.check input{accent-color:var(--accent);inline-size:16px;block-size:16px;flex:none;transform:translateY(3px)}
+code{direction:ltr;font-variant-ligatures:none;font-family:var(--mono);font-size:.86em;background:var(--accent-soft);color:var(--accent-2);padding:1px 6px;border-radius:5px;unicode-bidi:isolate;white-space:nowrap}
+pre{direction:ltr;font-variant-ligatures:none;text-align:left;background:var(--code-bg);color:var(--code-fg);border-radius:10px;padding:16px 18px;overflow-x:auto;margin:0;font:14px/1.65 var(--mono)}
+pre code{background:none;color:inherit;padding:0;white-space:pre;font-size:inherit}
+.tablewrap{overflow-x:auto;border:1px solid var(--line);border-radius:10px}
+table{border-collapse:collapse;width:100%;font-size:15px}
+th{text-align:right;background:var(--surface-2);color:var(--text);font-weight:700;padding:10px 14px;white-space:nowrap}
+td{padding:10px 14px;border-top:1px solid var(--line);color:var(--dim);line-height:1.9;vertical-align:top}
+td:first-child{color:var(--text);font-weight:600}
+a{color:var(--accent-2)}
+.tools{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+.tools button{font:500 14px var(--font);color:var(--text);background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:7px 14px;cursor:pointer}
+.tools button:hover,.tools button:focus-visible{border-color:var(--accent);outline:none}
+@media (max-width:860px){.page{grid-template-columns:minmax(0,1fr);gap:28px}nav.toc{position:static;max-height:none}nav.toc ol{flex-direction:row;flex-wrap:wrap}nav.toc a{font-size:13px;padding:5px 10px;border:1px solid var(--line)}}
+@media (prefers-reduced-motion:no-preference){html{scroll-behavior:smooth}}
+</style>
+<style>
+.part{margin-top:8px;padding:14px 18px;border-radius:12px;background:var(--accent-soft);border:1px solid var(--line)}
+.part span{font-size:15px;font-weight:800;color:var(--accent-2);letter-spacing:.02em}
+p.where{color:var(--text);font-size:16px;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:10px 14px}
+p.bridge{color:var(--text);border-top:1px dashed var(--line);padding-top:12px;margin-top:6px}
+blockquote.say{margin:0;padding:14px 18px;border-inline-start:3px solid var(--accent);background:var(--surface);border-radius:4px 10px 10px 4px;color:var(--text);font-size:17px;line-height:2.05;max-width:68ch}
+nav.toc li.tp{font-size:12px;font-weight:800;color:var(--accent);padding:14px 12px 4px;letter-spacing:.02em}
+nav.toc li.tp:first-child{padding-top:0}
+ol ol,ol ul,ul ul{margin-top:6px}
+</style>
+<div class="page" lang="fa" dir="rtl">
+<header class="top">
+  <span class="eyebrow">Teacher's guide · Session 1 of 3 · The idea</span>
+  <h1>راهنمای مدرس — جلسه‌ی ۱</h1>
+  <p class="sub">جلسه‌ی اول از سه جلسه، اسلاید به اسلاید و build به build: کجای مسیر هستیم، ایده برای خودتان، روی اسلاید چه اتفاقی می‌افتد و چه بگویید، از کلاس چه بپرسید، و پل به قدم بعد. جلسه‌ی ۲ و ۳ بعداً به همین صفحه اضافه می‌شوند.</p>
+  <div class="tools"><button type="button" id="fs-down">کوچک‌تر کردن متن</button><button type="button" id="fs-up">بزرگ‌تر کردن متن</button></div>
+</header>
+<nav class="toc" aria-label="فهرست"><ol><li><a href="#c1">نقشه‌ی جلسه‌ی ۱ — قبل از هر چیز این را بخوانید</a></li><li><a href="#c2">قبل از جلسه</a></li><li class="tp">بخش ۱ — شروع و مشکل</li><li><a href="#c3">فصل ۱ — شروع: سه جلسه</a></li><li><a href="#c4">فصل ۲ — قبل از شروع: React Query به زبان ساده</a></li><li><a href="#c5">فصل ۳ — Cold open: چند کپی؟</a></li><li><a href="#c6">فصل ۴ — جمله‌ی اصلی، و سه چیزی که امروز می‌سازیم</a></li><li class="tp">بخش ۲ — ایده از کجا آمد</li><li><a href="#c7">فصل ۵ — وب همین مشکل را داشت</a></li><li><a href="#c8">فصل ۶ — React Query</a></li><li><a href="#c9">فصل ۷ — چرا Compose</a></li><li><a href="#c10">فصل ۸ — دو جور state</a></li><li class="tp">بخش ۳ — جعبه</li><li><a href="#c11">فصل ۹ — یک جعبه‌ی مشترک</a></li><li><a href="#c12">فصل ۱۰ — داخل جعبه</a></li><li><a href="#c13">فصل ۱۱ — key: اسم جعبه</a></li><li><a href="#c14">فصل ۱۲ — QueryClient: یک map</a></li><li><a href="#c15">فصل ۱۳ — قبل و بعد</a></li><li><a href="#c16">فصل ۱۴ — این فقط یک ایده نیست</a></li><li class="tp">بخش ۴ — سه ابزار</li><li><a href="#c17">فصل ۱۵ — سه ابزار، و یک hook خط به خط</a></li><li><a href="#c18">فصل ۱۶ — سه حالت</a></li><li><a href="#c19">فصل ۱۷ — useMutation و invalidate</a></li><li><a href="#c20">فصل ۱۸ — هر تکه کجا زندگی می‌کند</a></li><li class="tp">بخش ۵ — پایان</li><li><a href="#c21">فصل ۱۹ — جمع‌بندی، جلسه‌ی بعد، سؤال</a></li><li class="tp">پیوست</li><li><a href="#c22">پیوست — سؤال‌های احتمالی جلسه‌ی ۱</a></li><li><a href="#c23">پیوست — کدهای جلسه‌ی ۱، خط به خط</a></li></ol></nav>
+<main><section id="c1"><h2>نقشه‌ی جلسه‌ی ۱ — قبل از هر چیز این را بخوانید</h2>
+<p>جلسه‌ی ۱ از ۳ · <strong>The idea</strong> · حدود ۵۰ دقیقه · ۲۸ اسلاید · <a href="https://lumoradevlab.github.io/query-client-presentation/session-1/" target="_blank" rel="noopener"><bdi>باز کردن اسلایدها</bdi></a></p>
+<p><strong>کار این جلسه:</strong> طرز فکر کلاس را درباره‌ی server data عوض کنید. امروز engine را باز نمی‌کنیم؛ فقط می‌گوییم <strong>چرا</strong> و <strong>چه چیزی</strong>. هر سؤالی درباره‌ی «کِی fetch می‌کند / کِی پاک می‌شود / retry» → «سؤال خوبی است؛ دقیقاً موضوع جلسه‌ی بعد.»</p>
+<p><strong>جمله‌ی اصلی</strong> (اسلاید ۸ می‌گویید، اسلاید ۲۶ تکرار می‌کنید):</p>
+<blockquote class="say">«server data مال ما نیست؛ یک کپی است. پس به جای اینکه هر screen کپی خودش را در یک ViewModel نگه دارد، یک cache مشترک داریم و screen فقط می‌گوید چه data‌ای می‌خواهد.»</blockquote>
+<p><strong>سه کلمه‌ای که امروز می‌سازید</strong> (اگر وسط جلسه گیر کردید، به همین سه برگردید):</p>
+<div class="tablewrap"><table><thead><tr><th>کلمه</th><th>یعنی</th><th>معادل آشنا</th></tr></thead><tbody><tr><td><strong>QueryEntry</strong> («جعبه»)</td><td>یک جعبه برای یک تکه server data، مشترک بین همه‌ی screenها</td><td>همان <code>MutableStateFlow</code> داخل ViewModel، که از screen بیرون آمده</td></tr><tr><td><strong>key</strong></td><td>اسم جعبه، مثل <code>"wallet.balance.USDT"</code></td><td>اسم یک فایل</td></tr><tr><td><strong>QueryClient</strong></td><td>یک map که همه‌ی جعبه‌ها را با اسمشان نگه می‌دارد</td><td>یک <code>Map&lt;String, QueryEntry&gt;</code> که Singleton است</td></tr></tbody></table></div>
+<p><strong>مسیر جلسه:</strong></p>
+<div class="tablewrap"><table><thead><tr><th>بخش</th><th>اسلاید</th><th>زمان</th><th>کار</th></tr></thead><tbody><tr><td>شروع</td><td>۱ تا ۲</td><td>۲ دقیقه</td><td>سه جلسه را معرفی کنید</td></tr><tr><td>قبل از شروع: React Query به زبان ساده</td><td>۳ تا ۶</td><td>۹ دقیقه</td><td>داستان تابلو، React Query، کد در دو چیز، کارهایی که خودش می‌کند</td></tr><tr><td>مشکل</td><td>۷ تا ۹</td><td>۷ دقیقه</td><td>سه phone، سه کپی؛ جمله‌ی اصلی؛ سه کلمه‌ی امروز</td></tr><tr><td>ایده از کجا آمد</td><td>۱۰ تا ۱۳</td><td>۱۱ دقیقه</td><td>Redux، React Query، چرا Compose، دو جور state</td></tr><tr><td>جعبه</td><td>۱۴ تا ۲۰</td><td>۱۷ دقیقه</td><td>جعبه‌ی مشترک، داخل جعبه، key، QueryClient، قبل و بعد، در production</td></tr><tr><td>سه ابزار</td><td>۲۱ تا ۲۵</td><td>۱۱ دقیقه</td><td>useQuery خط به خط، سه حالت، useMutation، لایه‌ها</td></tr><tr><td>پایان</td><td>۲۶ تا ۲۸</td><td>۴ دقیقه</td><td>جمع‌بندی، جلسه‌ی بعد و تمرین، سؤال</td></tr></tbody></table></div>
+<p><strong>اسلایدها مرحله‌به‌مرحله ساخته می‌شوند.</strong> هر → یک تکه را نشان می‌دهد (یک phone، یک کارت، یک خط کد). پس هر بار فقط درباره‌ی همان تکه حرف بزنید و بعد → بزنید. در این راهنما هر → با «→» مشخص شده.</p>
+</section>
+<section id="c2"><h2>قبل از جلسه</h2>
+<ul class="check"><li><label><input type="checkbox"> <span>لینک اسلایدها را در Chrome باز کنید: <a href="https://lumoradevlab.github.io/query-client-presentation/session-1/" target="_blank" rel="noopener"><bdi>session-1</bdi></a></span></label></li><li><label><input type="checkbox"> <span>لپ‌تاپ به پروژکتور در حالت extend. کلید F برای تمام‌صفحه، کلید N برای پنجره‌ی یادداشت روی لپ‌تاپ (شماره‌ی build را هم نشان می‌دهد).</span></label></li><li><label><input type="checkbox"> <span>یک بار کل اسلایدها را با → جلو بروید تا ترتیب buildها دستتان بیاید؛ مخصوصاً اسلاید ۷، ۱۴ و ۲۲.</span></label></li><li><label><input type="checkbox"> <span>اینترنت وصل باشد (فونت‌ها از Google می‌آیند).</span></label></li><li><label><input type="checkbox"> <span><a href="https://github.com/lumoradevlab/ComposeCleanArch" target="_blank" rel="noopener"><bdi>ComposeCleanArch</bdi></a> در یک تب جدا؛ فایل‌های <code>ArticleHooks.kt</code> و <code>ArticleListScreen.kt</code> را باز نگه دارید.</span></label></li></ul>
+<div class="tablewrap"><table><thead><tr><th>کلید</th><th>کار</th></tr></thead><tbody><tr><td>→ ↓ Space یا کلیک</td><td>build بعدی، بعد اسلاید بعد</td></tr><tr><td>← ↑</td><td>قدم قبل</td></tr><tr><td>N</td><td>پنجره‌ی یادداشت</td></tr><tr><td>F</td><td>تمام‌صفحه</td></tr></tbody></table></div>
+</section>
+<div class="part"><span>بخش ۱ — شروع و مشکل</span></div>
+<section id="c3"><h2>فصل ۱ — شروع: سه جلسه</h2>
+<p class="meta">اسلایدهای ۱ و ۲ · حدود ۲ دقیقه</p>
+<p class="where"><strong>کجای مسیر هستیم:</strong> اول جلسه. فقط نقشه را نشان می‌دهید؛ توضیح نمی‌دهید.</p>
+<h3>روی اسلاید</h3>
+<ul><li><strong>اسلاید ۱:</strong> عنوان، و سه pill پایین: The idea (روشن)، The engine، Building.</li><li><strong>اسلاید ۲:</strong> → جلسه‌ی ۱ · → جلسه‌ی ۲ · → جلسه‌ی ۳.</li></ul>
+<h3>به کلاس بگویید</h3>
+<blockquote class="say">«این اولین جلسه از سه جلسه است. در این سه جلسه معماری‌ای را با هم می‌سازیم که در آن بیشتر screenها ViewModel ندارند. امروز فقط ایده است: چرا، و چه چیزی. دوشنبه‌ی بعد engine را باز می‌کنیم، و جلسه‌ی سوم با هم یک feature واقعی می‌سازیم.»</blockquote>
+<p><strong>پل:</strong> «قبل از شروع، برای کسانی که این نوع معماری را ندیده‌اند، یک دقیقه React Query.»</p>
+</section>
+<section id="c4"><h2>فصل ۲ — قبل از شروع: React Query به زبان ساده</h2>
+<p class="meta">اسلایدهای ۳ تا ۶ · حدود ۹ دقیقه</p>
+<p class="where"><strong>کجای مسیر هستیم:</strong> یک heads-up برای کسانی که هیچ‌وقت این نوع معماری را ندیده‌اند. با زبان ساده و یک داستان؛ هنوز نه مشکل اپ خودمان را گفته‌ایم، نه کد Kotlin.</p>
+<h3>ایده (برای خودتان)</h3>
+<p>کل ایده با یک داستان ساده گفته می‌شود: <strong>تابلوی دفتر.</strong></p>
+<ul><li><strong>بدون تابلو:</strong> سه همکار هر کدام خودشان به بانک زنگ می‌زنند تا موجودی را بپرسند. سه تماس برای یک عدد، و بعد از یک خرید، هر کس عدد قدیمی خودش را دارد.</li><li><strong>با تابلو:</strong> یک نفر یک بار زنگ می‌زند و عدد را روی تابلو می‌نویسد؛ بقیه فقط تابلو را می‌خوانند. بعد از خرید، تابلو پاک می‌شود و فقط یک بار دوباره زنگ زده می‌شود.</li></ul>
+<div class="tablewrap"><table><thead><tr><th>در داستان</th><th>اسم فنی</th></tr></thead><tbody><tr><td>تابلو</td><td><strong>cache</strong></td></tr><tr><td>خواندن تابلو</td><td><strong>query</strong></td></tr><tr><td>خرید</td><td><strong>mutation</strong></td></tr><tr><td>پاک کردن تابلو</td><td><strong>invalidate</strong></td></tr><tr><td>اسم روی تابلو («موجودی USDT»)</td><td><strong>key</strong></td></tr></tbody></table></div>
+<p>در دنیای وب اسم این ایده <strong>React Query</strong> است (امروز TanStack Query، از ۲۰۱۹). در کد فقط دو چیز می‌گویید: <strong>queryKey</strong> (چه data‌ای) و <strong>queryFn</strong> (از کجا). بقیه را خودش انجام می‌دهد.</p>
+<h3>روی اسلاید ۳ — داستان تابلو</h3>
+<ol><li>→ بدون تابلو: «فرض کنید در یک دفتر سه همکار هر کدام موجودی حساب شرکت را لازم دارند. هر کدام خودش به بانک زنگ می‌زند. سه تماس برای یک عدد. وقتی یکی خرید کرد، دو نفر دیگر هنوز عدد قدیمی را دارند.»</li><li>→ با تابلو: «حالا یک تابلو در دفتر هست. یک نفر یک بار زنگ می‌زند و می‌نویسد. بقیه فقط به تابلو نگاه می‌کنند.»</li><li>→ «بعد از خرید، تابلو پاک می‌شود و فقط یک بار دوباره زنگ زده می‌شود.»</li><li>→ «کل امروز همین داستان است، با اسم‌های فنی: تابلو یعنی cache، خواندن تابلو یعنی query، خرید یعنی mutation، پاک کردن تابلو یعنی invalidate.»</li></ol>
+<h3>روی اسلاید ۴ — اسم این ایده: React Query</h3>
+<ol><li>→ Screen. → «به جای اینکه خودش request بزند، می‌گوید چه data‌ای می‌خواهد.» → «این درخواست به cache می‌رود؛ همان تابلو.» → «cache فقط وقتی لازم است به سرور می‌رود.»</li><li>→ سه کلمه را تکرار کنید: query خواندن، mutation عوض کردن، cache کپی مشترک.</li><li>→ «یک library معروف در وب، از ۲۰۱۹. امروز همین ایده را در Compose می‌بینیم.»</li></ol>
+<h3>روی اسلاید ۵ — در کد فقط دو چیز</h3>
+<p>«کد JavaScript است، ولی لازم نیست JavaScript بلد باشید.»</p>
+<ol><li>→ queryKey: «چه data‌ای؟ اسمش، مثل اسم روی تابلو.»</li><li>→ queryFn: «از کجا بگیرم؟ مثل تماس با بانک.»</li><li>→ خط اول: «چه پس می‌گیرید: data خود data، isLoading یعنی هنوز در راه است، error یعنی اگر نشد.»</li><li>→ «همین. بقیه را خودش انجام می‌دهد.»</li></ol>
+<h3>روی اسلاید ۶ — بقیه را خودش انجام می‌دهد</h3>
+<p>هر کارت را با داستان تابلو بگویید:</p>
+<ol><li>→ <strong>یادش می‌ماند (cache):</strong> عدد روی تابلو می‌ماند؛ دفعه‌ی بعد فوراً می‌بینید.</li><li>→ <strong>فقط یک بار می‌پرسد (de-duplication):</strong> سه نفر با هم بپرسند، یک تماس.</li><li>→ <strong>وقتی کهنه شد، دوباره می‌پرسد (refetch):</strong> عدد قدیمی روی تابلو می‌ماند تا جدید برسد.</li><li>→ <strong>اگر نشد، دوباره امتحان می‌کند (retry):</strong> بانک جواب نداد؟ چند ثانیه بعد دوباره.</li><li>→ <strong>بعد از تغییر، خبردار می‌شود (invalidate):</strong> بعد از خرید، تابلو پاک و دوباره پر می‌شود.</li><li>→ «شما فقط می‌گویید چه data‌ای.»</li></ol>
+<h3>از کلاس بپرسید</h3>
+<ul><li>«در اپ خودمان، کدام data مثل همان عدد روی تابلو است؛ چیزی که چند screen می‌خواهند؟» (موجودی، پروفایل، سفارش‌ها)</li></ul>
+<p><strong>نکته:</strong> اگر کلاس از قبل React Query را می‌شناسد، این بخش را به ۳ دقیقه کوتاه کنید و فقط اسلاید ۳ و ۶ را بگویید.</p>
+<p><strong>پل:</strong> «خب، این ایده بود. حالا ببینیم همین مشکل در اپ خودمان چه شکلی است.»</p>
+</section>
+<section id="c5"><h2>فصل ۳ — Cold open: چند کپی؟</h2>
+<p class="meta">اسلاید ۷ · حدود ۳ دقیقه</p>
+<p class="where"><strong>کجای مسیر هستیم:</strong> مشکل را نشان می‌دهیم، با چشم، قبل از هر توضیحی.</p>
+<h3>ایده (برای خودتان)</h3>
+<p>امروز هر screen که موجودی را نشان می‌دهد، ViewModel خودش را دارد و ViewModel یک <code>MutableStateFlow</code> جدا. پس اگر سه screen موجودی را نشان دهند، <strong>سه کپی</strong> از یک عدد در حافظه داریم، <strong>سه request</strong> برای گرفتنش، و بعد از هر تغییر، <strong>هیچ‌کدام خودشان خبردار نمی‌شوند</strong>. هر تیم این را با event bus یا callback یا «برگشتن به صفحه» وصله می‌کند.</p>
+<h3>روی اسلاید، build به build</h3>
+<ol><li>سؤال روی صفحه است. <strong>بلند بپرسید و صبر کنید جواب بدهند:</strong> «الان اپ ما چند کپی از موجودی کیف پول دارد؟»</li><li>→ سه phone: «موجودی در Dashboard هست، در Wallet، در Buy.»</li><li>→ سه ViewModel: «هر screen، ViewModel خودش را دارد. یعنی سه کپی.»</li><li>→ سه خط به سرور: «سه request برای یک عدد.»</li><li>→ خرید: سرور ۱٬۲۳۰ می‌شود و سه phone قرمز ۱٬۲۵۰ می‌مانند. «کاربر خرید کرد. سرور عدد جدید دارد. ولی هر سه screen هنوز عدد قدیمی را نشان می‌دهند، تا یکی دستی به هر ViewModel بگوید reload کن.»</li></ol>
+<h3>از کلاس بپرسید</h3>
+<ul><li>«امروز در کد خودمان، بعد از یک خرید چطور به screenهای دیگر می‌گوییم refresh کنند؟» (جواب‌های معمول: event bus، callback، shared ViewModel، یا اصلاً نمی‌گوییم و کاربر pull-to-refresh می‌کند.)</li></ul>
+<p><strong>پل:</strong> «این مشکل کد نیست؛ مشکل طرز فکر است.»</p>
+</section>
+<section id="c6"><h2>فصل ۴ — جمله‌ی اصلی، و سه چیزی که امروز می‌سازیم</h2>
+<p class="meta">اسلایدهای ۸ و ۹ · حدود ۴ دقیقه</p>
+<p class="where"><strong>کجای مسیر هستیم:</strong> مهم‌ترین لحظه‌ی جلسه. آرام و با مکث.</p>
+<h3>ایده (برای خودتان)</h3>
+<p>data‌ای که از سرور می‌آید <strong>مال ما نیست</strong>؛ صاحبش سرور است. ما فقط یک <strong>کپی</strong> داریم که از لحظه‌ی رسیدن شروع به کهنه شدن می‌کند. کپی‌ها نیازهای مشخصی دارند: یک جا نگه داشته شوند، بین همه مشترک باشند، و بعد از تغییر تازه شوند. این‌ها دقیقاً کار یک <strong>cache</strong> است. ViewModel ابزار نگه‌داری state است، نه cache؛ برای همین هر ViewModel یک cache ناقص و تکراری می‌سازد.</p>
+<h3>روی اسلاید، build به build</h3>
+<p><strong>اسلاید ۸:</strong></p>
+<ol><li>«server data…» (مکث)</li><li>→ «…مال شما نیست.» (مکث)</li><li>→ «یک کپی است. و کپی‌ها را باید مثل cache مدیریت کرد.»</li></ol>
+<p>بگویید: «اگر فقط یک چیز از امروز یادتان بماند، همین باشد.»</p>
+<p><strong>اسلاید ۹:</strong> «امروز سه چیز را با هم می‌سازیم.»</p>
+<ol><li>→ <strong>جعبه (QueryEntry):</strong> «یک جعبه برای هر تکه server data، که همه‌ی screenها مشترک می‌خوانند.»</li><li>→ <strong>اسم جعبه (key):</strong> «screen با اسم، جعبه‌اش را پیدا می‌کند.»</li><li>→ <strong>جای جعبه‌ها (QueryClient):</strong> «یک map از اسم به جعبه.»</li><li>→ «تا آخر جلسه، هر screen فقط می‌گوید چه data‌ای می‌خواهد.»</li></ol>
+<p><strong>پل:</strong> «این ایده جدید نیست. وب این مشکل را زودتر از ما داشت.»</p>
+</section>
+<div class="part"><span>بخش ۲ — ایده از کجا آمد</span></div>
+<section id="c7"><h2>فصل ۵ — وب همین مشکل را داشت</h2>
+<p class="meta">اسلاید ۱۰ · حدود ۳ دقیقه</p>
+<p class="where"><strong>کجای مسیر هستیم:</strong> یک سفر کوتاه به وب، تا ببینند این مشکل جهانی است و یک راه‌حل امتحان‌شده دارد.</p>
+<h3>ایده (برای خودتان)</h3>
+<p>تا حدود ۲۰۱۹ بیشتر اپ‌های React، server data را در <strong>Redux</strong> نگه می‌داشتند: یک store مرکزی. برای گرفتن یک لیست:</p>
+<ul><li>سه <strong>action</strong> (یعنی event): <code>LOADING</code>، <code>SUCCESS</code>، <code>FAILURE</code></li><li>یک <strong>reducer</strong>: تابعی که با هر action، state جدید می‌سازد (<code>isLoading</code>، data، error)</li><li>یک <strong>useEffect</strong> که بعد از اولین render، load را صدا می‌زند</li></ul>
+<p>ترجمه به اندروید: action + reducer = UiState و بدنه‌ی <code>load()</code> در ViewModel؛ useEffect = <code>LaunchedEffect</code>. <strong>لازم نیست Redux بلد باشید؛ فقط باید شباهت را ببینید.</strong></p>
+<h3>روی اسلاید، build به build</h3>
+<ol><li>→ ستون articles: «برای گرفتن یک لیست در React: سه action، یک reducer، یک useEffect.»</li><li>→ ستون‌های profile و orders: «و برای هر request دیگر، همه‌ی این‌ها دوباره.»</li><li>→ «آشنا نیست؟» (صبر کنید) «این همان UiState + ViewModel + LaunchedEffect ماست.»</li></ol>
+<h3>اگر پرسیدند</h3>
+<ul><li><strong>«Redux چیست؟»</strong> «یک store مرکزی برای state. action یعنی event، reducer یعنی تابعی که state جدید می‌سازد.»</li></ul>
+<p><strong>پل:</strong> «و یک نفر در دنیای React این را حل کرد.»</p>
+</section>
+<section id="c8"><h2>فصل ۶ — React Query</h2>
+<p class="meta">اسلاید ۱۱ · حدود ۳ دقیقه</p>
+<p class="where"><strong>کجای مسیر هستیم:</strong> راه‌حل وب. هنوز اندروید نیست.</p>
+<h3>ایده (برای خودتان)</h3>
+<p><strong>Tanner Linsley</strong> در ۲۰۱۹ <strong>React Query</strong> را ساخت؛ امروز اسمش <strong>TanStack Query</strong> است. ایده‌اش یک جمله است: <strong>server data، state نیست؛ cache است.</strong> پس به جای اینکه هر component مدیریتش کند، یک cache مرکزی این کارها را یک بار و درست انجام می‌دهد و component فقط دو چیز می‌گوید:</p>
+<ol><li><strong>queryKey:</strong> چه data‌ای (مثلاً <code>['articles', source]</code>)</li><li><strong>queryFn:</strong> از کجا (تابعی که API را صدا می‌زند)</li></ol>
+<p><code>isLoading</code> و <code>error</code> را خود کتابخانه برمی‌گرداند.</p>
+<h3>روی اسلاید، build به build</h3>
+<ol><li>جمله‌ی بزرگ: «کل ایده همین است.»</li><li>→ کد: «component فقط می‌گوید چه data‌ای (queryKey) و از کجا (queryFn). loading و error را کتابخانه می‌دهد.»</li><li>→ چهار کار: «cache مشترک، فقط یک request همزمان، refetch بعد از تغییر، retry و polling. این‌ها دیگر کار هر component نیست.»</li></ol>
+<h3>اگر پرسیدند</h3>
+<ul><li><strong>«پس این library را در اندروید استفاده می‌کنیم؟»</strong> «نه. TanStack Query برای JavaScript است. ما فقط ایده و شکل API را گرفتیم و در Kotlin ساختیم.»</li></ul>
+<p><strong>پل:</strong> «چرا فکر می‌کنیم این در اندروید جواب می‌دهد؟»</p>
+</section>
+<section id="c9"><h2>فصل ۷ — چرا Compose</h2>
+<p class="meta">اسلاید ۱۲ · حدود ۲ دقیقه</p>
+<p class="where"><strong>کجای مسیر هستیم:</strong> پل بین وب و اندروید.</p>
+<h3>ایده (برای خودتان)</h3>
+<p>React و Compose هر دو <strong>declarative</strong> هستند: UI تابعی از state است. ابزارهایی که React Query رویشان ساخته شده، معادل مستقیم در Compose دارند:</p>
+<div class="tablewrap"><table><thead><tr><th>React</th><th>Compose</th><th>کارش</th></tr></thead><tbody><tr><td><code>useMemo</code> / <code>useRef</code></td><td><code>remember</code></td><td>یک مقدار را بین recompositionها نگه دار</td></tr><tr><td><code>useEffect</code></td><td><code>DisposableEffect</code> (و <code>LaunchedEffect</code>)</td><td>وقتی screen آمد کاری بکن، وقتی رفت تمیزکاری کن</td></tr><tr><td>Context</td><td><code>CompositionLocal</code></td><td>یک چیز را به کل درخت UI بده</td></tr><tr><td>custom hook</td><td><code>@Composable fun useX()</code></td><td>تابعی که UI نمی‌کشد، یک مقدار برمی‌گرداند</td></tr></tbody></table></div>
+<p>engine ما دقیقاً از همین‌ها ساخته شده: <code>remember</code> برای گرفتن جعبه، <code>DisposableEffect</code> برای شمردن screenها، <code>CompositionLocal</code> برای رسیدن به QueryClient.</p>
+<h3>روی اسلاید، build به build</h3>
+<ul><li>چهار → اول: هر بار یک جفت ظاهر می‌شود؛ هر جفت را با یک جمله از جدول بالا توضیح دهید.</li><li>→ آخر: «پس hook در Compose طبیعی جا می‌افتد. library ی React را نمی‌آوریم؛ فقط ایده را. حدود ۸۸۰ خط Kotlin خودمان، بدون dependency، با test.»</li></ul>
+<p><strong>پل:</strong> «قبل از ساختن، یک تمایز مهم.»</p>
+</section>
+<section id="c10"><h2>فصل ۸ — دو جور state</h2>
+<p class="meta">اسلاید ۱۳ · حدود ۳ دقیقه</p>
+<p class="where"><strong>کجای مسیر هستیم:</strong> آخرین قدم قبل از راه‌حل. این تمایز جواب سؤال «پس ViewModel را دور بریزیم؟» است.</p>
+<h3>ایده (برای خودتان)</h3>
+<div class="tablewrap"><table><thead><tr><th></th><th>screen state</th><th>server data</th></tr></thead><tbody><tr><td>مثال</td><td>تب انتخاب‌شده، متن فرم، باز بودن bottom sheet</td><td>موجودی، سفارش‌ها، قیمت‌ها</td></tr><tr><td>صاحب</td><td>خود screen</td><td>سرور؛ ما یک کپی داریم</td></tr><tr><td>stale می‌شود؟</td><td>نه</td><td>بله</td></tr><tr><td>چند screen؟</td><td>معمولاً یکی</td><td>معمولاً چندتا</td></tr><tr><td>چه لازم دارد</td><td>فقط نگه‌داری</td><td>cache، refetch، اشتراک، retry</td></tr></tbody></table></div>
+<p><strong>ViewModel برای ستون اول می‌ماند</strong> (فرم‌ها، جریان‌های چندمرحله‌ای). ما فقط کار ستون دوم را از دوشش برمی‌داریم. این را جلسه‌ی ۳ دقیق‌تر می‌گوییم.</p>
+<h3>روی اسلاید، build به build</h3>
+<ol><li>→ screen state: «مال screen است. خودمان نوشتیم، پس همیشه درست است.»</li><li>→ server data: «مال سرور است. یک کپی: stale می‌شود، مشترک است، بعد از هر تغییر باید refetch شود.»</li><li>→ «ViewModel برای اولی عالی است و می‌ماند. برای دومی یک cache مشترک لازم داریم.»</li></ol>
+<h3>از کلاس بپرسید</h3>
+<ul><li>«در آخرین screenی که ساختید، کدام فیلدها screen state بودند و کدام server data؟»</li></ul>
+<h3>اگر پرسیدند</h3>
+<ul><li><strong>«پس ViewModel را کنار بگذاریم؟»</strong> «نه. ViewModel برای screen state می‌ماند. فقط گرفتن server data را از دوشش برمی‌داریم. جلسه‌ی ۳ دقیق می‌گوییم کجا هنوز لازم است.»</li></ul>
+<p><strong>پل:</strong> «حالا راه‌حل.»</p>
+</section>
+<div class="part"><span>بخش ۳ — جعبه</span></div>
+<section id="c11"><h2>فصل ۹ — یک جعبه‌ی مشترک</h2>
+<p class="meta">اسلاید ۱۴ · حدود ۳ دقیقه</p>
+<p class="where"><strong>کجای مسیر هستیم:</strong> راه‌حل، به همان شکل اسلاید ۷: همان سه phone، ولی این بار با یک جعبه.</p>
+<h3>ایده (برای خودتان)</h3>
+<p>به جای اینکه هر ViewModel جعبه‌ی خودش را داشته باشد، <strong>یک جعبه</strong> در یک جای مشترک نگه می‌داریم و همه‌ی screenها همان را می‌خوانند. اسم این جعبه در کد <code>QueryEntry</code> است. نتیجه:</p>
+<ul><li>یک جعبه → عدد هیچ‌وقت بین screenها فرق نمی‌کند.</li><li>یک request جعبه را پر می‌کند → همه نتیجه را می‌بینند.</li><li>بعد از خرید، <strong>همین یک جعبه</strong> refresh می‌شود → همه با هم عوض می‌شوند.</li></ul>
+<h3>روی اسلاید، build به build</h3>
+<ol><li>سه phone (مثل اسلاید ۷).</li><li>→ جعبه و سه خط: «یک جعبه به اسم QueryEntry، با key "wallet.balance.USDT". هر سه screen همین را می‌خوانند. یک request.»</li><li>→ خرید: جعبه می‌درخشد، هر سه phone با هم سبز می‌شوند. «خرید → invalidate → یک refetch → همه با هم. هیچ‌کس دستی کاری نکرد.» به ردیف requests اشاره کنید: ۱ بود، ۲ شد؛ نه ۶.</li></ol>
+<h3>اگر پرسیدند: «فرقش با shared ViewModel چیست؟»</h3>
+<p>این سؤال تقریباً حتماً پرسیده می‌شود.</p>
+<p><strong>در یک جمله:</strong> shared ViewModel یک <strong>state holder</strong> را مشترک می‌کند؛ جعبه یک <strong>cache از server data</strong> است که با key مشترک می‌شود.</p>
+<p><strong>۱. هویت: با چه چیزی پیدا می‌شوند؟</strong></p>
+<ul><li><strong>shared ViewModel</strong> با <strong>owner و key</strong> پیدا می‌شود. هر screen که همان owner (مثلاً Activity یا یک nav graph) و همان key را بگیرد، همان instance را می‌گیرد، و <strong>عمرش به همان owner بسته است</strong>.</li><li><strong>جعبه</strong> با <strong>key داده</strong> و QueryClient پیدا می‌شود (مثل <code>"profile.42"</code>). مهم نیست screen کجای navigation است یا چقدر عمر می‌کند.</li></ul>
+<p><strong>۲. مهم‌ترین فرق: عمر و cache</strong></p>
+<p>یک سناریو:</p>
+<ol><li>screen A پروفایل کاربر ۴۲ را می‌خواهد.</li><li>کاربر به screen B می‌رود که آن هم کاربر ۴۲ را می‌خواهد.</li><li>بعداً به A برمی‌گردد.</li></ol>
+<ul><li><strong>با shared ViewModel:</strong> data تا وقتی owner زنده است می‌ماند. اگر ViewModel به یک destination بسته باشد و آن destination از back stack بیرون برود، data پاک می‌شود. اگر به Activity بسته باشد، تا آخر عمر اپ می‌ماند، ولی هیچ‌وقت خودش کهنه یا تازه یا پاک نمی‌شود مگر خودتان بنویسید؛ و کم‌کم همه‌ی data مشترک اپ در همان یک ViewModel جمع می‌شود.</li><li><strong>با جعبه:</strong> وقتی A رفت، data در cache می‌ماند؛ B با همان key همان را فوراً می‌گیرد. حتی وقتی هیچ screenی نگاهش نمی‌کند، تا <strong>cacheTime</strong> نگه داشته می‌شود و بعد خودش پاک می‌شود. و اگر کهنه شده باشد (<strong>staleTime</strong>)، خودش دوباره می‌گیرد.</li></ul>
+<p><strong>۳. جعبه فقط «اشتراک» نیست</strong></p>
+<div class="tablewrap"><table><thead><tr><th></th><th>shared ViewModel</th><th>جعبه (QueryEntry)</th></tr></thead><tbody><tr><td>اشتراک بین screenها</td><td>بله، با همان owner و key</td><td>بله، با همان key</td></tr><tr><td>cache بر اساس هویت data (مثلاً کاربر ۴۲)</td><td>باید خودتان بنویسید</td><td>از قبل هست</td></tr><tr><td>staleTime: تا کی data تازه است</td><td>باید خودتان بنویسید</td><td>از قبل هست</td></tr><tr><td>refetch پشت صحنه و polling</td><td>باید خودتان بنویسید</td><td>از قبل هست</td></tr><tr><td>invalidate با key از هر جای اپ</td><td>باید خودتان بنویسید</td><td>از قبل هست</td></tr><tr><td>write و به‌روز کردن cache بعد از آن</td><td>منطق دستی</td><td><code>useMutation</code></td></tr><tr><td>پاک شدن data بی‌استفاده</td><td>وابسته به owner</td><td>خودکار، بعد از cacheTime</td></tr><tr><td>UI state دلخواه و eventها</td><td>عالی</td><td>کارش نیست</td></tr></tbody></table></div>
+<p><strong>کِی shared ViewModel درست است:</strong> برای UI state مشترک؛ مثلاً فرمی که بین مراحل ثبت‌نام مشترک است. نه برای server data.</p>
+<p><strong>آماده برای گفتن:</strong></p>
+<blockquote class="say">«shared ViewModel یک state holder است که بین screenهایی با همان owner مشترک می‌شود، و عمرش به همان owner بسته است. جعبه یک cache از server data است که با key پیدا می‌شود: هر screenی در اپ با همان key همان data را می‌گیرد، data بعد از رفتن screen هم تا cacheTime می‌ماند، و قانون‌های staleTime، refetch، retry و invalidate از قبل در آن هست. با shared ViewModel همه‌ی این‌ها را باید خودتان بنویسید. shared ViewModel برای UI state مشترک عالی است، مثل فرم چندمرحله‌ای؛ برای server data، cache.»</blockquote>
+<p><strong>پل:</strong> «داخل این جعبه چه هست؟»</p>
+</section>
+<section id="c12"><h2>فصل ۱۰ — داخل جعبه</h2>
+<p class="meta">اسلاید ۱۵ · حدود ۳ دقیقه</p>
+<p class="where"><strong>کجای مسیر هستیم:</strong> فقط اسم چهار قطعه را می‌گوییم؛ قانون‌هایشان جلسه‌ی بعد است.</p>
+<h3>ایده (برای خودتان)</h3>
+<div class="tablewrap"><table><thead><tr><th>قطعه</th><th>یعنی</th><th>جلسه‌ی ۲ چه می‌گوییم</th></tr></thead><tbody><tr><td><code>data</code></td><td>یک StateFlow که همه‌ی screenها می‌خوانند</td><td>Loading / Success / Failure</td></tr><tr><td><code>observers</code></td><td>چند screen الان نشانش می‌دهند</td><td>اولین screen fetch را شروع می‌کند؛ وقتی به صفر رسید، بعداً پاک می‌شود (cacheTime)</td></tr><tr><td><code>lastFetch</code></td><td>آخرین بار کِی از سرور گرفته شد</td><td>اگر قدیمی‌تر از staleTime بود، دوباره fetch</td></tr><tr><td><code>inFlight</code></td><td>request در جریان، اگر هست</td><td>اگر یکی در راه است، دومی زده نمی‌شود</td></tr></tbody></table></div>
+<h3>روی اسلاید، build به build</h3>
+<ol><li>→ data: «خود data، در یک StateFlow. همان StateFlowی که امروز در ViewModel داریم، فقط از screen بیرون آمده.»</li><li>→ observers: «یک شمارنده: چند screen الان نشانش می‌دهند.»</li><li>→ lastFetch: «آخرین بار کِی از سرور گرفته شد.»</li><li>→ inFlight: «اگر یک request الان در راه است.»</li><li>→ «این چهار تا قانون دارند: کِی fetch، کِی پاک، چند request. جلسه‌ی بعد.»</li></ol>
+<p><strong>مهم:</strong> اینجا جزئیات را توضیح ندهید. اگر پرسیدند، بگویید «جلسه‌ی بعد دقیقاً همین را باز می‌کنیم.»</p>
+<p><strong>پل:</strong> «گفتیم هر جعبه یک اسم دارد. اسمش مهم‌تر از چیزی است که به نظر می‌رسد.»</p>
+</section>
+<section id="c13"><h2>فصل ۱۱ — key: اسم جعبه</h2>
+<p class="meta">اسلایدهای ۱۶ و ۱۷ · حدود ۶ دقیقه</p>
+<p class="where"><strong>کجای مسیر هستیم:</strong> قطعه‌ی دوم از سه کلمه‌ی امروز. key ساده به نظر می‌رسد، ولی باگ‌هایش <strong>بی‌صدا</strong> هستند؛ پس وقت بگذارید.</p>
+<h3>ایده (برای خودتان)</h3>
+<p>key <strong>هویت جعبه</strong> است:</p>
+<ul><li><strong>key یکسان = همان جعبه = data مشترک.</strong></li><li><strong>key متفاوت = جعبه‌ی جدا = data جدا.</strong></li></ul>
+<p>engine هیچ چیز دیگری را نگاه نمی‌کند: نه اینکه کدام screen است، نه اینکه fetcher چیست. فقط اسم. وقتی screenی جعبه‌ای را با یک key می‌خواهد، QueryClient در map دنبال همان اسم می‌گردد؛ اگر پیدا کرد همان را می‌دهد، اگر نه یکی جدید می‌سازد.</p>
+<h3>تشبیه: برچسب روی تابلو</h3>
+<p>همان تابلوی دفتر از اول جلسه، حالا چند بخش دارد و هر بخش یک برچسب: «موجودی USDT»، «موجودی BTC»، «سفارش‌های باز». <strong>key همان برچسب است.</strong> هر کس دنبال «موجودی USDT» بگردد، به همان بخش می‌رسد. اگر دو چیز متفاوت را با یک برچسب بنویسیم، روی هم نوشته می‌شوند.</p>
+<h3>جعبه‌ی یکسان یا جدا؟ (برای پرسیدن از کلاس)</h3>
+<div class="tablewrap"><table><thead><tr><th>screen اول</th><th>screen دوم</th><th>یکی یا جدا؟</th><th>چرا</th></tr></thead><tbody><tr><td><code>wallet.balance.USDT</code></td><td><code>wallet.balance.USDT</code></td><td><strong>یکی</strong></td><td>همان data؛ هر دو screen یک جعبه را می‌خوانند</td></tr><tr><td><code>wallet.balance.USDT</code></td><td><code>wallet.balance.BTC</code></td><td>جدا</td><td>ارز متفاوت، data متفاوت</td></tr><tr><td><code>articles.headlines.techcrunch.1</code></td><td><code>articles.headlines.techcrunch.2</code></td><td>جدا</td><td>صفحه‌ی متفاوت</td></tr><tr><td><code>orders.list.open</code></td><td><code>orders.list.closed</code></td><td>جدا</td><td>فیلتر متفاوت</td></tr><tr><td><code>profile.42</code></td><td><code>profile.43</code></td><td>جدا</td><td>کاربر متفاوت</td></tr></tbody></table></div>
+<p>این جدول را یکی‌یکی بپرسید: «این دو screen یک جعبه را می‌خوانند یا دو جعبه؟»</p>
+<h3>قانون ۱: هر چیزی که نتیجه را عوض می‌کند، باید در key باشد</h3>
+<p><strong>قاعده‌ی سرانگشتی:</strong> به پارامترهای fetcher نگاه کنید. <strong>هر پارامتری که در fetcher هست، باید در key هم باشد</strong> (source، page، فیلتر، id، ارز).</p>
+<p><strong>داستان باگ، قدم به قدم:</strong></p>
+<ol><li>key فقط <code>"headlines"</code> است، ولی fetcher صفحه را می‌گیرد: <code>repo.getHeadlines(source, page)</code>.</li><li>کاربر صفحه‌ی ۱ را باز می‌کند. جعبه‌ی <code>"headlines"</code> ساخته و با data‌ی صفحه‌ی ۱ پر می‌شود.</li><li>کاربر به صفحه‌ی ۲ می‌رود. screen دوباره جعبه‌ی <code>"headlines"</code> را می‌خواهد.</li><li>QueryClient می‌گوید: «جعبه‌ای با این اسم دارم» و <strong>همان جعبه</strong> را می‌دهد. data هنوز fresh است، پس request جدیدی هم نمی‌رود.</li><li>نتیجه: <strong>صفحه‌ی ۲، data‌ی صفحه‌ی ۱ را نشان می‌دهد.</strong> هیچ error‌ی هم نیست.</li></ol>
+<p><strong>fix:</strong> <code>ArticleKeys.headlines(source, page)</code> که می‌سازد <code>"articles.headlines.techcrunch.2"</code>. حالا هر صفحه اسم خودش را دارد، پس جعبه‌ی خودش.</p>
+<h3>قانون ۲: key سلسله‌مراتبی است، مثل پوشه‌ها</h3>
+<pre dir="ltr"><code>articles
+├── headlines
+│   ├── techcrunch.1
+│   └── techcrunch.2
+└── bookmarks</code></pre>
+<p>از کلی به جزئی: اول حوزه (<code>articles</code>)، بعد چه چیزی (<code>headlines</code>)، بعد پارامترها (<code>techcrunch</code>، <code>2</code>).</p>
+<p><strong>فایده:</strong> می‌توانیم یک گروه کامل را با هم refetch کنیم:</p>
+<ul><li><code>invalidate("articles.headlines.techcrunch.1")</code>: <strong>فقط همین یک</strong> جعبه.</li><li><code>invalidateMatching("articles\\..*")</code>: <strong>هر key که با <code>articles.</code> شروع می‌شود</strong>؛ همه‌ی صفحه‌ها و bookmarks.</li></ul>
+<p>اگر پرسیدند <code>\\..*</code> چیست: یک regex است. <code>\\.</code> یعنی یک نقطه‌ی واقعی و <code>.*</code> یعنی هر چیزی بعدش. (دو backslash چون داخل رشته‌ی Kotlin است.)</p>
+<p><strong>مثال واقعی:</strong> کاربر زبان خبرها را عوض می‌کند. همه‌ی لیست‌های خبر باید دوباره گرفته شوند؛ با یک <code>invalidateMatching</code> همه با هم.</p>
+<h3>قانون ۳: key را دستی تایپ نکنید</h3>
+<p><strong>داستان باگ:</strong></p>
+<ol><li>hook موجودی را با <code>"wallet.balance.usdt"</code> (حروف کوچک) می‌خواند.</li><li>خرید بعد از موفقیت <code>"wallet.balance.USDT"</code> (حروف بزرگ) را invalidate می‌کند.</li><li>این دو، دو رشته‌ی متفاوت‌اند، پس <strong>دو جعبه</strong>.</li><li>خرید موفق است، ولی جعبه‌ای که screen نشان می‌دهد هیچ‌وقت invalidate نمی‌شود. <strong>موجودی هرگز تازه نمی‌شود، و هیچ error‌ی هم نمی‌بینید.</strong></li></ol>
+<p><strong>fix:</strong> keyها فقط در یک object کنار Api ساخته می‌شوند:</p>
+<pre dir="ltr"><code>object WalletKeys {
+    fun balance(symbol: String) = &quot;wallet.balance.$symbol&quot;
+}
+// hook:     useQuery(key = WalletKeys.balance(&quot;USDT&quot;)) { ... }
+// mutation: invalidateKeys = listOf(WalletKeys.balance(&quot;USDT&quot;))</code></pre>
+<p>یک تعریف، یک جا. اگر کسی اسم تابع را اشتباه بنویسد، compiler خطا می‌دهد؛ رشته‌ی دستی را هیچ‌کس چک نمی‌کند.</p>
+<h3>روی اسلاید ۱۶، build به build</h3>
+<ol><li>سه مثال key. با تشبیه برچسب تابلو توضیح دهید. چند ردیف از جدول «یکی یا جدا؟» بالا را از کلاس بپرسید.</li><li>→ قانون ۱: «هر چیزی که نتیجه را عوض می‌کند، باید در key باشد.»</li><li>→ کد باگ‌دار. <strong>قبل از build بعدی بپرسید:</strong> «باگ کجاست؟» صبر کنید. بعد داستان پنج‌قدمی بالا را بگویید.</li><li>→ fix: «هر صفحه اسم خودش، پس جعبه‌ی خودش.»</li></ol>
+<h3>روی اسلاید ۱۷، build به build</h3>
+<ol><li>→ درخت key: «مثل پوشه‌ها: از کلی به جزئی.»</li><li>→ invalidateMatching: «یک گروه کامل با هم؛ مثلاً وقتی زبان خبرها عوض شد.»</li><li>→ باگ typo: «usdt با حروف کوچک، USDT با حروف بزرگ. دو جعبه.» بپرسید: «این باگ را چطور پیدا می‌کردید؟» (جواب: خیلی سخت؛ هیچ error‌ی نیست.)</li><li>→ fix: «یک تعریف، یک جا. compiler مراقب است.»</li></ol>
+<h3>از کلاس بپرسید</h3>
+<ul><li>«برای لیست سفارش‌ها با فیلتر باز/بسته و صفحه‌بندی، key چه باشد؟» (جواب: <code>orders.list.open.1</code>، <code>orders.list.closed.1</code>، …)</li><li>«بعد از لغو یک سفارش، کدام جعبه‌ها باید invalidate شوند؟» (جواب: همه‌ی لیست‌های سفارش با <code>invalidateMatching("orders\\.list\\..*")</code>، و جزئیات همان سفارش.)</li></ul>
+<h3>اگر پرسیدند</h3>
+<ul><li><strong>«شناسه‌ی کاربر هم باید در key باشد؟»</strong> معمولاً نه؛ موقع logout، <code>queryClient.clear()</code> همه‌ی جعبه‌ها را پاک می‌کند. اگر اپ چند حساب همزمان دارد، بله.</li><li><strong>«چرا key رشته است و نه یک data class؟»</strong> چون رشته‌ی سلسله‌مراتبی اجازه می‌دهد یک گروه را با یک الگو invalidate کنیم. برای اینکه typo نشود، رشته‌ها فقط در object کنار Api ساخته می‌شوند.</li></ul>
+<p><strong>پل:</strong> «همه‌ی این جعبه‌ها کجا نگه داشته می‌شوند؟»</p>
+</section>
+<section id="c14"><h2>فصل ۱۲ — QueryClient: یک map</h2>
+<p class="meta">اسلاید ۱۸ · حدود ۲ دقیقه</p>
+<p class="where"><strong>کجای مسیر هستیم:</strong> قطعه‌ی سوم.</p>
+<h3>ایده (برای خودتان)</h3>
+<p><code>QueryClient</code> یک <code>ConcurrentHashMap&lt;String, QueryEntry&gt;</code> است، و یک <code>@Singleton</code> در Hilt. وقتی screenی جعبه‌ای را با key می‌خواهد، <code>computeIfAbsent(key)</code> صدا زده می‌شود: اگر جعبه هست همان را برمی‌گرداند، اگر نیست می‌سازد و در map می‌گذارد. چون کل اپ یک map دارد، data بین screenها مشترک است. (کد روی اسلاید ساده‌شده است؛ در کد واقعی <code>getOrCreate</code> چند پارامتر دیگر هم می‌گیرد، مثل fetcher و staleTime.)</p>
+<p><code>ConcurrentHashMap</code> چون از چند thread همزمان صدا زده می‌شود.</p>
+<h3>روی اسلاید، build به build</h3>
+<ol><li>→ کد: «یک map از key به جعبه.»</li><li>→ «key هست؟ همان جعبه. پس screen دوم جعبه‌ی screen اول را می‌گیرد.»</li><li>→ «key نیست؟ یک جعبه‌ی جدید.»</li><li>→ «یک Singleton در Hilt؛ کل اپ یک map.»</li></ol>
+<p><strong>پل:</strong> «خب، برای کسی که screen می‌نویسد چه فرقی کرد؟»</p>
+</section>
+<section id="c15"><h2>فصل ۱۳ — قبل و بعد</h2>
+<p class="meta">اسلاید ۱۹ · حدود ۲ دقیقه</p>
+<p class="where"><strong>کجای مسیر هستیم:</strong> «لحظه‌ی wow». کم حرف بزنید.</p>
+<h3>روی اسلاید، build به build</h3>
+<ol><li>سمت راست، ۳۰ خط: «UiState، ViewModel، load، LaunchedEffect. و هنوز cache ندارد، retry ندارد، و بین screenها مشترک نیست.»</li><li>→ سمت چپ، ۲ خط: «همان screen.»</li><li>→ «بدون ViewModel، بدون UiState، بدون load()، بدون boolean loading.» مکث کنید و بگذارید ببینند.</li></ol>
+<h3>اگر پرسیدند</h3>
+<ul><li><strong>«پس آن ۳۰ خط کجا رفت؟»</strong> «یک بار، در engine، با test. نه در هر screen. جلسه‌ی بعد بازش می‌کنیم.»</li></ul>
+<p><strong>پل:</strong> «این روی کاغذ است. در یک اپ واقعی هم کار می‌کند؟»</p>
+</section>
+<section id="c16"><h2>فصل ۱۴ — این فقط یک ایده نیست</h2>
+<p class="meta">اسلاید ۲۰ · حدود ۲ دقیقه</p>
+<p class="where"><strong>کجای مسیر هستیم:</strong> اعتبار. بعد از «لحظه‌ی wow»، نشان می‌دهید این تجربه است، نه تئوری.</p>
+<h3>ایده (برای خودتان)</h3>
+<p>این معماری قبل از ComposeCleanArch در یک اپ معاملاتی رمزارز ساخته و در production استفاده شد: بیش از ۱۷۰ hook، ۷۶ useQuery، ۵۶ useMutation، و چهار اپ white-label روی همین یک engine، بیش از یک سال. ComposeCleanArch نسخه‌ی تمیز و تست‌شده‌ی همان engine است؛ درس‌هایی که آن نسخه‌ی اول داد (مثلاً retry در write، جواب‌های دیررس) موضوع جلسه‌ی ۲ است.</p>
+<p><strong>اسم اپ را نگویید.</strong> اگر پرسیدند: «یک اپ معاملاتی که روی آن کار کرده‌ام.»</p>
+<h3>روی اسلاید، build به build</h3>
+<ol><li>→ «بیش از ۱۷۰ hook.»</li><li>→ «۷۶ جا data را با useQuery می‌خواند.»</li><li>→ «۵۶ write با useMutation.»</li><li>→ «چهار اپ white-label، همه روی همین یک engine.»</li><li>→ «بیش از یک سال در production. ComposeCleanArch نسخه‌ی تمیز و تست‌شده‌ی همان است.»</li></ol>
+<p><strong>پل:</strong> «و screenها با سه ابزار ساخته می‌شوند.»</p>
+</section>
+<div class="part"><span>بخش ۴ — سه ابزار</span></div>
+<section id="c17"><h2>فصل ۱۵ — سه ابزار، و یک hook خط به خط</h2>
+<p class="meta">اسلایدهای ۲۱ و ۲۲ · حدود ۶ دقیقه</p>
+<p class="where"><strong>کجای مسیر هستیم:</strong> از دید کسی که فردا screen می‌نویسد.</p>
+<h3>ایده (برای خودتان)</h3>
+<div class="tablewrap"><table><thead><tr><th>ابزار</th><th>برای</th><th>چه برمی‌گرداند</th></tr></thead><tbody><tr><td><code>useQuery(key, fetcher)</code></td><td>خواندن</td><td><code>QueryResult</code>: state، data، error، isLoading، refetch</td></tr><tr><td><code>useMutation(mutationFn)</code></td><td>نوشتن</td><td>یک تابع که صدایش می‌زنید، به‌علاوه‌ی isLoading</td></tr><tr><td><code>QueryContent(result) { data -&gt; }</code></td><td>نمایش</td><td>loading و error را خودش می‌کشد</td></tr></tbody></table></div>
+<p><strong>hook</strong> یعنی یک تابع <code>@Composable</code> که UI نمی‌کشد و یک مقدار برمی‌گرداند. اسمش با <code>use</code> شروع می‌شود (از React). وقتی screen این hook را صدا می‌زند، <code>useQuery</code> جعبه را از QueryClient می‌گیرد، screen را به‌عنوان observer می‌شمارد، و state جعبه را برمی‌گرداند. وقتی screen از صفحه رفت، خودش observer را کم می‌کند. (جزئیاتش جلسه‌ی بعد.)</p>
+<p><strong>HookProvider</strong> یک <code>@HiltViewModel</code> است که فقط repositoryها را نگه می‌دارد تا hookها از داخل Compose به آن‌ها برسند. state و منطق ندارد.</p>
+<h3>روی اسلاید ۲۱</h3>
+<p>سه → ، سه کارت: «برای خواندن useQuery، برای نوشتن useMutation، برای نمایش QueryContent.»</p>
+<h3>روی اسلاید ۲۲، build به build</h3>
+<p>کد واقعی از <code>ArticleHooks.kt</code> است. با هر → یک تکه روشن می‌شود و کارت سمت چپ عوض می‌شود:</p>
+<ol><li><strong>hook:</strong> «یک تابع Composable که UI نمی‌کشد؛ یک مقدار برمی‌گرداند.»</li><li><strong>HookProvider:</strong> «راه رسیدن به repositoryهای Hilt. ViewModel است ولی بدون state و بدون منطق.»</li><li><strong>key:</strong> «کدام جعبه. source و page در key هستند.»</li><li><strong>fetcher:</strong> «جعبه را از کجا پر کنیم. یک lambda که repository را صدا می‌زند؛ data برمی‌گرداند یا throw می‌کند.»</li><li><strong>screen:</strong> «و این کل screen است. دو خط.»</li></ol>
+<h3>اگر پرسیدند</h3>
+<ul><li><strong>«با hiltViewModel باز ViewModel داریم؟»</strong> «HookProvider فقط برای تزریق وابستگی است. نه state دارد، نه fetch می‌کند.»</li><li><strong>«هر recomposition یک request می‌زند؟»</strong> «نه. جعبه با remember(key) یک بار گرفته می‌شود. request فقط در حالت‌های مشخص می‌رود؛ جلسه‌ی بعد.»</li></ul>
+<p><strong>پل:</strong> «QueryContent از کجا می‌داند چه نشان بدهد؟»</p>
+</section>
+<section id="c18"><h2>فصل ۱۶ — سه حالت</h2>
+<p class="meta">اسلاید ۲۳ · حدود ۳ دقیقه</p>
+<p class="where"><strong>کجای مسیر هستیم:</strong> قطعه‌ی نمایش.</p>
+<h3>ایده (برای خودتان)</h3>
+<pre dir="ltr"><code>sealed interface QueryState&lt;out T&gt; {
+    data object Loading : QueryState&lt;Nothing&gt;
+    data class Success&lt;out T&gt;(val data: T, val refreshing: Boolean = false) : QueryState&lt;T&gt;
+    data class Failure(val error: AppError) : QueryState&lt;Nothing&gt;
+}</code></pre>
+<ul><li><strong>sealed</strong> یعنی همه‌ی حالت‌ها همین‌جا تعریف شده‌اند؛ <code>when</code> بدون <code>else</code> کامل است و اگر حالتی فراموش شود compile نمی‌شود.</li><li>با سه boolean جدا (<code>isLoading</code>، <code>data</code>، <code>error</code>) هشت ترکیب ممکن داریم که بعضی بی‌معنی‌اند (data و error با هم؟). با sealed فقط سه حالت.</li><li><code>refreshing = true</code> یعنی data قبلی را نشان بده، پشت صحنه در حال refetch هستیم؛ spinner روی صفحه‌ای که پر است نمی‌آید.</li><li><code>QueryContent</code> فقط یک <code>when</code> روی همین سه حالت است.</li></ul>
+<h3>روی اسلاید، build به build</h3>
+<ol><li>→ Loading: «هنوز data نداریم؛ spinner.»</li><li>→ Success: «data داریم؛ لیست.»</li><li>→ Failure: «request شکست خورد و data‌ای نداریم؛ پیام و Retry.»</li><li>→ «در کد یک sealed interface است: سه حالت، نه هشت ترکیب. QueryContent برای هر حالت یکی را می‌کشد.»</li></ol>
+<p><strong>پل:</strong> «تا اینجا خواندیم. نوشتن چطور؟»</p>
+</section>
+<section id="c19"><h2>فصل ۱۷ — useMutation و invalidate</h2>
+<p class="meta">اسلاید ۲۴ · حدود ۴ دقیقه</p>
+<p class="where"><strong>کجای مسیر هستیم:</strong> آخرین ابزار؛ و جواب cold open (اسلاید ۷): «بعد از خرید، چطور همه‌ی screenها خبردار می‌شوند؟» تا اینجا فقط <strong>خواندن</strong> دیدیم. حالا <strong>نوشتن</strong>.</p>
+<h3>ایده با داستان تابلو</h3>
+<p>یادتان هست؟ روی تابلو نوشته «موجودی USDT: ۱۰۰». همه به تابلو نگاه می‌کنند (این query است).</p>
+<p>حالا یک نفر ۲۰ USDT خرج می‌کند (این mutation است). در بانک موجودی شد ۸۰، ولی روی تابلو هنوز ۱۰۰ نوشته. تابلو <strong>غلط</strong> است.</p>
+<p>راه حل: کسی که خرید کرد، یک کار کوچک می‌کند: روی عدد تابلو یک علامت «قدیمی است» می‌زند (این invalidate است). هر کس الان به تابلو نگاه می‌کند، می‌بیند علامت خورده، دوباره به بانک زنگ می‌زند و عدد درست را می‌نویسد.</p>
+<p>نکته‌ی مهم: کسی که خرید کرد <strong>لازم نیست بداند چه کسانی به تابلو نگاه می‌کنند</strong>. فقط می‌گوید «این عدد قدیمی شد».</p>
+<h3>query و mutation کنار هم</h3>
+<div class="tablewrap"><table><thead><tr><th></th><th><code>useQuery</code> (خواندن)</th><th><code>useMutation</code> (نوشتن)</th></tr></thead><tbody><tr><td>کِی اجرا می‌شود؟</td><td>خودکار، وقتی screen باز می‌شود</td><td>فقط وقتی شما صدایش بزنید: <code>buy(request)</code></td></tr><tr><td>مثال</td><td>موجودی، لیست اخبار، پروفایل</td><td>خرید، bookmark، ویرایش پروفایل</td></tr><tr><td>cache دارد؟</td><td>بله، در یک جعبه با key</td><td>نه؛ نتیجه‌اش در جعبه نمی‌رود</td></tr><tr><td>بعد از موفقیت</td><td>data در جعبه</td><td>جعبه‌های مربوط را invalidate می‌کند</td></tr><tr><td>retry پیش‌فرض</td><td>۳ بار، فقط برای error موقت</td><td><strong>۰</strong>؛ نوشتن را خودکار تکرار نمی‌کنیم</td></tr></tbody></table></div>
+<p>جمله‌ی کوتاه برای کلاس: «query می‌پرسد، mutation عوض می‌کند، invalidate خبر می‌دهد.»</p>
+<h3>بدون useMutation چه می‌کردیم؟</h3>
+<p>با ViewModel معمولاً این‌طور بود:</p>
+<ol><li><code>BuyViewModel</code> خرید را انجام می‌داد.</li><li>بعد باید به <code>WalletViewModel</code> می‌گفت «refresh کن». پس یا یک event bus می‌ساختیم، یا یک <code>SharedFlow</code> مشترک، یا موقع برگشتن از screen یک result پاس می‌دادیم.</li><li>فردا یک screen سوم (مثلاً order history) هم موجودی نشان می‌داد. باید یادمان می‌ماند آن را هم به این زنجیره وصل کنیم.</li></ol>
+<p>یعنی screen خرید باید <strong>همه‌ی screenهای دیگر را بشناسد</strong>. هر screen جدید، یک جا برای فراموش کردن.</p>
+<p>با <code>useMutation</code>: screen خرید فقط <strong>اسم data</strong> را می‌گوید: <code>WalletKeys.balance("USDT")</code>. هر کس آن جعبه را نگاه کند، خودش تازه می‌شود؛ امروز یک screen، فردا ده screen.</p>
+<h3>کد، خط به خط</h3>
+<pre dir="ltr"><code>val buy = useMutation&lt;BuyRequest, Order&gt;(
+    mutationFn = { req -&gt; repo.buy(req) },
+    options = MutationOptions(
+        invalidateKeys = listOf(WalletKeys.balance(&quot;USDT&quot;)),
+    ),
+)
+Button(onClick = { buy(request) }, enabled = !buy.isLoading) { Text(&quot;Buy&quot;) }</code></pre>
+<ol><li><code>useMutation&lt;BuyRequest, Order&gt;</code>: دو type. اولی <strong>ورودی</strong> است (چه چیزی می‌فرستیم: سفارش خرید)، دومی <strong>خروجی</strong> (سرور چه برمی‌گرداند: Order ثبت‌شده).</li><li><code>mutationFn</code>: همان تابعی که سرور را صدا می‌زند. درست مثل <code>fetcher</code> در <code>useQuery</code>: فقط Api را صدا می‌زند؛ موفق شد نتیجه برمی‌گرداند، نشد exception می‌دهد.</li><li><code>invalidateKeys</code>: لیست جعبه‌هایی که <strong>بعد از موفقیت</strong> باید «قدیمی» علامت بخورند.</li><li><code>buy(request)</code>: نتیجه‌ی <code>useMutation</code> را می‌شود مثل تابع صدا زد (پشتش یک <code>operator fun invoke</code> است). تا صدایش نزنید، هیچ اتفاقی نمی‌افتد.</li><li><code>buy.isLoading</code>: وقتی request در راه است <code>true</code> است؛ پس دکمه را غیرفعال می‌کنیم. غیر از آن <code>buy.data</code>، <code>buy.error</code>، <code>isSuccess</code> و <code>isError</code> هم دارد.</li></ol>
+<p><code>MutationOptions</code> دو callback هم دارد: <code>onSuccess</code> (مثلاً برگشتن به صفحه‌ی قبل یا نشان دادن Toast) و <code>onError</code>.</p>
+<h3>یک خرید، قدم به قدم</h3>
+<p>فرض کنید screen کیف پول باز است و موجودی را نشان می‌دهد: ۱۰۰ USDT. کاربر در یک bottom sheet روی Buy می‌زند (۲۰ USDT).</p>
+<ol><li><strong>کلیک:</strong> <code>buy(request)</code> صدا زده می‌شود. <code>isLoading = true</code>؛ دکمه غیرفعال می‌شود.</li><li><strong>سرور:</strong> <code>repo.buy(request)</code> اجرا می‌شود. سفارش ثبت می‌شود؛ در سرور موجودی حالا ۸۰ است.</li><li><strong>invalidate:</strong> <code>useMutation</code> برای هر key در لیست، <code>queryClient.invalidate(key)</code> را صدا می‌زند. جعبه‌ی <code>wallet.balance.USDT</code> «قدیمی» علامت می‌خورد (در کد: <code>lastFetch = 0</code>).</li><li><strong>کسی نگاه می‌کند؟</strong> بله، screen کیف پول یک observer است. پس جعبه <strong>همان لحظه</strong> fetch می‌کند. در این مدت screen هنوز ۱۰۰ را نشان می‌دهد (<code>Success</code> با <code>refreshing = true</code>)؛ spinner نمی‌آید، صفحه چشمک نمی‌زند.</li><li><strong>جواب:</strong> سرور می‌گوید ۸۰. جعبه عوض می‌شود؛ هر screen که به آن نگاه می‌کند، ۸۰ را می‌بیند.</li></ol>
+<p>در کل این مسیر، screen خرید و screen کیف پول <strong>هیچ کدی از هم ندارند</strong>.</p>
+<h3>اگر هیچ screenی به جعبه نگاه نکند؟</h3>
+<p>سه حالت. این را خوب بفهمید، چون معمولاً می‌پرسند:</p>
+<div class="tablewrap"><table><thead><tr><th>وضعیت جعبه</th><th>بعد از invalidate چه می‌شود؟</th></tr></thead><tbody><tr><td>screenی الان نگاهش می‌کند</td><td>همان لحظه refetch</td></tr><tr><td>در cache هست، ولی screenی نگاهش نمی‌کند (مثلاً order history که بسته است)</td><td>فقط علامت «قدیمی» می‌خورد؛ هیچ request نمی‌رود. دفعه‌ی بعد که screenی بازش کند، اول data قبلی را نشان می‌دهد و همان لحظه fetch می‌کند</td></tr><tr><td>اصلاً در cache نیست</td><td>هیچ کاری لازم نیست؛ اولین بار که screenی بازش کند، به هر حال fetch می‌کند</td></tr></tbody></table></div>
+<p>یعنی invalidate <strong>ارزان</strong> است: برای screenی که کسی نمی‌بیند، request نمی‌زند.</p>
+<h3>کدام keyها را invalidate کنیم؟</h3>
+<p>یک سؤال از خودتان بپرسید: <strong>«بعد از این نوشتن، کدام data در سرور عوض شد؟»</strong> همان‌ها را invalidate کنید.</p>
+<div class="tablewrap"><table><thead><tr><th>نوشتن</th><th>چه چیزی عوض شد؟</th><th>invalidate</th></tr></thead><tbody><tr><td>bookmark یک خبر</td><td>لیست bookmarkها</td><td><code>ArticleKeys.BOOKMARKS</code></td></tr><tr><td>ویرایش پروفایل</td><td>پروفایل همین کاربر</td><td><code>"user.profile.42"</code></td></tr><tr><td>خرید BTC با USDT</td><td><strong>دو</strong> موجودی، و لیست سفارش‌های باز</td><td><code>balance("USDT")</code>، <code>balance("BTC")</code>، <code>"orders.open"</code></td></tr><tr><td>تغییر زبان اخبار</td><td>همه‌ی لیست‌های خبر</td><td><code>invalidateMatching("articles\\..*")</code></td></tr></tbody></table></div>
+<p>مثال خرید BTC مهم است: یک نوشتن می‌تواند <strong>چند جعبه</strong> را عوض کند. اگر یکی را فراموش کنید، آن عدد تا وقتی staleTime تمام شود (یا polling بعدی) قدیمی می‌ماند. در فایل نمونه‌ی repo (<code>examples/WalletHooks.kt</code>) برای همین در <code>onSuccess</code> همه‌ی موجودی‌ها را یک‌جا invalidate می‌کنیم: <code>queryClient.invalidateMatching(WalletKeys.ALL_BALANCES)</code>.</p>
+<h3>اگر خرید شکست بخورد؟</h3>
+<ul><li>هیچ جعبه‌ای invalidate نمی‌شود (چیزی در سرور عوض نشده).</li><li><code>buy.error</code> پر می‌شود (یک <code>AppError</code>) و <code>onError</code> صدا زده می‌شود؛ screen خرید پیام را نشان می‌دهد.</li><li><strong>retry پیش‌فرض صفر است.</strong> چرا؟ تصور کنید request رسیده و سفارش ثبت شده، ولی جواب در راه گم شده. retry خودکار یعنی <strong>دو سفارش</strong>. اگر <code>retryCount</code> بدهید، فقط برای error موقت (شبکه، 5xx) تکرار می‌شود؛ هرگز برای 4xx. جزئیات در جلسه‌ی ۲.</li></ul>
+<h3>اگر کاربر دو بار سریع بزند؟</h3>
+<p><code>useMutation</code> single-flight است: تا اولی تمام نشده، صدا زدن دوم <strong>نادیده گرفته می‌شود</strong>. پس دو سفارش نمی‌رود، حتی اگر دکمه را غیرفعال نکرده باشید. (<code>enabled = !buy.isLoading</code> را باز هم بگذارید؛ برای کاربر واضح‌تر است.)</p>
+<h3>سه اشتباه رایج</h3>
+<ol><li><strong>فراموش کردن یک key:</strong> خرید موفق، ولی یک screen عدد قدیمی نشان می‌دهد. با سؤال «چه چیزی در سرور عوض شد؟» پیدایش کنید.</li><li><strong>typo در key:</strong> همان باگ قانون ۳ در فصل ۱۱. key را همیشه از <code>WalletKeys</code> بسازید، نه با string دستی.</li><li><strong>invalidate کردن همه چیز:</strong> <code>invalidateMatching(".*")</code> کار می‌کند، ولی همه‌ی screenهای باز همزمان request می‌زنند. فقط چیزی را که عوض شد invalidate کنید.</li></ol>
+<h3>روی اسلاید، build به build</h3>
+<ol><li>→ کد: «تا اینجا خواندیم. نوشتن چطور؟ useMutation دو چیز می‌گیرد: تابعی که سرور را صدا می‌زند، و لیست جعبه‌هایی که بعدش قدیمی می‌شوند.» روی <code>buy(request)</code> اشاره کنید: «مثل یک تابع صدایش می‌زنیم.»</li><li>→ ۱: «کاربر Buy می‌زند؛ request می‌رود؛ سفارش ثبت می‌شود.»</li><li>→ ۲: «بعد از موفقیت، جعبه‌ی wallet.balance.USDT قدیمی علامت می‌خورد. مثل علامت زدن روی تابلو.»</li><li>→ ۳: «screen کیف پول به این جعبه نگاه می‌کند، پس همان لحظه refetch می‌شود. کاربر ۸۰ را می‌بیند.»</li><li>→ «screen خرید اصلاً نمی‌داند screen کیف پول وجود دارد. فقط می‌گوید کدام data عوض شد.»</li></ol>
+<p>بگویید: «این جواب همان سؤال اول جلسه است. یادتان هست سه phone؟ حالا هر سه بعد از خرید تازه می‌شوند.»</p>
+<h3>سؤال از کلاس</h3>
+<ul><li>«کاربر Buy می‌زند، ولی screen order history الان باز نیست. چه می‌شود؟» → جواب: جعبه فقط علامت می‌خورد؛ وقتی کاربر order history را باز کند، fetch می‌کند. request اضافه نمی‌رود.</li><li>«خرید BTC با USDT: کدام keyها را invalidate کنیم؟» → جواب: هر دو موجودی و سفارش‌های باز. بگذارید خودشان پیدا کنند.</li></ul>
+<h3>اگر پرسیدند</h3>
+<ul><li><strong>«چرا نتیجه‌ی خرید را مستقیم در جعبه نگذاریم؟ سرور موجودی جدید را برمی‌گرداند.»</strong> «می‌شود؛ QueryClient یک <code>setData</code> دارد. ولی invalidate ساده‌تر و امن‌تر است: سرور منبع حقیقت است و ما فقط یک کپی داریم. setData را برای جایی نگه داریم که واقعاً لازم است.»</li><li><strong>«optimistic update داریم؟ مثل React Query؟»</strong> «یعنی قبل از جواب سرور عدد را عوض کنیم. با setData ممکن است، ولی پیش‌فرض نیست. برای خرید و پول، اول جواب سرور را صبر می‌کنیم.»</li><li><strong>«نتیجه‌ی mutation cache می‌شود؟»</strong> «نه. هر بار که buy را صدا بزنید، یک request جدید است. فقط queryها cache دارند.»</li><li><strong>«اگر کاربر وسط خرید از screen برود؟»</strong> «mutation در scope همان Composable اجرا می‌شود؛ اگر screen از composition بیرون برود، cancel می‌شود. برای کارهایی که حتماً باید تمام شوند، جلسه‌ی ۳ حرف می‌زنیم.»</li></ul>
+<p><strong>پل:</strong> «حالا هر سه ابزار را دیدیم. آخرین تصویر امروز: هر تکه کجا زندگی می‌کند.»</p>
+</section>
+<section id="c20"><h2>فصل ۱۸ — هر تکه کجا زندگی می‌کند</h2>
+<p class="meta">اسلاید ۲۵ · حدود ۲ دقیقه</p>
+<p class="where"><strong>کجای مسیر هستیم:</strong> یک قدم عقب، کل تصویر.</p>
+<h3>روی اسلاید، build به build (از پایین به بالا)</h3>
+<ol><li>→ <strong>Api (Retrofit)</strong> در <code>:core:network</code>: «هر جوابی از سرور را به یک Resource تبدیل می‌کند؛ safeApiCall لازم نیست.»</li><li>→ <strong>Repository</strong> در <code>:core:network</code>: «Resource را باز می‌کند؛ data برمی‌گرداند یا throw می‌کند.»</li><li>→ <strong>QueryClient و QueryEntry</strong> در <code>:core:query</code>: «جعبه‌ها و قانون‌هایشان. Kotlin خالص.»</li><li>→ <strong>hook</strong> در <code>:app/hooks</code>.</li><li>→ <strong>screen</strong> در <code>:app/ui</code>.</li><li>→ «فقط دو لایه‌ی بالا Composable هستند. engine Kotlin خالص است؛ پس بدون emulator test می‌شود.»</li></ol>
+<p><strong>پل:</strong> «جمع‌بندی.»</p>
+</section>
+<div class="part"><span>بخش ۵ — پایان</span></div>
+<section id="c21"><h2>فصل ۱۹ — جمع‌بندی، جلسه‌ی بعد، سؤال</h2>
+<p class="meta">اسلایدهای ۲۶ تا ۲۸ · حدود ۴ دقیقه</p>
+<h3>اسلاید ۲۶: جمع‌بندی</h3>
+<p>با هر → یکی:</p>
+<ol><li>«server data مال ما نیست؛ یک کپی است.»</li><li>«یک جعبه‌ی مشترک، با یک اسم، در یک map: QueryEntry، key، QueryClient.»</li><li>«screen یعنی یک hook و QueryContent. بدون ViewModel.»</li></ol>
+<h3>اسلاید ۲۷: جلسه‌ی بعد</h3>
+<ul><li>«ولی هنوز نگفتیم جعبه <strong>کِی</strong> به سرور می‌رود.» → «کِی پاک می‌شود؟ با error چه می‌کند؟ اگر دو request با هم برسند؟ دوشنبه.»</li><li>→ تمرین: «<code>ArticleHooks.kt</code> و <code>ArticleListScreen.kt</code> را در ComposeCleanArch بخوانید. و فکر کنید: اگر دو screen همزمان <code>useHeadlines("techcrunch")</code> را صدا بزنند، چند request می‌رود؟» (جواب: یکی. key یکی است، پس جعبه یکی است؛ و فقط اولین screenی که جعبه را نگاه می‌کند fetch را شروع می‌کند. screen دوم فقط data موجود را می‌گیرد. جلسه‌ی بعد دقیق می‌بینیم.)</li></ul>
+<h3>اسلاید ۲۸: سؤال</h3>
+<p>قانون: سؤال‌های «چرا» و «چه» را امروز جواب بدهید. سؤال‌های «کِی و چطور در engine» را یادداشت کنید و بگویید «جلسه‌ی بعد».</p>
+</section>
+<div class="part"><span>پیوست</span></div>
+<section id="c22"><h2>پیوست — سؤال‌های احتمالی جلسه‌ی ۱</h2>
+<p>جواب کوتاه بدهید. اگر سؤال درباره‌ی جزئیات engine بود، بگویید «جلسه‌ی بعد» و یادداشتش کنید.</p>
+<p><strong>چرا خود TanStack Query را استفاده نکنیم؟</strong> TanStack Query برای JavaScript است و نسخه‌ی Kotlin ندارد. ما ایده و شکل API را گرفتیم و در حدود ۸۸۰ خط Kotlin ساختیم.</p>
+<p><strong>چرا Store5 نه؟</strong> Store5 cache را در لایه‌ی repository می‌گذارد و نمی‌داند کدام screen الان روی صفحه است؛ باز هم برای وصل کردنش به UI به ViewModel نیاز داریم. engine ما به lifecycle خود screen وصل است.</p>
+<p><strong>فرقش با shared ViewModel چیست؟</strong> shared ViewModel یک state holder است که با owner و key پیدا می‌شود و عمرش به همان owner بسته است؛ cache و staleTime و refetch و invalidate را باید خودتان بنویسید. جعبه یک cache از server data است که با key پیدا می‌شود، بعد از رفتن screen هم تا cacheTime می‌ماند، و این قانون‌ها را از قبل دارد. جواب کامل در فصل ۹.</p>
+<p><strong>پس ViewModel را کنار بگذاریم؟</strong> نه. ViewModel برای screen state می‌ماند: فرم‌ها، validation، جریان‌های چندمرحله‌ای. فقط گرفتن server data را از دوشش برمی‌داریم. جلسه‌ی ۳ دقیق.</p>
+<p><strong>با hiltViewModel در hook، باز ViewModel داریم؟</strong> HookProvider یک HiltViewModel است فقط برای اینکه hookها به repositoryهای Hilt برسند. نه state دارد، نه fetch می‌کند.</p>
+<p><strong>با چرخش صفحه (configuration change) چه می‌شود؟</strong> QueryClient یک Singleton است و زنده می‌ماند. screen دوباره ساخته می‌شود و همان جعبه را با همان key می‌گیرد؛ data همان‌جاست.</p>
+<p><strong>اگر key را اشتباه تایپ کنم؟</strong> برای همین keyها فقط در یک object کنار Api ساخته می‌شوند (<code>ArticleKeys.headlines(...)</code>)؛ هیچ رشته‌ی دستی در hook یا mutation نمی‌نویسیم.</p>
+<p><strong>این در production امتحان شده؟</strong> بله. همین معماری در یک اپ معاملاتی رمزارز بیش از یک سال در production است: بیش از ۱۷۰ hook و چهار اپ white-label روی یک engine. ComposeCleanArch نسخه‌ی تمیز و تست‌شده‌ی آن است، با ۱۲ test برای engine. (اسم اپ را نگویید.)</p>
+<p><strong>هر recomposition یک request می‌زند؟</strong> نه. جعبه با <code>remember(key)</code> یک بار گرفته می‌شود. request فقط در حالت‌های مشخص می‌رود؛ جلسه‌ی بعد.</p>
+</section>
+<section id="c23"><h2>پیوست — کدهای جلسه‌ی ۱، خط به خط</h2>
+<p><strong>اسلاید ۱۱ — React Query (JavaScript)</strong></p>
+<pre dir="ltr"><code>const { data, isLoading, error } = useQuery({
+  queryKey: [&#x27;articles&#x27;, source],
+  queryFn: () =&gt; api.getHeadlines(source),
+})</code></pre>
+<ul><li><code>const { data, isLoading, error } = …</code> یعنی سه فیلد را از نتیجه بیرون بکش؛ مثل <code>val (a, b) = pair</code> در Kotlin.</li><li><code>queryKey</code> اسم data در cache است. اگر <code>source</code> عوض شود، key عوض می‌شود و data جدید گرفته می‌شود.</li><li><code>queryFn: () =&gt; …</code> یک lambda است؛ مثل <code>{ api.getHeadlines(source) }</code> در Kotlin.</li></ul>
+<p><strong>اسلاید ۱۶ — key</strong></p>
+<pre dir="ltr"><code>// bug: page is not in the key
+useQuery(key = &quot;headlines&quot;) { repo.getHeadlines(source, page) }
+
+// fix
+useQuery(key = ArticleKeys.headlines(source, page)) { repo.getHeadlines(source, page) }</code></pre>
+<ul><li>در نسخه‌ی اول همه‌ی صفحه‌ها یک key دارند، پس یک جعبه؛ صفحه‌ی ۲ همان data‌ی صفحه‌ی ۱ را نشان می‌دهد.</li><li><code>ArticleKeys.headlines(source, page)</code> رشته‌ای مثل <code>"articles.headlines.techcrunch.2"</code> می‌سازد؛ هر صفحه جعبه‌ی خودش.</li></ul>
+<p><strong>اسلاید ۱۸ — QueryClient (ساده‌شده)</strong></p>
+<pre dir="ltr"><code>@Singleton
+class QueryClient {
+  val entries = ConcurrentHashMap&lt;String, QueryEntry&gt;()
+  fun getOrCreate(key: String) =
+    entries.computeIfAbsent(key) { QueryEntry(key) }
+}</code></pre>
+<ul><li><code>ConcurrentHashMap</code> چون از چند thread صدا زده می‌شود.</li><li><code>computeIfAbsent(key) { … }</code> اگر key هست مقدارش را برمی‌گرداند؛ اگر نیست lambda را اجرا می‌کند، نتیجه را ذخیره و برمی‌گرداند. به‌صورت اتمی.</li><li>در کد واقعی <code>getOrCreate</code> fetcher، staleTime، cacheTime و چند پارامتر دیگر هم می‌گیرد.</li></ul>
+<p><strong>اسلاید ۲۲ — hook (از ArticleHooks.kt)</strong></p>
+<pre dir="ltr"><code>@Composable
+fun useHeadlines(source: String, page: Int = 1): QueryResult&lt;List&lt;Article&gt;&gt; {
+    val provider = hiltViewModel&lt;HookProvider&gt;()
+    return useQuery(
+        key = ArticleKeys.headlines(source, page),
+        fetcher = { provider.articleRepository.getHeadlines(source, page) },
+    )
+}
+
+val headlines = useHeadlines(&quot;techcrunch&quot;)
+QueryContent(headlines) { ArticleList(it) }</code></pre>
+<ul><li><code>@Composable</code> چون داخلش <code>useQuery</code> صدا زده می‌شود که از <code>remember</code> و <code>DisposableEffect</code> استفاده می‌کند.</li><li><code>QueryResult&lt;List&lt;Article&gt;&gt;</code> شامل state، data، error، isLoading و تابع refetch است.</li><li><code>hiltViewModel&lt;HookProvider&gt;()</code> راه رسیدن به repositoryهای Hilt از Compose.</li><li><code>fetcher</code> یک lambda که data برمی‌گرداند یا exception پرتاب می‌کند؛ engine خودش آن را به <code>AppError</code> تبدیل می‌کند.</li><li><code>QueryContent(headlines) { ArticleList(it) }</code>: <code>it</code> همان data است، فقط وقتی حالت Success است.</li></ul>
+<p><strong>اسلاید ۲۳ — QueryState</strong></p>
+<pre dir="ltr"><code>sealed interface QueryState&lt;out T&gt; {
+    data object Loading : QueryState&lt;Nothing&gt;
+    data class Success&lt;out T&gt;(val data: T, val refreshing: Boolean = false) : QueryState&lt;T&gt;
+    data class Failure(val error: AppError) : QueryState&lt;Nothing&gt;
+}</code></pre>
+<ul><li><code>sealed</code>: همه‌ی زیرنوع‌ها همین‌جا؛ <code>when</code> کامل است بدون <code>else</code>.</li><li><code>Nothing</code> زیرنوع همه‌چیز است و <code>out T</code> اجازه می‌دهد <code>Loading</code> جای <code>QueryState&lt;List&lt;Article&gt;&gt;</code> هم قبول شود.</li><li><code>refreshing = true</code>: data قبلی روی صفحه، refetch پشت صحنه.</li></ul>
+<p><strong>اسلاید ۲۴ — useMutation</strong></p>
+<pre dir="ltr"><code>val buy = useMutation&lt;BuyRequest, Order&gt;(
+    mutationFn = { req -&gt; repo.buy(req) },
+    options = MutationOptions(invalidateKeys = listOf(WalletKeys.balance(&quot;USDT&quot;))),
+)
+Button(onClick = { buy(request) }) { Text(&quot;Buy&quot;) }</code></pre>
+<ul><li>دو نوع generic: ورودی (<code>BuyRequest</code>) و خروجی (<code>Order</code>).</li><li><code>invalidateKeys</code>: بعد از موفقیت این جعبه‌ها کهنه علامت می‌خورند و screenهایی که نگاهشان می‌کنند refetch می‌شوند.</li><li><code>buy(request)</code>: نتیجه‌ی <code>useMutation</code> یک <code>operator fun invoke</code> دارد، پس مثل تابع صدا زده می‌شود.</li></ul>
+</section></main>
+</div>
+<script>
+(function(){
+  var links=[].slice.call(document.querySelectorAll('nav.toc a'));
+  var obs=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){links.forEach(function(a){a.classList.toggle('on',a.getAttribute('href')==='#'+e.target.id)})}})},{rootMargin:'0px 0px -70% 0px'});
+  document.querySelectorAll('main section').forEach(function(s){obs.observe(s)});
+  var size=17; try{var v=parseFloat(localStorage.getItem('tg-fs'));if(v)size=v}catch(e){}
+  function apply(){document.querySelectorAll('main p, main li, main blockquote').forEach(function(el){el.style.fontSize=size+'px'});try{localStorage.setItem('tg-fs',size)}catch(e){}}
+  if(size!==17)apply();
+  document.getElementById('fs-up').onclick=function(){size=Math.min(24,size+1);apply()};
+  document.getElementById('fs-down').onclick=function(){size=Math.max(14,size-1);apply()};
+})();
+</script>
+
+</body></html>
