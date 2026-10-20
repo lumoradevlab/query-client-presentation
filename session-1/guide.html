@@ -288,9 +288,31 @@ ol ol,ol ul,ul ul{margin-top:6px}
 <p class="where"><strong>کجای مسیر هستیم:</strong> قطعه‌ی سوم.</p>
 <h3>ایده (برای خودتان)</h3>
 <p><code>QueryClient</code> یک <code>ConcurrentHashMap&lt;String, QueryEntry&gt;</code> است، و یک <code>@Singleton</code> در Hilt. وقتی screenی جعبه‌ای را با key می‌خواهد، <code>computeIfAbsent(key)</code> صدا زده می‌شود: اگر جعبه هست همان را برمی‌گرداند، اگر نیست می‌سازد و در map می‌گذارد. چون کل اپ یک map دارد، data بین screenها مشترک است. (کد روی اسلاید ساده‌شده است؛ در کد واقعی <code>getOrCreate</code> چند پارامتر دیگر هم می‌گیرد، مثل fetcher و staleTime.)</p>
-<p><code>ConcurrentHashMap</code> چون از چند thread همزمان صدا زده می‌شود.</p>
+<h3>چرا ConcurrentHashMap و نه HashMap؟ (قدم به قدم)</h3>
+<p><strong>قدم ۱: چه کسی، از کدام thread، به map دست می‌زند؟</strong></p>
+<table><tr><th>چه کسی</th><th>کجا</th><th>thread</th></tr>
+<tr><td>hook ها (<code>useQuery</code>)</td><td><code>getOrCreate</code> → <code>computeIfAbsent</code></td><td>main (composition)</td></tr>
+<tr><td><code>prefetch</code></td><td><code>getOrCreate</code> داخل <code>scope.launch</code></td><td>IO</td></tr>
+<tr><td>پاک کردن جعبه بعد از cacheTime</td><td><code>evict</code> → <code>computeIfPresent</code></td><td>IO</td></tr>
+<tr><td>mutation یا هر کلاسی که QueryClient را inject کرده</td><td><code>invalidate</code> / <code>invalidateMatching</code></td><td>هر thread‌ی</td></tr></table>
+<p>پس map همزمان از main و IO خوانده و نوشته می‌شود. اینجا HashMap امن نیست.</p>
+<p><strong>قدم ۲: با HashMap چه چیزی خراب می‌شود؟</strong></p>
+<ol><li><strong>دو جعبه برای یک key.</strong> screen روی main و prefetch روی IO همزمان می‌پرسند «key هست؟». هر دو جواب «نه» می‌گیرند و هر کدام یک جعبه‌ی جدید می‌سازند. دو request می‌رود؛ یکی از جعبه‌ها جای دیگری را در map می‌گیرد و screen‌ی که جعبه‌ی دیگر را دارد دیگر هیچ invalidate‌ی را نمی‌بیند. کل قانون «یک key، یک جعبه» شکسته است.</li><li><strong>خرابی خود map.</strong> HashMap موقع بزرگ شدن (resize) جدولش را بازسازی می‌کند. اگر thread دیگری همان لحظه بنویسد، ممکن است entry گم شود.</li><li><strong>crash موقع invalidateMatching.</strong> این تابع روی همه‌ی keyها می‌چرخد. اگر وسط چرخش، screen‌ی key جدیدی اضافه کند، HashMap با <code>ConcurrentModificationException</code> crash می‌کند.</li></ol>
+<p><strong>قدم ۳: ConcurrentHashMap هر سه را حل می‌کند.</strong></p>
+<ul><li><code>computeIfAbsent</code> <strong>atomic</strong> است: «نگاه کن، اگر نبود بساز، بگذار» یک قدم است. thread دوم صبر می‌کند و همان جعبه‌ی اول را می‌گیرد.</li><li>iterator آن <strong>weakly consistent</strong> است: موقع چرخیدن روی keyها، اضافه شدن key جدید crash نمی‌دهد.</li><li><code>evict</code> هم از <code>computeIfPresent</code> استفاده می‌کند. داخل همان قدم atomic دوباره چک می‌کند که آیا screen‌ی همین الان دوباره به جعبه برگشته است؛ اگر برگشته، جعبه را پاک نمی‌کند.</li></ul>
+<pre dir="ltr"><code>private fun evict(key: String) {
+    entries.computeIfPresent(key) { _, entry -&gt;
+        if (entry.hasNoObservers()) { entry.cleanup(); null } // null = remove
+        else entry                                            // re-observed: keep
+    }
+}</code></pre>
+<p><strong>قدم ۴: چرا synchronized یا Mutex نه؟</strong></p>
+<ul><li><code>synchronized</code> روی کل map: هر خواندن، حتی روی main thread، باید منتظر بقیه بماند. ConcurrentHashMap خواندن را بدون قفل انجام می‌دهد و فقط همان قسمت از جدول را که در آن می‌نویسد قفل می‌کند.</li><li><code>Mutex</code> ی coroutine: <code>lock()</code> یک تابع suspend است، ولی <code>getOrCreate</code> مستقیم از composition صدا زده می‌شود که suspend نیست.</li></ul>
+<p><strong>جمله‌ی کلاس:</strong> «map از چند thread استفاده می‌شود. ConcurrentHashMap تضمین می‌کند هر key فقط یک جعبه داشته باشد، بدون اینکه main thread منتظر بماند.»</p>
 <h3>روی اسلاید، build به build</h3>
 <ol><li>→ کد: «یک map از key به جعبه.»</li><li>→ «key هست؟ همان جعبه. پس screen دوم جعبه‌ی screen اول را می‌گیرد.»</li><li>→ «key نیست؟ یک جعبه‌ی جدید.»</li><li>→ «یک Singleton در Hilt؛ کل اپ یک map.»</li></ol>
+<h3>اگر پرسیدند</h3>
+<ul><li><strong>«مگر Compose همه‌چیز را روی main اجرا نمی‌کند؟ پس چرا thread-safe؟»</strong> hook ها بله، ولی prefetch و evict روی IO اجرا می‌شوند، و invalidate از هر جایی که QueryClient را inject کرده صدا زده می‌شود.</li><li><strong>«خود QueryEntry هم thread-safe است؟»</strong> بله؛ state آن یک <code>StateFlow</code> است و شمارنده‌ها <code>Atomic</code>. جزئیاتش جلسه‌ی بعد.</li><li><strong>«چیزی هست که باید مراقبش بود؟»</strong> lambda ی <code>computeIfAbsent</code> باید کوتاه باشد و دوباره به همان map دست نزند. برای همین فقط <code>QueryEntry</code> را می‌سازد؛ fetch بعداً و بیرون از آن شروع می‌شود.</li></ul>
 <p><strong>پل:</strong> «خب، برای کسی که screen می‌نویسد چه فرقی کرد؟»</p>
 </section>
 <section id="c15"><h2>فصل ۱۳ — قبل و بعد</h2>
