@@ -168,13 +168,33 @@ window.NOTES = {
   layers: { time: '2′', html: `
 <p>«آخرین تصویر امروز: هر تکه کجا زندگی می‌کند.» از پایین به بالا ظاهر می‌شود:</p>
 <ol><li>Api (Retrofit) در :core:network</li><li>Repository در :core:network</li><li>QueryClient و QueryEntry در :core:query</li><li>hook در :app/hooks</li><li>screen در :app/ui</li></ol>
-<p>→ «فقط دو لایه‌ی بالا Composable هستند. engine Kotlin خالص است؛ یعنی رفتارش را بدون emulator test می‌کنیم. جلسه‌ی بعد همین engine را باز می‌کنیم.»</p>` },
+<p>→ «فقط دو لایه‌ی بالا Composable هستند. engine Kotlin خالص است؛ یعنی رفتارش را بدون emulator test می‌کنیم.»</p>
+<p>پل: «حرف کافی است. ببینیم واقعاً کار می‌کند.»</p>` },
+
+  demo: { time: '4′', html: `
+<p><b>قبل از این اسلاید:</b> اپ force stop شده، Logcat با فیلتر <code>tag:okhttp.OkHttpClient message:"--> GET"</code> پاک و آماده است.</p>
+<p><b>قبل از هر کار بپرسید: «چند request؟»</b> صبر کنید، بعد انجام دهید، بعد → بزنید.</p>
+<ol><li>اپ را باز کنید. «یک خط <code>--> GET</code>. جعبه خالی بود، پس fetch.»</li>
+<li>روی یک خبر بزنید. «هیچ خطی. صفحه‌ی جزئیات هم <code>useHeadlines()</code> را صدا می‌زند؛ همان key، همان جعبه.»</li>
+<li>گوشی را بچرخانید. «Activity دوباره ساخته شد، ولی QueryClient یک Singleton است. جعبه همان‌جاست.»</li>
+<li>برگردید، به Settings بروید، برگردید به Articles. «هیچ خطی. data هنوز fresh است.»</li></ol>
+<p>→ «کل این مسیر یک request. چرا دیگر fetch نکرد؟ دقیقاً موضوع جلسه‌ی بعد: staleTime.»</p>
+<p><b>اگر demo خراب شد:</b> وقت نگذارید. بگویید «عددها روی اسلاید است» و → بزنید.</p>` },
+
+  tradeoffs: { time: '3′', html: `
+<p>«قبل از جمع‌بندی، صادق باشیم. هر طراحی هزینه‌ای دارد. هزینه‌های ما این‌هاست، و برای هر کدام یک قانون.»</p>
+<ol><li>→ <b>اولین hook برنده است:</b> «<code>computeIfAbsent</code> فقط بار اول جعبه را می‌سازد. fetcher و staleTime همان بار اول ثبت می‌شوند. پس برای هر key فقط یک hook.»</li>
+<li>→ <b>یک key، دو type:</b> «map جعبه‌ها را بدون type نگه می‌دارد؛ cast چک نمی‌شود. اگر دو hook یک key را با دو type بخوانند، crash در runtime. برای همین key فقط از <code>XxxKeys</code>.»</li>
+<li>→ <b>process death:</b> «cache در حافظه است. چرخاندن گوشی مشکلی ندارد، ولی اگر سیستم process را ببندد، دوباره fetch می‌کنیم. برای offline یک tier با Room داریم: <code>useCachedQuery</code>. جلسه‌ی ۳.»</li>
+<li>→ <b>فقط Compose:</b> «hook فقط داخل Composable کار می‌کند. از Worker یا push notification، QueryClient را inject کنید و invalidate بزنید.»</li></ol>
+<p>«هیچ‌کدام مانع نیست؛ هر کدام یک قانون دارد. ولی بهتر است از من بشنوید تا در production پیدایش کنید.»</p>` },
 
   recap: { time: '2′', html: `
 <p>«سه چیز از امروز:»</p>
 <ol><li>server data مال ما نیست؛ یک کپی است.</li>
 <li>یک جعبه‌ی مشترک (QueryEntry)، با اسم (key)، در یک map (QueryClient).</li>
-<li>screen یعنی یک hook و QueryContent. بدون ViewModel.</li></ol>` },
+<li>screen یعنی یک hook و QueryContent. بدون ViewModel.</li></ol>
+<p>→ «و از کجا شروع کنیم؟ هیچ چیز را بازنویسی نمی‌کنیم. ViewModel و hook کنار هم زندگی می‌کنند. هر بار یک screen که فقط data می‌خواند را منتقل می‌کنیم؛ ViewModelهای فرم‌ها می‌مانند.»</p>` },
 
   next: { time: '2′', html: `
 <p>«ولی هنوز نگفتیم جعبه کِی به سرور می‌رود.» → «کِی پاک می‌شود؟ با error چه می‌کند؟ اگر دو request با هم برسند؟ این‌ها جلسه‌ی بعد است، دوشنبه.»</p>

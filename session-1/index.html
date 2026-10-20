@@ -613,7 +613,32 @@ Button(onClick = { buy(request) }) { Text(<span class="s">"Buy"</span>) }</div>
   <p class="lead" data-step="6" style="margin-top:24px">فقط دو لایه‌ی بالا Composable هستند. engine Kotlin خالص است؛ پس بدون emulator test می‌شود.</p>
 </section>
 
-<!-- 20 · RECAP -->
+<!-- LIVE DEMO -->
+<section class="slide col" id="demo" data-title="Demo: ببینیم">
+  <div class="eyebrow">Live demo · ComposeCleanArch</div>
+  <p class="q">حرف کافی است. ببینیم چند request می‌رود.</p>
+  <div class="row2" style="margin-top:40px">
+    <div class="tile" data-step="1"><span class="tag">1 · OPEN THE LIST</span><h3 style="font-size:32px">باز کردن لیست خبرها</h3><p><span class="ltr mono acc">1 request</span> · جعبه خالی است، پس fetch.</p></div>
+    <div class="tile" data-step="2"><span class="tag">2 · OPEN AN ARTICLE</span><h3 style="font-size:32px">باز کردن یک خبر</h3><p><span class="ltr mono acc">0 request</span> · همان <span class="ltr mono">useHeadlines()</span>، همان key، همان جعبه.</p></div>
+    <div class="tile" data-step="3"><span class="tag">3 · ROTATE</span><h3 style="font-size:32px">چرخاندن گوشی</h3><p><span class="ltr mono acc">0 request</span> · Activity دوباره ساخته شد؛ جعبه نه.</p></div>
+    <div class="tile" data-step="4"><span class="tag">4 · AWAY AND BACK</span><h3 style="font-size:32px">رفتن به Settings و برگشتن</h3><p><span class="ltr mono acc">0 request</span> · data هنوز fresh است.</p></div>
+  </div>
+  <p class="lead" data-step="5" style="margin-top:28px">کل این مسیر: <span class="acc">یک request</span>. چرا دیگر fetch نکرد؟ جلسه‌ی بعد.</p>
+</section>
+
+<!-- TRADE-OFFS -->
+<section class="slide col" id="tradeoffs" data-title="هزینه‌ها">
+  <div class="eyebrow">Trade-offs</div>
+  <p class="q">هر طراحی هزینه‌ای دارد. هزینه‌های ما این‌هاست</p>
+  <div class="row2" style="margin-top:36px">
+    <div class="tile" data-step="1"><span class="tag">FIRST HOOK WINS</span><h3 style="font-size:30px">اولین hook تنظیمات جعبه را تعیین می‌کند</h3><p>fetcher، staleTime و cacheTime از اولین hookی می‌آیند که جعبه را ساخت. <span style="color:var(--text)">قانون: هر key فقط یک hook.</span></p></div>
+    <div class="tile" data-step="2"><span class="tag">ONE KEY, TWO TYPES</span><h3 style="font-size:30px">یک key با دو type یعنی crash</h3><p>cast چک نمی‌شود؛ خطا در runtime است، نه compile. <span style="color:var(--text)">قانون: key فقط از <span class="ltr mono">XxxKeys</span>.</span></p></div>
+    <div class="tile" data-step="3"><span class="tag">PROCESS DEATH</span><h3 style="font-size:30px">cache در حافظه است</h3><p>اگر سیستم process را ببندد، جعبه‌ها خالی‌اند. <span style="color:var(--text)">برای offline: <span class="ltr mono">useCachedQuery</span> با Room (جلسه‌ی ۳).</span></p></div>
+    <div class="tile" data-step="4"><span class="tag">COMPOSE ONLY</span><h3 style="font-size:30px">hook فقط داخل Compose</h3><p>Worker و Service و push، hook ندارند. <span style="color:var(--text)">QueryClient یک Singleton است؛ inject کنید و <span class="ltr mono">invalidate</span> بزنید.</span></p></div>
+  </div>
+</section>
+
+<!-- RECAP -->
 <section class="slide col" id="recap" data-title="جمع‌بندی">
   <div class="eyebrow">Recap</div>
   <p class="q">امروز سه چیز یاد گرفتیم</p>
@@ -622,6 +647,7 @@ Button(onClick = { buy(request) }) { Text(<span class="s">"Buy"</span>) }</div>
     <p class="q" data-step="2" style="font-size:42px;margin:0"><span class="acc ltr">2</span> &nbsp;یک جعبه‌ی مشترک، با یک اسم، در یک map: <span class="ltr acc">QueryEntry · key · QueryClient</span></p>
     <p class="q" data-step="3" style="font-size:42px;margin:0"><span class="acc ltr">3</span> &nbsp;screen = یک hook + QueryContent. بدون ViewModel.</p>
   </div>
+  <p class="lead" data-step="4" style="margin-top:44px">از کجا شروع کنیم؟ <span style="color:var(--text)">هیچ چیز را بازنویسی نمی‌کنیم.</span> ViewModel و hook کنار هم زندگی می‌کنند؛ هر بار <span class="acc">یک screen که فقط data می‌خواند</span> را منتقل می‌کنیم.</p>
 </section>
 
 <!-- 21 · NEXT TIME -->
