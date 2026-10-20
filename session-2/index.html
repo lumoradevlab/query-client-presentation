@@ -1,0 +1,719 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Query Client · Session 2 · The engine</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Vazirmatn:wght@400;500;700;800;900&family=JetBrains+Mono:wght@400;500;700&display=swap">
+<style>
+/* Keynote direction: one idea per slide, huge type, diagrams that build on each → press. Nocturne palette, single dark world. */
+:root{
+  --bg:#0f1019; --surf:#1e2030; --surf-2:#262839; --line:rgba(233,233,237,.10);
+  --text:#ecedf3; --dim:#9da1b6; --faint:#5f6378;
+  --accent:#9184d9; --accent-hi:#c4bcff; --glow:rgba(145,132,217,.55);
+  --good:#7fd4ad; --bad:#f08f7c;
+  --display:'Inter','Vazirmatn',system-ui,sans-serif; --body:'Vazirmatn','Inter',system-ui,sans-serif; --mono:'JetBrains Mono',ui-monospace,monospace;
+  color-scheme:dark;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);font-family:var(--body)}
+#vp{position:fixed;inset:0;display:flex;align-items:center;justify-content:center}
+#stage{width:1600px;height:900px;position:relative;flex:none}
+.slide{position:absolute;inset:0;padding:80px 110px;opacity:0;visibility:hidden;transition:opacity .5s ease,visibility 0s linear .5s;direction:rtl;
+  background:radial-gradient(ellipse 60% 55% at 50% 45%,rgba(53,59,128,.26),transparent 70%),var(--bg)}
+.slide.on{opacity:1;visibility:visible;transition:opacity .5s ease}
+.col{display:flex;flex-direction:column}
+.center{justify-content:center}
+.eyebrow{font:600 18px var(--mono);letter-spacing:.14em;color:var(--accent);text-transform:uppercase;direction:ltr;text-align:right}
+.q{font:800 64px/1.3 var(--display);letter-spacing:-.01em;text-wrap:balance;margin-top:14px}
+.big{font:900 110px/1.15 var(--display);letter-spacing:-.02em}
+.huge{font:900 150px/1.12 var(--display);letter-spacing:-.02em}
+.lead{font:500 34px/1.7 var(--body);color:var(--dim)}
+.dim{color:var(--dim)} .faint{color:var(--faint)} .acc{color:var(--accent-hi)} .bad{color:var(--bad)} .good{color:var(--good)}
+.ltr{direction:ltr;unicode-bidi:isolate}
+.mono{font-family:var(--mono)}
+
+/* builds */
+[data-step],[data-only]{opacity:0;transform:translateY(18px);transition:opacity .55s ease,transform .55s ease}
+[data-step].shown,[data-only].shown{opacity:1;transform:none}
+[data-only]:not(.shown){pointer-events:none}
+@media (prefers-reduced-motion:reduce){[data-step],[data-only],.slide{transition:none}}
+
+/* cards & tiles */
+.tile{background:var(--surf);border:1px solid var(--line);border-radius:22px;padding:30px 32px;display:flex;flex-direction:column;gap:10px}
+.tile.hot{background:linear-gradient(160deg,#2a2850,#1b1c30);border-color:rgba(196,188,255,.45);box-shadow:0 0 60px rgba(145,132,217,.25)}
+.tile .tag{font:600 16px var(--mono);color:var(--accent);direction:ltr;text-align:right;letter-spacing:.06em}
+.tile h3{font:800 40px/1.25 var(--display)}
+.tile p{font:500 24px/1.7 var(--body);color:var(--dim)}
+.row3{display:grid;grid-template-columns:repeat(3,1fr);gap:28px}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:34px}
+.pill{display:inline-flex;align-items:center;gap:10px;font:600 20px var(--display);padding:8px 18px;border-radius:999px;border:1px solid var(--line);color:var(--dim)}
+.pill.on{border-color:rgba(196,188,255,.5);color:var(--accent-hi);background:rgba(145,132,217,.14)}
+
+/* phones */
+.phone{position:absolute;width:210px;height:380px;border-radius:34px;border:2px solid rgba(233,233,237,.22);background:linear-gradient(170deg,#202336,#151724);
+  box-shadow:0 30px 60px rgba(0,0,0,.45);display:flex;flex-direction:column;align-items:center;padding:26px 16px;gap:10px;direction:ltr}
+.phone.sm{transform:scale(.82);transform-origin:top left}
+.phone .notch{width:64px;height:8px;border-radius:4px;background:rgba(233,233,237,.18);margin-bottom:22px}
+.phone .name{font:600 18px var(--display);color:var(--dim)}
+.phone .val{font:800 34px var(--display);transition:color .5s}
+.phone .unit{font:500 15px var(--mono);color:var(--faint)}
+.phone.stale .val{color:var(--bad)} .phone.fresh .val{color:var(--good)}
+.chip{position:absolute;font:600 17px var(--mono);padding:10px 16px;border-radius:12px;background:var(--surf);border:1px solid var(--line);color:var(--dim);direction:ltr;white-space:nowrap}
+.chip.vm{border-color:rgba(240,143,124,.45);color:#f5b3a6}
+.server{position:absolute;width:260px;padding:22px;border-radius:20px;background:var(--surf);border:1px solid var(--line);text-align:center;direction:ltr}
+.server .t{font:600 16px var(--mono);color:var(--faint);letter-spacing:.1em}
+.server .v{font:800 40px var(--display);margin-top:6px}
+svg.wires{position:absolute;inset:0;overflow:visible;pointer-events:none}
+svg.wires path{fill:none;stroke-width:2.5;stroke-linecap:round}
+.wire{stroke:rgba(240,143,124,.6);stroke-dasharray:8 10;animation:flow 1.2s linear infinite}
+.wire.ok{stroke:rgba(145,132,217,.75)}
+@keyframes flow{to{stroke-dashoffset:-36}}
+.caption{position:absolute;left:110px;right:110px;bottom:60px;text-align:center;font:800 40px var(--display);letter-spacing:-.01em}
+
+/* the box */
+.box{position:absolute;width:420px;padding:28px 30px;border-radius:26px;background:linear-gradient(160deg,#2a2850,#1b1c30);border:1.5px solid rgba(196,188,255,.5);
+  box-shadow:0 0 0 1px rgba(145,132,217,.2),0 0 80px var(--glow);direction:ltr}
+.box .k{font:600 17px var(--mono);color:var(--accent-hi)}
+.box .title{font:800 30px var(--display);margin:6px 0 16px}
+.box .rowx{display:flex;justify-content:space-between;font:500 19px var(--mono);color:var(--dim);padding:8px 0;border-top:1px solid var(--line)}
+.box .rowx b{color:var(--text);font-weight:700}
+.box.pulse{animation:pulse 1.2s ease}
+@keyframes pulse{0%{box-shadow:0 0 0 1px rgba(145,132,217,.2),0 0 80px var(--glow)}40%{box-shadow:0 0 0 6px rgba(127,212,173,.35),0 0 140px rgba(127,212,173,.6)}100%{box-shadow:0 0 0 1px rgba(145,132,217,.2),0 0 80px var(--glow)}}
+
+/* code */
+.code{direction:ltr;text-align:left;font:15px/1.55 var(--mono);color:#cfd2e2;background:#0b0c14;border:1px solid var(--line);border-radius:18px;padding:24px 28px;white-space:pre;overflow:hidden}
+.code.big{font-size:27px;line-height:1.65;padding:32px 38px;box-shadow:0 0 90px rgba(145,132,217,.22);border-color:rgba(196,188,255,.3)}
+.code .k{color:#b5abfc}.code .t{color:#8cc8ec}.code .s{color:#9fd8b8}.code .c{color:#6d7189;font-style:italic}.code .n{color:#e6b98a}
+.code .ln{display:block;transition:opacity .4s,background .4s;border-radius:6px;margin:0 -10px;padding:0 10px}
+.code.hlmode .ln{opacity:.28}
+.code.hlmode .ln.hl{opacity:1;background:rgba(145,132,217,.16)}
+.count{font:900 96px/1 var(--display);letter-spacing:-.04em;direction:ltr}
+
+/* stacks (web slide) */
+.stack{display:flex;flex-direction:column;gap:10px}
+.stack .head{font:700 24px var(--mono);color:var(--accent-hi);direction:ltr;text-align:center;margin-bottom:6px}
+.card{font:600 20px var(--mono);direction:ltr;text-align:center;padding:14px 16px;border-radius:14px;background:var(--surf);border:1px solid var(--line);color:var(--dim)}
+.card.r{border-color:rgba(240,143,124,.35);color:#f5b3a6}
+
+/* map / pairs */
+.pair{display:grid;grid-template-columns:1fr 90px 1fr;align-items:center;gap:20px}
+.pair .a,.pair .b{font:700 36px var(--mono);direction:ltr;padding:20px 26px;border-radius:18px;background:var(--surf);border:1px solid var(--line);text-align:center}
+.pair .b{border-color:rgba(196,188,255,.45);color:var(--accent-hi);background:rgba(145,132,217,.10)}
+.pair .arrow{font:800 40px var(--display);color:var(--accent);text-align:center}
+.maprow{display:grid;grid-template-columns:1.2fr 60px 1fr;align-items:center;gap:16px;direction:ltr}
+.maprow .key{font:600 24px var(--mono);color:var(--accent-hi);padding:16px 20px;border-radius:14px;background:rgba(145,132,217,.10);border:1px solid rgba(196,188,255,.3)}
+.maprow .to{text-align:center;color:var(--accent);font:800 32px var(--display)}
+.maprow .val{font:600 22px var(--display);padding:16px 20px;border-radius:14px;background:var(--surf);border:1px solid var(--line);color:var(--text)}
+
+/* mini screens (QueryState) */
+.screen{width:290px;height:420px;border-radius:40px;border:2px solid rgba(233,233,237,.2);background:linear-gradient(170deg,#202336,#151724);padding:30px 22px;display:flex;flex-direction:column;align-items:center;gap:14px;direction:ltr}
+.screen .notch{width:70px;height:8px;border-radius:4px;background:rgba(233,233,237,.18);margin-bottom:16px}
+.spinner{width:70px;height:70px;border-radius:50%;border:6px solid rgba(145,132,217,.2);border-top-color:var(--accent-hi);margin-top:95px;animation:spin 1s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.line{width:100%;height:46px;border-radius:12px;background:var(--surf-2)}
+.err{margin-top:80px;font:700 24px var(--display);color:var(--bad);text-align:center}
+.btn{font:700 20px var(--display);padding:12px 26px;border-radius:12px;background:var(--accent);color:#141526}
+.statelabel{font:800 34px var(--mono);text-align:center;direction:ltr;margin-top:16px}
+
+/* layers */
+.layer{display:grid;grid-template-columns:1fr 250px;gap:22px;align-items:center}
+.layer .bx{display:flex;justify-content:space-between;align-items:center;padding:20px 28px;border-radius:18px;background:var(--surf);border:1px solid var(--line)}
+.layer .bx h3{font:800 30px var(--display);direction:ltr;unicode-bidi:isolate}
+.layer .bx .m{font:500 18px var(--mono);color:var(--faint);direction:ltr}
+.layer .bx.hot{border-color:rgba(196,188,255,.45);background:linear-gradient(90deg,var(--surf),rgba(145,132,217,.14))}
+.layer .tagc{font:700 20px var(--mono);text-align:center;padding:12px;border-radius:999px;direction:ltr}
+.tagc.compose{color:var(--accent-hi);background:rgba(145,132,217,.14);border:1px solid rgba(196,188,255,.4)}
+.tagc.kt{color:var(--good);background:rgba(127,212,173,.10);border:1px solid rgba(127,212,173,.4)}
+
+/* heads-up flow */
+.hflow{display:flex;align-items:center;gap:22px;direction:ltr;margin-top:46px}
+.hnode{flex:none;padding:24px 28px;border-radius:20px;background:var(--surf);border:1px solid var(--line);text-align:center;min-width:220px}
+.hnode .t{font:600 15px var(--mono);letter-spacing:.1em;color:var(--faint)}
+.hnode .v{font:800 30px var(--display);margin-top:6px}
+.hnode.hot{background:linear-gradient(160deg,#2a2850,#1b1c30);border-color:rgba(196,188,255,.5);box-shadow:0 0 70px rgba(145,132,217,.35)}
+.harrow{flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;min-width:0}
+.harrow .lbl{font:600 20px var(--mono);color:var(--accent-hi);white-space:nowrap}
+.harrow .ln{width:100%;height:2px;background:linear-gradient(90deg,transparent,var(--accent),transparent)}
+
+/* chrome */
+#bar{position:fixed;bottom:0;right:0;height:3px;background:var(--accent);transition:width .4s;z-index:5}
+#ctrl{position:fixed;left:16px;bottom:12px;display:flex;gap:8px;align-items:center;opacity:.25;transition:opacity .2s;direction:ltr;z-index:5}
+#ctrl:hover{opacity:1}
+#ctrl button{font:600 13px var(--mono);color:var(--text);background:var(--surf);border:1px solid var(--line);border-radius:8px;padding:6px 10px;cursor:pointer}
+#ctrl span{font:13px var(--mono);color:var(--faint);min-width:56px;text-align:center}
+
+/* session 2 additions */
+.tl{position:relative;direction:ltr;height:330px;margin-top:40px}
+.tl .axis{position:absolute;left:0;right:0;top:172px;height:3px;background:rgba(233,233,237,.18);border-radius:2px}
+.tl .tick{position:absolute;top:190px;font:500 17px var(--mono);color:var(--faint);margin-left:-30px;width:60px;text-align:center}
+.tl .band{position:absolute;top:150px;height:47px;border-radius:12px;background:rgba(127,212,173,.12);border:1px solid rgba(127,212,173,.45);font:600 16px var(--mono);color:var(--good);display:flex;align-items:center;justify-content:center}
+.tl .ev{position:absolute;top:0;width:214px;margin-left:-107px;display:flex;flex-direction:column;align-items:center;gap:8px}
+.tl .ev .lbl{font:700 21px var(--body);direction:rtl;text-align:center;padding:10px 14px;border-radius:12px;background:var(--surf);border:1px solid var(--line);min-height:92px;display:flex;align-items:center;justify-content:center;width:100%}
+.tl .ev .stem{width:2px;height:40px;background:var(--accent)}
+.tl .ev .dot{width:22px;height:22px;border-radius:50%;background:var(--accent-hi);box-shadow:0 0 24px var(--glow);margin-top:-4px}
+.tl .ev .res{margin-top:44px;font:800 24px var(--mono);white-space:nowrap}
+.counter{display:flex;align-items:baseline;gap:14px;direction:ltr;font:600 20px var(--mono);color:var(--dim)}
+.counter b{font:900 64px/1 var(--display);color:var(--accent-hi)}
+.trow{display:grid;grid-template-columns:1fr 1.05fr 1fr;gap:18px;align-items:center;direction:ltr}
+.st{font:700 22px var(--mono);padding:14px 16px;border-radius:14px;background:var(--surf);border:1px solid var(--line);text-align:center;white-space:nowrap}
+.st.g{border-color:rgba(127,212,173,.5);color:var(--good)} .st.r{border-color:rgba(240,143,124,.5);color:var(--bad)} .st.a{border-color:rgba(196,188,255,.5);color:var(--accent-hi)}
+.evx{font:600 20px var(--body);color:var(--dim);text-align:center;direction:rtl;display:flex;flex-direction:column;align-items:center;gap:6px}
+.evx::after{content:'';display:block;width:100%;height:2px;background:linear-gradient(90deg,transparent,var(--accent),var(--accent-hi))}
+.stbl{width:100%;border-collapse:collapse;margin-top:34px}
+.stbl th{font:600 16px var(--mono);letter-spacing:.1em;color:var(--accent);text-align:right;padding:0 18px 12px}
+.stbl td{font:500 26px/1.5 var(--body);color:var(--text);padding:14px 18px;border-top:1px solid var(--line)}
+.stbl td.n{font:800 30px var(--mono);color:var(--accent-hi);text-align:center;direction:ltr;white-space:nowrap}
+.stbl td.w{color:var(--dim);font-size:23px}
+.stbl tr.total td{border-top:2px solid rgba(196,188,255,.4)}
+.lane{position:relative;height:74px;direction:ltr}
+.lane .name{position:absolute;left:0;top:22px;font:600 18px var(--mono);color:var(--faint);width:150px}
+.lane .bar{position:absolute;top:12px;height:50px;border-radius:12px;display:flex;align-items:center;padding:0 18px;font:700 19px var(--mono);white-space:nowrap}
+.bar.old{background:rgba(240,143,124,.12);border:1px solid rgba(240,143,124,.5);color:#f5b3a6}
+.bar.new{background:rgba(127,212,173,.12);border:1px solid rgba(127,212,173,.5);color:var(--good)}
+.valbox{font:900 64px/1 var(--display);direction:ltr;transition:color .4s}
+.valbox.good{color:var(--good)} .valbox.bad{color:var(--bad)}
+.mini{font:600 19px var(--mono);direction:ltr;text-align:left;color:var(--dim);line-height:1.7}
+.log{display:flex;flex-direction:column;gap:10px}
+.log .it{display:grid;grid-template-columns:44px 1fr;gap:12px;align-items:baseline;font:600 22px/1.5 var(--body);color:var(--text);padding:10px 16px;border-radius:12px;background:var(--surf);border:1px solid var(--line)}
+.log .it b{font:800 20px var(--mono);color:var(--accent);direction:ltr}
+.log .it span.r{display:block;font:500 18px var(--body);color:var(--dim)}
+.tile .code{font-size:17px;padding:14px 18px;border-radius:12px}
+.screen .bar2{width:100%;height:5px;border-radius:3px;background:linear-gradient(90deg,transparent,var(--accent-hi),transparent);background-size:200% 100%;animation:slide 1.2s linear infinite}
+@keyframes slide{from{background-position:100% 0}to{background-position:-100% 0}}
+.screen .pull{width:40px;height:40px;border-radius:50%;border:4px solid rgba(145,132,217,.25);border-top-color:var(--accent-hi);animation:spin 1s linear infinite;margin:-6px 0 4px}
+.g3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.gt{padding:16px 18px;border-radius:14px;background:var(--surf);border:1px solid var(--line)}
+.gt p{font:700 21px/1.5 var(--body);color:var(--text)}
+.gt code{display:block;font:500 13.5px/1.5 var(--mono);color:var(--faint);direction:ltr;text-align:left;margin-top:6px}
+.gt.miss{border-style:dashed;border-color:rgba(240,143,124,.55)}
+.gt.miss p{color:#f5b3a6}
+.code{font-variant-ligatures:none}
+</style>
+</head>
+<body>
+<div id="vp"><div id="stage">
+
+<!-- 1 · COVER -->
+<section class="slide col center" id="cover" data-title="Query Client — جلسه‌ی ۲" style="gap:26px">
+  <div class="eyebrow">Session 2 of 3 · The engine</div>
+  <p class="huge ltr" style="text-align:right">Query <span class="acc">Client</span></p>
+  <p class="q" style="font-size:52px;margin-top:0">درِ جعبه را باز می‌کنیم: engine، خط به خط</p>
+  <div style="display:flex;gap:16px;margin-top:20px;align-items:center">
+    <span class="pill">۱ · The idea</span><span class="pill on">۲ · The engine</span><span class="pill">۳ · Building</span>
+    <span style="flex:1"></span>
+    <span class="ltr" style="font:600 22px var(--display)">Parisa Hazhir Ghader <span class="faint mono" style="font-size:18px;margin-left:10px">parisaghader.org</span></span>
+  </div>
+</section>
+
+<!-- 2 · YOU ASKED -->
+<section class="slide col" id="asked" data-title="هفته‌ی پیش پرسیدید">
+  <div class="eyebrow">You asked</div>
+  <p class="q">هفته‌ی پیش این‌ها را پرسیدید</p>
+  <div class="row2" style="margin-top:36px;gap:26px">
+    <div class="tile" data-step="1"><span class="tag">ENGINE</span><h3 style="font-size:32px">engine دقیقاً چطور کار می‌کند؟</h3><p>کِی fetch می‌کند، کِی پاک می‌کند، state را چطور نگه می‌دارد.</p></div>
+    <div class="tile" data-step="2"><span class="tag">REQUESTS</span><h3 style="font-size:32px">data مدام عوض می‌شود. این همه request؟</h3><p>اگر data زنده است، سرور و باتری چه می‌شوند؟</p></div>
+    <div class="tile" data-step="3"><span class="tag">PAYLOAD</span><h3 style="font-size:32px">حجم جواب‌ها چه؟</h3><p>cache یعنی data ی سنگین، هم روی شبکه و هم در حافظه؟</p></div>
+    <div class="tile" data-step="4"><span class="tag">STATE</span><h3 style="font-size:32px">query state و UI state کنار هم؟</h3><p>فیلتر، search، فرم، loading: هر کدام کجا زندگی می‌کند؟</p></div>
+  </div>
+  <p class="lead" data-step="5" style="margin-top:30px">امروز به هر چهار سؤال جواب می‌دهیم، با <b style="color:var(--text)">کد واقعی</b>. و جایی که engine کاری را نمی‌کند، همان را هم می‌گوییم.</p>
+</section>
+
+<!-- 3 · RECAP -->
+<section class="slide col" id="recap1" data-title="هفته‌ی پیش در یک اسلاید">
+  <div class="eyebrow">Last week in one slide</div>
+  <p class="q">هفته‌ی پیش: یک جعبه، یک اسم، یک map</p>
+  <div class="hflow">
+    <div class="hnode" data-step="1"><div class="t">SCREEN</div><div class="v">useQuery(key)</div></div>
+    <div class="harrow" data-step="2"><span class="lbl">key</span><span class="ln"></span></div>
+    <div class="hnode" data-step="2"><div class="t">THE MAP</div><div class="v">QueryClient</div></div>
+    <div class="harrow" data-step="3"><span class="lbl">one per key</span><span class="ln"></span></div>
+    <div class="hnode hot" data-step="3"><div class="t">THE BOX</div><div class="v">QueryEntry</div></div>
+    <div class="harrow" data-step="4"><span class="lbl">only when needed</span><span class="ln"></span></div>
+    <div class="hnode" data-step="4"><div class="t">BACKEND</div><div class="v">Server</div></div>
+  </div>
+  <p class="lead" data-step="5" style="margin-top:60px">هفته‌ی پیش گفتیم «فقط وقتی لازم است». امروز دقیقاً می‌بینیم <span class="acc">«لازم»</span> یعنی چه. همه‌اش در یک فایل است: <span class="ltr mono" style="color:var(--text)">QueryEntry.kt</span>، حدود ۳۰۰ خط.</p>
+</section>
+
+<!-- 4 · ANATOMY -->
+<section class="slide col" id="anatomy" data-title="داخل جعبه: شش فیلد">
+  <div class="eyebrow">Inside QueryEntry</div>
+  <p class="q">داخل جعبه: شش فیلد</p>
+  <div style="display:grid;grid-template-columns:1.45fr 1fr;gap:40px;margin-top:34px;align-items:start">
+<div class="code big hlmode" data-hl-code style="font-size:20px"><span class="ln" data-hl="1,7"><span class="k">val</span> state = MutableStateFlow&lt;<span class="t">QueryState</span>&lt;T&gt;&gt;(Loading)</span><span class="ln"> </span><span class="ln" data-hl="2,7"><span class="n">@Volatile</span> <span class="k">var</span> lastFetch = <span class="n">0L</span></span><span class="ln"> </span><span class="ln" data-hl="3,7"><span class="k">val</span> observers   = <span class="t">AtomicInteger</span>(<span class="n">0</span>)</span><span class="ln"> </span><span class="ln" data-hl="4,7"><span class="k">val</span> inFlight    = <span class="t">AtomicReference</span>&lt;Deferred?&gt;(<span class="k">null</span>)</span><span class="ln"> </span><span class="ln" data-hl="5,7"><span class="k">val</span> latestEpoch = <span class="t">AtomicLong</span>(<span class="n">0</span>)</span><span class="ln"> </span><span class="ln" data-hl="6,7"><span class="k">val</span> intervalJob = <span class="t">AtomicReference</span>&lt;Job?&gt;(<span class="k">null</span>)</span></div>
+    <div style="position:relative;height:420px">
+      <div class="tile hot" data-only="1" style="position:absolute;inset:0 0 auto 0"><span class="tag">1 · STATE</span><h3 style="font-size:30px">چیزی که screen می‌بیند</h3><p style="color:var(--text)">یک <span class="ltr mono">StateFlow</span>. هر تغییر، همزمان به همه‌ی screenهایی که این key را دارند می‌رسد.</p></div>
+      <div class="tile hot" data-only="2" style="position:absolute;inset:0 0 auto 0"><span class="tag">2 · LASTFETCH</span><h3 style="font-size:30px">کِی data رسید</h3><p style="color:var(--text)">با <span class="ltr mono">staleTime</span> مقایسه می‌شود: data تازه است یا کهنه؟</p></div>
+      <div class="tile hot" data-only="3" style="position:absolute;inset:0 0 auto 0"><span class="tag">3 · OBSERVERS</span><h3 style="font-size:30px">چند screen نگاه می‌کنند</h3><p style="color:var(--text)">وقتی به ۰ برسد، شمارش <span class="ltr mono">cacheTime</span> شروع می‌شود.</p></div>
+      <div class="tile hot" data-only="4" style="position:absolute;inset:0 0 auto 0"><span class="tag">4 · INFLIGHT</span><h3 style="font-size:30px">request ی که در راه است</h3><p style="color:var(--text)">اگر هست، request دوم نمی‌رود. همه منتظر همین یکی می‌مانند.</p></div>
+      <div class="tile hot" data-only="5" style="position:absolute;inset:0 0 auto 0"><span class="tag">5 · EPOCH</span><h3 style="font-size:30px">شماره‌ی هر fetch</h3><p style="color:var(--text)">جوابی که با شماره‌ی قدیمی برسد، دور ریخته می‌شود.</p></div>
+      <div class="tile hot" data-only="6" style="position:absolute;inset:0 0 auto 0"><span class="tag">6 · INTERVAL</span><h3 style="font-size:30px">حلقه‌ی polling</h3><p style="color:var(--text)">یکی برای کل جعبه، نه یکی برای هر screen.</p></div>
+      <div class="tile" data-only="7" style="position:absolute;inset:0 0 auto 0"><span class="tag">WHY ATOMIC</span><h3 style="font-size:30px">سه thread، یک جعبه</h3><p style="color:var(--text)">main (screenها)، IO (fetch) و حلقه‌ی polling همزمان به این فیلدها دست می‌زنند. پس <span class="ltr mono">Atomic</span> و <span class="ltr mono">@Volatile</span>، نه <span class="ltr mono">var</span> ساده.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- 5 · STATE MACHINE -->
+<section class="slide col" id="machine" data-title="جعبه چطور حالت عوض می‌کند">
+  <div class="eyebrow">QueryState transitions</div>
+  <p class="q">جعبه چطور از یک حالت به حالت دیگر می‌رود</p>
+  <div class="col" style="gap:14px;margin-top:34px">
+    <div class="trow" data-step="1"><span class="st a">Loading</span><span class="evx">fetch موفق</span><span class="st g">Success(data)</span></div>
+    <div class="trow" data-step="2"><span class="st g">Success(data)</span><span class="evx">refetch شروع شد</span><span class="st g">Success(data, refreshing)</span></div>
+    <div class="trow" data-step="3"><span class="st g">Success(data, refreshing)</span><span class="evx">refetch موفق</span><span class="st g">Success(newData)</span></div>
+    <div class="trow" data-step="4"><span class="st g">Success(data, refreshing)</span><span class="evx">refetch ناموفق</span><span class="st g">Success(data)</span></div>
+    <div class="trow" data-step="5"><span class="st a">Loading</span><span class="evx">ناموفق، بعد از retryها</span><span class="st r">Failure(error)</span></div>
+    <div class="trow" data-step="6"><span class="st r">Failure(error)</span><span class="evx">کاربر Retry زد</span><span class="st a">Loading</span></div>
+  </div>
+  <p class="lead" data-step="7" style="margin-top:26px">spinner تمام‌صفحه فقط یک بار است: وقتی هنوز <span class="acc">هیچ data ای</span> نداریم. بعد از آن، screen دیگر هیچ‌وقت خالی نمی‌شود.</p>
+</section>
+
+<!-- 6 · FETCH DECISION -->
+<section class="slide col" id="decide" data-title="fetch: سه سؤال">
+  <div class="eyebrow">fetch(), decision by decision</div>
+  <p class="q">fetch: جعبه سه سؤال می‌پرسد</p>
+  <div style="display:grid;grid-template-columns:1fr 1.15fr;gap:40px;margin-top:34px;align-items:start">
+    <div class="col" style="gap:16px">
+      <div class="tile" data-step="1" style="padding:20px 26px"><span class="tag">1 · ALREADY FETCHING?</span><p style="color:var(--text)">request ی در راه است؟ <b>بله:</b> request دوم نزن؛ همان را صبر کن. <span class="ltr mono acc">0 request</span></p></div>
+      <div class="tile" data-step="2" style="padding:20px 26px"><span class="tag">2 · STILL FRESH?</span><p style="color:var(--text)">data داریم و از <span class="ltr mono">staleTime</span> جوان‌تر است؟ <b>بله:</b> همان را بده. <span class="ltr mono acc">0 request</span></p></div>
+      <div class="tile hot" data-step="3" style="padding:20px 26px"><span class="tag">3 · OTHERWISE</span><p style="color:var(--text)">یک request، با یک شماره‌ی <span class="ltr mono">epoch</span> جدید. <span class="ltr mono acc">1 request</span></p></div>
+    </div>
+<div class="code big hlmode" data-hl-code style="font-size:20px"><span class="ln" data-hl="4"><span class="k">fun</span> fetch(force: Boolean = <span class="k">false</span>) {</span><span class="ln" data-hl="1">  <span class="k">if</span> (!force &amp;&amp; inFlight.isActive) <span class="k">return</span></span><span class="ln" data-hl="2">  <span class="k">if</span> (!force &amp;&amp; !shouldFetch()) <span class="k">return</span></span><span class="ln" data-hl="3">  epoch = latestEpoch.incrementAndGet()</span><span class="ln" data-hl="3">  inFlight = scope.async { fetcher() }</span><span class="ln">}</span><span class="ln"> </span><span class="ln" data-hl="2"><span class="k">fun</span> shouldFetch() =</span><span class="ln" data-hl="2">  current == <span class="k">null</span> ||</span><span class="ln" data-hl="2">  now() - lastFetch &gt; staleTime</span><span class="ln"> </span><span class="ln"><span class="c">// simplified from QueryEntry.kt</span></span></div>
+  </div>
+  <p class="lead" data-step="4" style="margin-top:22px"><span class="ltr mono acc">force = true</span> (invalidate، pull-to-refresh، polling) از دو سؤال اول رد می‌شود.</p>
+</section>
+
+<!-- 7 · FOUR TRIGGERS -->
+<section class="slide col" id="triggers" data-title="فقط چهار چیز request می‌فرستد">
+  <div class="eyebrow">When does a request go?</div>
+  <p class="q">فقط چهار چیز request می‌فرستد</p>
+  <div class="row2" style="margin-top:34px;gap:24px">
+    <div class="tile" data-step="1" style="padding:22px 28px"><span class="tag">1 · FIRST OBSERVER</span><p style="color:var(--text)">اولین screen جعبه را باز می‌کند، و جعبه <b>خالی یا stale</b> است.</p></div>
+    <div class="tile" data-step="2" style="padding:22px 28px"><span class="tag">2 · INVALIDATE</span><p style="color:var(--text)">بعد از یک write، <b>اگر کسی الان نگاهش می‌کند</b>. وگرنه فقط علامت stale می‌خورد.</p></div>
+    <div class="tile" data-step="3" style="padding:22px 28px"><span class="tag">3 · MANUAL</span><p style="color:var(--text)">کاربر خواست: pull-to-refresh یا دکمه‌ی Retry، یعنی <span class="ltr mono">refetch()</span>.</p></div>
+    <div class="tile" data-step="4" style="padding:22px 28px"><span class="tag">4 · INTERVAL</span><p style="color:var(--text)"><span class="ltr mono">refetchInterval</span>، <b>فقط</b> وقتی screen روی صفحه است.</p></div>
+  </div>
+  <div class="tile hot" data-step="5" style="margin-top:24px;padding:22px 28px"><span class="tag">EVERYTHING ELSE · 0 REQUESTS</span><p style="color:var(--text);font-size:26px">recomposition · چرخش صفحه · screen دوم با همان key · برگشت در staleTime · و stale شدن به‌تنهایی</p></div>
+</section>
+
+<!-- 8 · STALETIME TIMELINE -->
+<section class="slide col" id="stale" data-title="staleTime">
+  <div class="eyebrow">staleTime · 5 min by default</div>
+  <div style="display:flex;justify-content:space-between;align-items:flex-end">
+    <p class="q">staleTime: تا کِی data تازه است؟</p>
+    <div class="counter">requests <b data-vals="0|1|1|1|2|2">0</b></div>
+  </div>
+  <div class="tl">
+    <div class="axis"></div>
+    <div class="band" data-step="1" style="left:8%;width:44%">fresh · 5 min</div>
+    <div class="band" data-step="4" style="left:69.6%;width:26.4%">fresh again</div>
+    <span class="tick" style="left:8%">0</span><span class="tick" style="left:25.6%">2′</span><span class="tick" style="left:47.6%">4.5′</span><span class="tick" style="left:52%">5′</span><span class="tick" style="left:69.6%">7′</span><span class="tick" style="left:96%">10′</span>
+    <div class="ev" data-step="1" style="left:8%"><div class="lbl">Dashboard باز شد</div><div class="stem"></div><div class="dot"></div><div class="res acc">1 · empty</div></div>
+    <div class="ev" data-step="2" style="left:25.6%"><div class="lbl">Wallet، همان key</div><div class="stem"></div><div class="dot"></div><div class="res good">0 · fresh</div></div>
+    <div class="ev" data-step="3" style="left:47.6%"><div class="lbl">گوشی چرخید</div><div class="stem"></div><div class="dot"></div><div class="res good">0 · fresh</div></div>
+    <div class="ev" data-step="4" style="left:69.6%"><div class="lbl">برگشت به Dashboard</div><div class="stem"></div><div class="dot"></div><div class="res acc">1 · stale</div></div>
+  </div>
+  <p class="lead" data-step="5" style="margin-top:6px">بین دقیقه‌ی ۵ و ۷ data کهنه بود و <span class="acc">هیچ request ی نرفت</span>. stale شدن خودش request نمی‌زند؛ فقط وقتی کسی جعبه را باز کند.</p>
+</section>
+
+<!-- 9 · OBSERVERS & CACHETIME -->
+<section class="slide col" id="observers" data-title="observers و cacheTime">
+  <div class="eyebrow">observers · cacheTime · 10 min by default</div>
+  <p class="q">جعبه می‌شمارد چه کسی نگاهش می‌کند</p>
+  <div style="display:grid;grid-template-columns:330px 1fr;gap:44px;margin-top:34px;align-items:start">
+    <div class="col" style="gap:18px">
+      <div class="tile hot" style="align-items:center;text-align:center"><span class="tag" style="text-align:center">OBSERVERS</span><span class="count acc" data-vals="0|1|2|1|0|1|0">0</span></div>
+      <div class="tile" style="align-items:center;text-align:center"><span class="tag" style="text-align:center">THE BOX</span><span class="mono" style="font:800 26px var(--mono)" data-vals="—|alive|alive|alive|timer 10′|alive|removed" data-cls="||||bad|good|bad" data-base="mono">—</span></div>
+<div class="code" style="font-size:16px">DisposableEffect(key) {
+  entry.observe()        <span class="c">// +1</span>
+  onDispose {
+    entry.unobserve()    <span class="c">// −1</span>
+  }
+}</div>
+    </div>
+    <div class="log">
+      <div class="it" data-step="1"><b>+1</b><div>screen A باز شد<span class="r">اولین observer، جعبه خالی است ← fetch</span></div></div>
+      <div class="it" data-step="2"><b>+1</b><div>screen B باز شد<span class="r">نفر دوم. fetch نه؛ همان جعبه را می‌بیند</span></div></div>
+      <div class="it" data-step="3"><b>−1</b><div>A بسته شد<span class="r">هنوز یک نفر نگاه می‌کند</span></div></div>
+      <div class="it" data-step="4"><b>−1</b><div>B بسته شد<span class="r">۰ نفر. تایمر <span class="ltr mono">cacheTime</span> شروع شد؛ data هنوز در حافظه است</span></div></div>
+      <div class="it" data-step="5"><b>+1</b><div>B سه دقیقه بعد برگشت<span class="r">تایمر لغو شد. data فوراً روی صفحه، بدون spinner</span></div></div>
+      <div class="it" data-step="6"><b>−1</b><div>B رفت و ۱۰ دقیقه کسی نیامد<span class="r">جعبه از map حذف شد. حافظه آزاد است</span></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- 10 · SINGLE-FLIGHT -->
+<section class="slide col" id="dedup" data-title="یک لحظه، یک request">
+  <div class="eyebrow">Single-flight</div>
+  <p class="q">سه screen، یک لحظه، یک request</p>
+  <div style="display:grid;grid-template-columns:300px 1fr 420px 1fr 260px;align-items:center;direction:ltr;margin-top:40px">
+    <div class="col" style="gap:12px" data-step="1">
+      <div class="card">Dashboard · fetch()</div><div class="card">Wallet · fetch()</div><div class="card">Header · fetch()</div>
+    </div>
+    <div class="harrow" data-step="2" style="padding:0 14px"><span class="lbl">3 calls</span><span class="ln"></span></div>
+    <div class="tile hot" data-step="2" style="direction:ltr;text-align:left"><span class="tag" style="text-align:left">wallet.balance.USDT</span>
+      <div class="mini">call 1 → <span class="acc">wins inFlight</span><br>call 2 → isActive · wait<br>call 3 → isActive · wait</div></div>
+    <div class="harrow" data-step="3" style="padding:0 14px"><span class="lbl">1 request</span><span class="ln"></span></div>
+    <div class="server" data-step="3" style="position:static;width:auto"><div class="t">SERVER</div><div class="v">1</div></div>
+  </div>
+<div class="code" data-step="4" style="font-size:19px;margin-top:34px;padding:18px 24px"><span class="k">if</span> (!force &amp;&amp; running?.isActive == <span class="k">true</span>) <span class="k">return</span>     <span class="c">// someone is already fetching</span>
+<span class="k">if</span> (inFlight.compareAndSet(running, deferred)) { ... }  <span class="c">// only one caller can win the slot</span></div>
+  <p class="lead" data-step="5" style="margin-top:20px">compare-and-set اتمی است؛ پس روی چند thread واقعی هم فقط یک request. test آن:</p>
+  <p class="ltr mono" data-step="5" style="font-size:22px;color:var(--text);text-align:right;margin-top:6px">concurrent fetches across real threads run the fetcher exactly once</p>
+</section>
+
+<!-- 11 · A REAL PATH -->
+<section class="slide col" id="path" data-title="یک مسیر واقعی، request به request">
+  <div class="eyebrow">Counting requests</div>
+  <p class="q">یک مسیر واقعی، request به request</p>
+  <table class="stbl">
+    <tr><th>ACTION</th><th style="text-align:center">REQUESTS</th><th>WHY</th></tr>
+    <tr data-step="1"><td>Dashboard را باز می‌کند</td><td class="n">1</td><td class="w">جعبه‌ی موجودی خالی است</td></tr>
+    <tr data-step="2"><td>Wallet را باز می‌کند (همان موجودی)</td><td class="n">0</td><td class="w">همان key؛ هنوز fresh</td></tr>
+    <tr data-step="3"><td>گوشی را می‌چرخاند</td><td class="n">0</td><td class="w">جعبه در QueryClient است، نه در Activity</td></tr>
+    <tr data-step="4"><td>خرید می‌کند (Buy موجودی را نشان می‌دهد)</td><td class="n">1 + 1</td><td class="w">write، بعد invalidate؛ جعبه‌ی روی صفحه تازه می‌شود</td></tr>
+    <tr data-step="5"><td>به Dashboard برمی‌گردد</td><td class="n">0</td><td class="w">همان جعبه همین الان تازه شد</td></tr>
+    <tr data-step="6"><td>هفت دقیقه بعد دوباره باز می‌کند</td><td class="n">1</td><td class="w">stale شده</td></tr>
+    <tr class="total" data-step="7"><td><b>کل مسیر</b></td><td class="n">4</td><td class="w"><span class="ltr">3 reads + 1 write</span></td></tr>
+  </table>
+  <p class="lead" data-step="8" style="margin-top:20px">هر request یک دلیل دارد: <span class="acc">خالی</span>، <span class="acc">stale</span>، یا <span class="acc">می‌دانیم عوض شده</span>.</p>
+</section>
+
+<!-- 12 · CHOOSING STALETIME -->
+<section class="slide col" id="choose" data-title="staleTime یک تصمیم product است">
+  <div class="eyebrow">Choosing staleTime</div>
+  <p class="q">staleTime یک تصمیم product است</p>
+  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:22px;margin-top:40px">
+    <div class="tile" data-step="1"><span class="tag">PRICE</span><h3 style="font-size:28px">هر ثانیه عوض می‌شود</h3>
+<div class="code">QueryOptions(
+  refetchInterval = 5_000)</div><p>یا push (چند اسلاید بعد)</p></div>
+    <div class="tile" data-step="2"><span class="tag">BALANCE</span><h3 style="font-size:28px">فقط با کار کاربر</h3>
+<div class="code">QueryOptions
+  .freshFor(30_000)</div><p>به‌علاوه‌ی invalidate بعد از خرید</p></div>
+    <div class="tile" data-step="3"><span class="tag">FEED</span><h3 style="font-size:28px">چند دقیقه کهنه، مشکلی نیست</h3>
+<div class="code">QueryOptions()
+<span class="c">// 5 min default</span></div><p>پیش‌فرض</p></div>
+    <div class="tile" data-step="4"><span class="tag">PROFILE</span><h3 style="font-size:28px">تقریباً هیچ‌وقت</h3>
+<div class="code">QueryOptions
+  .OfflineForever</div><p>فقط با invalidate</p></div>
+  </div>
+  <p class="lead" data-step="5" style="margin-top:34px">سؤال درست «data چند وقت یک بار عوض می‌شود؟» نیست. سؤال درست: <span class="acc">«چقدر کهنه بودن برای کاربر اشکال دارد؟»</span></p>
+</section>
+
+<!-- 13 · POLLING -->
+<section class="slide col" id="polling" data-title="data زنده: polling">
+  <div class="eyebrow">refetchInterval · live data</div>
+  <p class="q">data زنده: polling، ولی با سه محدودیت</p>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:40px;margin-top:34px;align-items:start">
+<div class="code big" style="font-size:21px"><span class="k">val</span> price = useQuery(
+    key = TickerKeys.price(<span class="s">"BTC"</span>),
+    fetcher = { api.price(<span class="s">"BTC"</span>) },
+    options = QueryOptions(
+        refetchInterval = <span class="n">5_000</span>,
+    ),
+)</div>
+    <div class="col" style="gap:16px">
+      <div class="tile" data-step="1" style="padding:20px 26px"><span class="tag">1 · ONLY WHILE VISIBLE</span><p style="color:var(--text)">فقط وقتی screen در <span class="ltr mono">STARTED</span> است. اپ در background = <b>صفر request</b>.</p></div>
+      <div class="tile" data-step="2" style="padding:20px 26px"><span class="tag">2 · ONE LOOP PER BOX</span><p style="color:var(--text)">سه screen با همان key = <b>یک</b> request هر ۵ ثانیه، نه سه.</p></div>
+      <div class="tile" data-step="3" style="padding:20px 26px"><span class="tag">3 · NO PILE-UP</span><p style="color:var(--text)">اگر request قبلی هنوز در راه است، این tick رد می‌شود. شبکه‌ی کند ≠ صف request.</p></div>
+    </div>
+  </div>
+  <p class="lead" data-step="4" style="margin-top:26px">و وقتی آخرین screen رفت، حلقه هم تمام می‌شود.</p>
+</section>
+
+<!-- 14 · POLLING OR PUSH -->
+<section class="slide col" id="push" data-title="polling یا push">
+  <div class="eyebrow">Polling or push?</div>
+  <p class="q">push، به داخل همان جعبه</p>
+  <div class="row2" style="margin-top:30px;gap:26px">
+    <div class="tile" data-step="1" style="padding:22px 28px"><span class="tag">POLLING IS ENOUGH</span><p style="color:var(--text)">چند ثانیه تأخیر قابل قبول است · چند key، نه صدها · سرور push ندارد</p></div>
+    <div class="tile" data-step="2" style="padding:22px 28px"><span class="tag">USE PUSH · WEBSOCKET / SSE</span><p style="color:var(--text)">order book · قیمت لحظه‌ای صدها symbol · چت</p></div>
+  </div>
+  <div style="display:grid;grid-template-columns:1.2fr 1fr;gap:34px;margin-top:26px;align-items:start">
+<div class="code big" data-step="3" style="font-size:21px">socket.ticks.collect { tick -&gt;
+    queryClient.setData(
+        TickerKeys.price(tick.symbol),
+        tick,
+    )
+}</div>
+    <div class="col" style="gap:12px" data-step="4">
+      <p class="lead" style="font-size:26px;line-height:1.6">screen همان <span class="ltr mono">useQuery</span> را می‌خواند؛ نمی‌داند data از socket آمد یا از HTTP.</p>
+      <p class="lead" style="font-size:26px;line-height:1.6"><span class="ltr mono">setData</span> شماره‌ی epoch را جلو می‌برد؛ جواب HTTP قدیمی رویش نمی‌نویسد.</p>
+      <p class="lead" style="font-size:26px;line-height:1.6">بعد از reconnect: <span class="ltr mono">invalidate</span>، تا هر چه از دست رفته پر شود.</p>
+    </div>
+  </div>
+</section>
+
+<!-- 15 · PAYLOAD -->
+<section class="slide col" id="payload" data-title="payload">
+  <div class="eyebrow">Payload</div>
+  <p class="q">engine تعداد request را کم می‌کند، نه حجم هر جواب را</p>
+  <div class="row2" style="margin-top:30px;gap:24px">
+    <div class="tile hot" data-step="1" style="padding:22px 28px"><span class="tag">ENGINE · FEWER REQUESTS</span><p style="color:var(--text)">cache، single-flight، staleTime. request ی که نرود، هیچ byte ای ندارد.</p></div>
+    <div class="tile" data-step="2" style="padding:22px 28px"><span class="tag">API · PAGES</span><p style="color:var(--text)">هر صفحه یک key: <span class="ltr mono acc">orders.list.open.1</span>. فقط صفحه‌ای که دیده می‌شود گرفته می‌شود.</p></div>
+    <div class="tile" data-step="3" style="padding:22px 28px"><span class="tag">API · SUMMARY VS DETAIL</span><p style="color:var(--text)">لیست، نسخه‌ی خلاصه؛ صفحه‌ی جزئیات، نسخه‌ی کامل. دو endpoint، دو key، دو جعبه.</p></div>
+    <div class="tile" data-step="4" style="padding:22px 28px"><span class="tag">HTTP · ETAG / 304</span><p style="color:var(--text)">OkHttp Cache زیر fetcher: اگر چیزی عوض نشده، سرور <span class="ltr mono">304</span> بدون body می‌دهد.</p></div>
+  </div>
+  <p class="lead" data-step="5" style="margin-top:26px">حافظه: فقط جعبه‌هایی که کسی نگاهشان می‌کند، به‌علاوه‌ی <span class="ltr mono">cacheTime</span>. بعد از آن از map حذف می‌شوند.</p>
+</section>
+
+<!-- 16 · LATE RESPONSES -->
+<section class="slide col" id="race" data-title="جواب دیررسیده">
+  <div class="eyebrow">Late responses · epoch</div>
+  <div style="display:flex;justify-content:space-between;align-items:flex-end">
+    <p class="q">اگر جواب قدیمی دیرتر برسد؟</p>
+    <div class="col" style="align-items:center;gap:6px"><span class="tag mono faint" style="font-size:16px">BOX SHOWS</span><span class="valbox" data-vals="1,250|1,250|1,250|1,230|1,250|1,230" data-cls="|||good|bad|good" data-base="valbox">1,250</span></div>
+  </div>
+  <div class="col" style="gap:10px;margin-top:40px">
+    <div class="lane" data-step="1"><span class="name">fetch #1</span><div class="bar old" style="left:170px;width:1050px">epoch 1 · slow network …</div></div>
+    <div class="lane" data-step="2"><span class="name">fetch #2</span><div class="bar new" style="left:470px;width:380px">epoch 2 · after buy</div></div>
+  </div>
+  <div class="col" style="gap:12px;margin-top:26px">
+    <p class="lead" data-step="1" style="font-size:27px">۱. fetch #1 شروع شد؛ شبکه کند است.</p>
+    <p class="lead" data-step="2" style="font-size:27px">۲. کاربر خرید کرد ← invalidate ← fetch #2 با epoch 2. fetch #1 cancel می‌شود.</p>
+    <p class="lead" data-step="3" style="font-size:27px">۳. fetch #2 زودتر رسید: <span class="good ltr">1,230</span>. درست است.</p>
+    <p class="lead" data-step="4" style="font-size:27px">۴. جواب fetch #1 با این حال رسید: <span class="bad ltr">1,250</span>. <span class="bad">بدون epoch، data ی قدیمی برنده می‌شد.</span></p>
+    <p class="lead" data-step="5" style="font-size:27px">۵. با epoch: <span class="ltr mono">1 ≠ 2</span> ← دور ریخته شد. <span class="good">جعبه <span class="ltr">1,230</span> می‌ماند.</span></p>
+  </div>
+<div class="code" data-step="5" style="font-size:18px;margin-top:16px;padding:14px 22px"><span class="k">if</span> (epoch.get() != latestEpoch.get()) <span class="k">break</span>   <span class="c">// a newer fetch (or setData) superseded us: drop this result</span></div>
+</section>
+
+<!-- 17 · RETRY -->
+<section class="slide col" id="retry" data-title="retry">
+  <div class="eyebrow">Retry</div>
+  <p class="q">کدام خطا ارزش دوباره امتحان کردن دارد؟</p>
+  <div class="row2" style="margin-top:34px;gap:26px">
+    <div class="tile" data-step="1" style="border-color:rgba(127,212,173,.45)"><span class="tag" style="color:var(--good)">RETRY · TRANSIENT</span><p class="ltr mono" style="color:var(--text);text-align:right;font-size:24px">IOException · 408 · 5xx</p><p>قطع شبکه، timeout، خطای سرور. شاید یک ثانیه بعد درست شود.</p></div>
+    <div class="tile" data-step="2" style="border-color:rgba(240,143,124,.45)"><span class="tag" style="color:var(--bad)">NEVER · CLIENT ERROR</span><p class="ltr mono" style="color:var(--text);text-align:right;font-size:24px">400 · 401 · 403 · 404 · 409 · 422</p><p>جواب سرور قطعی است. دوباره زدن فقط همان خطا را دیرتر نشان می‌دهد.</p></div>
+  </div>
+  <div class="row2" style="margin-top:24px;gap:26px">
+    <div class="tile hot" data-step="3"><span class="tag">READ · useQuery</span><p style="color:var(--text)">پیش‌فرض ۳ تلاش، با فاصله‌ی ۱ و ۲ ثانیه. در این مدت کاربر Loading می‌بیند؛ error فقط وقتی واقعاً تسلیم شدیم.</p></div>
+    <div class="tile hot" data-step="4"><span class="tag">WRITE · useMutation</span><p style="color:var(--text)">پیش‌فرض <b>بدون</b> retry. اگر <span class="ltr mono">retryCount</span> بدهید، باز فقط خطای موقت؛ 4xx هرگز، چون خرید تکراری.</p></div>
+  </div>
+  <p class="lead" data-step="5" style="margin-top:22px;font-size:28px">یک تابع برای هر دو: <span class="ltr mono" style="color:var(--text)">isRetryable(throwable)</span> در <span class="ltr mono">RetryPolicy.kt</span>. 429 در لایه‌ی شبکه جواب داده می‌شود.</p>
+</section>
+
+<!-- 18 · FAILURE KEEPS DATA -->
+<section class="slide col" id="failure" data-title="refetch ناموفق">
+  <div class="eyebrow">Failure</div>
+  <p class="q">refetch شکست خورد. screen خالی نمی‌شود</p>
+  <div style="display:flex;gap:80px;justify-content:center;margin-top:16px;direction:ltr">
+    <div class="col" data-step="1" style="align-items:center"><div class="screen" style="height:330px"><div class="notch"></div><div class="err" style="margin-top:50px">Couldn't load</div><div class="btn">Retry</div></div><div class="statelabel bad" style="font-size:26px">first load fails</div><div class="mono faint" style="font-size:18px">no data yet → Failure</div></div>
+    <div class="col" data-step="2" style="align-items:center"><div class="screen" style="height:330px"><div class="notch"></div><div class="line"></div><div class="line"></div><div class="line"></div><div class="line" style="width:70%"></div></div><div class="statelabel good" style="font-size:26px">refetch fails</div><div class="mono faint" style="font-size:18px">has data → Success(old data)</div></div>
+  </div>
+<div class="code" data-step="3" style="font-size:19px;margin-top:22px;padding:16px 24px">_state.value = <span class="k">if</span> (existing != <span class="k">null</span>) Success(existing) <span class="k">else</span> Failure(error)</div>
+  <p class="lead" data-step="4" style="margin-top:16px;font-size:30px">data ی کمی کهنه بهتر از صفحه‌ی خالی است.</p>
+</section>
+
+<!-- 19 · MUTATION INSIDE -->
+<section class="slide col" id="mutation" data-title="useMutation از داخل">
+  <div class="eyebrow">useMutation, inside</div>
+  <p class="q">write: سه چیز که engine برایتان درست انجام می‌دهد</p>
+  <div style="display:grid;grid-template-columns:1.25fr 1fr;gap:40px;margin-top:34px;align-items:start">
+<div class="code big hlmode" data-hl-code style="font-size:19px"><span class="ln" data-hl="2"><span class="k">val</span> currentFn = rememberUpdatedState(mutationFn)</span><span class="ln"> </span><span class="ln" data-hl="1"><span class="k">val</span> running = inFlight.get()</span><span class="ln" data-hl="1"><span class="k">if</span> (running == <span class="k">null</span> || !running.isActive) {</span><span class="ln" data-hl="1">  scope.launch {</span><span class="ln" data-hl="2">    <span class="k">val</span> result = currentFn.value(params)</span><span class="ln" data-hl="3">    invalidateKeys.forEach(client::invalidate)</span><span class="ln" data-hl="3">    onSuccess(result)</span><span class="ln" data-hl="1">  }</span><span class="ln" data-hl="1">} <span class="c">// else: already running, drop this tap</span></span><span class="ln"> </span><span class="ln"><span class="c">// simplified from MutationHooks.kt</span></span></div>
+    <div style="position:relative;height:420px">
+      <div class="tile hot" data-only="1" style="position:absolute;inset:0 0 auto 0"><span class="tag">1 · SINGLE-FLIGHT</span><h3 style="font-size:30px">دو tap، یک خرید</h3><p style="color:var(--text)">تا write اول تمام نشده، tap دوم نادیده گرفته می‌شود. نه write دوم، نه onSuccess دوم.</p></div>
+      <div class="tile hot" data-only="2" style="position:absolute;inset:0 0 auto 0"><span class="tag">2 · LATEST LAMBDA</span><h3 style="font-size:30px">همیشه آخرین نسخه</h3><p style="color:var(--text)"><span class="ltr mono">rememberUpdatedState</span>: اگر screen recompose شد و lambda عوض شد، write با مقدارهای جدید اجرا می‌شود، نه یک closure کهنه.</p></div>
+      <div class="tile hot" data-only="3" style="position:absolute;inset:0 0 auto 0"><span class="tag">3 · ORDER</span><h3 style="font-size:30px">اول موفقیت، بعد invalidate</h3><p style="color:var(--text)">invalidate فقط بعد از موفقیت. error ← <span class="ltr mono">onError</span>، و هیچ جعبه‌ای دست نمی‌خورد.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- 20 · TWO KINDS OF STATE -->
+<section class="slide col" id="owners" data-title="دو نوع state، دو صاحب">
+  <div class="eyebrow">Query state + UI state</div>
+  <p class="q">دو نوع state، دو صاحب</p>
+  <div class="row2" style="margin-top:36px;gap:28px">
+    <div class="tile hot" data-step="1"><span class="tag">QUERY STATE · SERVER</span><h3 style="font-size:32px">صاحب: جعبه</h3><p style="color:var(--text)">لیست سفارش‌ها، موجودی، پروفایل.</p><p>مشترک بین screenها. cache، stale، refetch.</p><p class="ltr mono acc" style="text-align:right">useQuery(...)</p></div>
+    <div class="tile" data-step="2"><span class="tag">UI STATE · SCREEN</span><h3 style="font-size:32px">صاحب: screen</h3><p style="color:var(--text)">تب انتخاب‌شده، متن search، فرم در حال ویرایش، dialog باز.</p><p>مال همین screen. وقتی منطق دارد، ViewModel.</p><p class="ltr mono acc" style="text-align:right">rememberSaveable { ... }</p></div>
+  </div>
+  <p class="lead" data-step="3" style="margin-top:30px"><b style="color:var(--text)">قانون:</b> هر state یک صاحب. UI state هیچ‌وقت داخل جعبه نمی‌رود؛ server data هیچ‌وقت در <span class="ltr mono">remember</span> کپی نمی‌شود.</p>
+  <p class="lead" data-step="4" style="margin-top:8px">و به دو شکل به هم وصل می‌شوند: UI state <span class="acc">بخشی از key</span> است، یا server data <span class="acc">مقدار اولیه‌ی فرم</span> است.</p>
+</section>
+
+<!-- 21 · UI STATE IN THE KEY -->
+<section class="slide col" id="filter" data-title="فیلتر بخشی از key است">
+  <div class="eyebrow">UI state drives the key</div>
+  <p class="q">فیلتر UI state است، و بخشی از key</p>
+  <div style="display:grid;grid-template-columns:1.45fr 1fr;gap:36px;margin-top:30px;align-items:start">
+<div class="code big hlmode" data-hl-code style="font-size:19px"><span class="ln" data-hl="1"><span class="k">var</span> filter <span class="k">by</span> rememberSaveable { mutableStateOf(<span class="t">Filter</span>.Open) }</span><span class="ln" data-hl="1"><span class="k">var</span> page <span class="k">by</span> rememberSaveable { mutableIntStateOf(<span class="n">1</span>) }</span><span class="ln"> </span><span class="ln" data-hl="2,3"><span class="k">val</span> orders = useOrders(filter, page)</span><span class="ln" data-hl="2"><span class="c">// key = OrderKeys.list(filter, page)</span></span><span class="ln"> </span><span class="ln" data-hl="3">FilterTabs(filter, onSelect = { filter = it; page = <span class="n">1</span> })</span><span class="ln" data-hl="3"><span class="t">QueryContent</span>(orders) { OrderList(it) }</span><span class="ln"> </span><span class="ln" data-hl="4"><span class="k">val</span> results = useSearch(</span><span class="ln" data-hl="4">    text, QueryOptions(enabled = text.length &gt;= <span class="n">2</span>))</span></div>
+    <div style="position:relative;height:420px">
+      <div class="tile" data-only="1" style="position:absolute;inset:0 0 auto 0"><span class="tag">1 · UI STATE</span><p style="color:var(--text)">filter و page مال screen‌اند. <span class="ltr mono">rememberSaveable</span>: از چرخش صفحه هم رد می‌شوند.</p></div>
+      <div class="tile hot" data-only="2" style="position:absolute;inset:0 0 auto 0"><span class="tag">2 · PART OF THE KEY</span><p style="color:var(--text)">هر ترکیب یک جعبه: <span class="ltr mono acc">orders.list.open.1</span>، <span class="ltr mono acc">orders.list.closed.1</span></p></div>
+      <div class="tile hot" data-only="3" style="position:absolute;inset:0 0 auto 0"><span class="tag">3 · SWITCH BACK</span><p style="color:var(--text)">برگشت به تب Open: <span class="ltr mono acc">0 request</span>. جعبه‌اش هنوز در map و fresh است.</p></div>
+      <div class="tile hot" data-only="4" style="position:absolute;inset:0 0 auto 0"><span class="tag">4 · ENABLED</span><p style="color:var(--text)">تا متن کوتاه است، hook بیکار می‌ماند: نه observe، نه request. (debounce هم کنارش؛ راهنما.)</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- 22 · FORMS -->
+<section class="slide col" id="form" data-title="فرم">
+  <div class="eyebrow">Forms</div>
+  <p class="q">فرم: شروع از server، ویرایش مال screen</p>
+  <div style="display:grid;grid-template-columns:1.45fr 1fr;gap:36px;margin-top:30px;align-items:start">
+<div class="code big hlmode" data-hl-code style="font-size:19px"><span class="ln" data-hl="1,3,4"><span class="k">val</span> profile = useProfile()</span><span class="ln" data-hl="3,4"><span class="k">val</span> save = useUpdateProfile()  <span class="c">// invalidates ProfileKeys.ME</span></span><span class="ln" data-hl="4"> </span><span class="ln" data-hl="1,4"><span class="t">QueryContent</span>(profile) { p -&gt;</span><span class="ln" data-hl="1,2,4">  <span class="k">var</span> name <span class="k">by</span> rememberSaveable(p.id) {</span><span class="ln" data-hl="1,2,4">      mutableStateOf(p.name) }</span><span class="ln" data-hl="4">  TextField(name, onValueChange = { name = it })</span><span class="ln" data-hl="3,4">  Button(</span><span class="ln" data-hl="3,4">    onClick = { save(p.copy(name = name)) },</span><span class="ln" data-hl="3,4">    enabled = !save.isLoading &amp;&amp; name != p.name,</span><span class="ln" data-hl="3,4">  ) { Text(<span class="s">"Save"</span>) }</span><span class="ln" data-hl="4">}</span></div>
+    <div style="position:relative;height:440px">
+      <div class="tile" data-only="1" style="position:absolute;inset:0 0 auto 0"><span class="tag">1 · SEED ONCE</span><p style="color:var(--text)">مقدار اولیه‌ی فرم از جعبه می‌آید. از آن به بعد، متن مال screen است.</p></div>
+      <div class="tile hot" data-only="2" style="position:absolute;inset:0 0 auto 0"><span class="tag">2 · KEY = p.id, NOT p</span><p style="color:var(--text)">اگر وسط تایپ refetch شود، <span class="ltr mono">p</span> عوض می‌شود ولی <span class="ltr mono">p.id</span> نه. پس متن کاربر پاک نمی‌شود.</p></div>
+      <div class="tile hot" data-only="3" style="position:absolute;inset:0 0 auto 0"><span class="tag">3 · SUBMIT</span><p style="color:var(--text)">mutation ← invalidate ← جعبه تازه می‌شود ← <span class="ltr mono">name == p.name</span> ← دکمه غیرفعال.</p></div>
+      <div class="tile" data-only="4" style="position:absolute;inset:0 0 auto 0"><span class="tag">4 · WHEN A VIEWMODEL</span><p style="color:var(--text)">validation، چند مرحله، منطق پیچیده؟ ViewModel برای UI state، hook برای server data. جلسه‌ی ۳.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- 23 · THREE KINDS OF LOADING -->
+<section class="slide col" id="loading" data-title="سه نوع loading">
+  <div class="eyebrow">Three kinds of loading</div>
+  <p class="q">سه نوع loading، سه UI</p>
+  <div style="display:flex;gap:60px;justify-content:center;margin-top:20px;direction:ltr">
+    <div class="col" data-step="1" style="align-items:center;gap:6px"><div class="screen" style="height:380px"><div class="notch"></div><div class="spinner" style="margin-top:80px"></div></div><div class="statelabel acc" style="font-size:24px">Loading</div><div class="mono faint" style="font-size:17px">first time, no data</div></div>
+    <div class="col" data-step="2" style="align-items:center;gap:6px"><div class="screen" style="height:380px"><div class="notch"></div><div class="bar2"></div><div class="line"></div><div class="line"></div><div class="line"></div></div><div class="statelabel good" style="font-size:24px">Success(refreshing)</div><div class="mono faint" style="font-size:17px">background refetch</div></div>
+    <div class="col" data-step="3" style="align-items:center;gap:6px"><div class="screen" style="height:380px"><div class="notch"></div><div class="pull"></div><div class="line"></div><div class="line"></div><div class="line"></div></div><div class="statelabel" style="font-size:24px">isManualRefetch</div><div class="mono faint" style="font-size:17px">user pulled to refresh</div></div>
+  </div>
+<div class="code" data-step="4" style="font-size:18px;margin-top:20px;padding:14px 22px">PullToRefreshBox(isRefreshing = headlines.isManualRefetch, onRefresh = headlines.refetch) {
+    <span class="t">QueryContent</span>(headlines) { ArticleList(it) }
+}</div>
+</section>
+
+<!-- 24 · TESTING -->
+<section class="slide col" id="testing" data-title="test بدون emulator">
+  <div class="eyebrow">Testing the engine</div>
+  <p class="q">engine بدون emulator test می‌شود</p>
+  <div style="display:grid;grid-template-columns:1.5fr 1fr;gap:36px;margin-top:30px;align-items:start">
+<div class="code big hlmode" data-hl-code style="font-size:18px"><span class="ln" data-hl="1,3"><span class="k">val</span> clock = FakeClock()</span><span class="ln" data-hl="3"><span class="k">var</span> fetches = <span class="n">0</span></span><span class="ln" data-hl="3"><span class="k">val</span> entry = QueryEntry(key = <span class="s">"dashboard"</span>,</span><span class="ln" data-hl="3">    fetcher = { <span class="s">"value-${++fetches}"</span> },</span><span class="ln" data-hl="3">    staleTime = <span class="n">1</span>.minutes.inWholeMilliseconds,</span><span class="ln" data-hl="1,2,3">    scope = backgroundScope, now = clock::read, ...)</span><span class="ln" data-hl="3"> </span><span class="ln" data-hl="3">entry.observe()                       <span class="c">// empty → fetch</span></span><span class="ln" data-hl="1,3">clock.advance(<span class="n">30</span>.seconds); entry.fetch()</span><span class="ln" data-hl="3">assertEquals(<span class="n">1</span>, fetches)                <span class="c">// fresh → cache</span></span><span class="ln" data-hl="1,3">clock.advance(<span class="n">40</span>.seconds); entry.fetch()</span><span class="ln" data-hl="3">assertEquals(<span class="n">2</span>, fetches)                <span class="c">// stale → refetch</span></span></div>
+    <div class="col" style="gap:16px">
+      <div class="tile" data-step="1" style="padding:20px 24px"><span class="tag">CLOCK IS INJECTED</span><p style="color:var(--text)"><span class="ltr mono">now = clock::read</span>. یک دقیقه صبر، در ۰ میلی‌ثانیه.</p></div>
+      <div class="tile" data-step="2" style="padding:20px 24px"><span class="tag">DISPATCHER IS INJECTED</span><p style="color:var(--text)"><span class="ltr mono">QueryClient(testDispatcher)</span>. coroutineها در کنترل test.</p></div>
+      <div class="tile hot" data-step="3" style="padding:20px 24px"><span class="tag">RUN IT</span><p style="color:var(--text);text-align:right"><span class="ltr mono">./gradlew :core:query:test</span></p></div>
+    </div>
+  </div>
+</section>
+
+<!-- 25 · GUARANTEES -->
+<section class="slide col" id="guarantees" data-title="۱۲ قول، ۱۲ test">
+  <div class="eyebrow">12 tests · 12 guarantees</div>
+  <p class="q">هر قولی که امروز دادیم، یک test دارد</p>
+  <div class="g3" style="margin-top:30px">
+    <div class="gt" data-step="1"><p>fresh از cache، stale دوباره</p><code>within stale time serves cache, refetches once stale</code></div>
+    <div class="gt" data-step="1"><p>read های همزمان، یک fetch</p><code>concurrent reads are de-duplicated to a single fetch</code></div>
+    <div class="gt" data-step="1"><p>روی thread های واقعی هم یکی</p><code>concurrent fetches across real threads run the fetcher exactly once</code></div>
+    <div class="gt" data-step="1"><p>invalidate واقعاً refetch می‌کند</p><code>invalidate forces a refetch through the client</code></div>
+    <div class="gt" data-step="2"><p>خطای موقت retry می‌شود</p><code>retries transient failures before surfacing an error</code></div>
+    <div class="gt" data-step="2"><p>4xx retry نمی‌شود</p><code>does not retry a client error</code></div>
+    <div class="gt" data-step="2"><p>فقط خطای موقت retryable است</p><code>isRetryable retries only transient failures</code></div>
+    <div class="gt" data-step="2"><p>Room وقتی شبکه نیست</p><code>persistent tier serves the cached value when the fetch fails</code></div>
+    <div class="gt" data-step="3"><p>polling روی هم انباشته نمی‌شود</p><code>a tick that lands on a still-running fetch is skipped, not forced</code></div>
+    <div class="gt" data-step="3"><p>polling متوقف و دوباره شروع می‌شود</p><code>stopInterval pauses polling, startInterval resumes it</code></div>
+    <div class="gt" data-step="3"><p>جعبه‌ی بی‌observer حذف می‌شود</p><code>unobserved slots are evicted from the client after cacheTime</code></div>
+    <div class="gt" data-step="3"><p>برگشت در آخرین لحظه، جعبه می‌ماند</p><code>a slot re-observed during the eviction window is kept</code></div>
+  </div>
+  <div class="row2" data-step="4" style="margin-top:18px;gap:16px">
+    <div class="gt miss"><p>جواب دیررسیده دور ریخته می‌شود (epoch)</p><code>no test yet</code></div>
+    <div class="gt miss"><p>refetch ناموفق data را نگه می‌دارد</p><code>no test yet · this week's homework</code></div>
+  </div>
+</section>
+
+<!-- 26 · LIMITS -->
+<section class="slide col" id="limits" data-title="کارهایی که engine نمی‌کند">
+  <div class="eyebrow">What the engine does not do</div>
+  <p class="q">کارهایی که engine نمی‌کند</p>
+  <div class="row3" style="margin-top:34px;gap:22px">
+    <div class="tile" data-step="1" style="padding:22px 26px"><span class="tag">NO FOCUS REFETCH</span><p style="color:var(--text)">برگشت از background خودش refetch نمی‌کند. React Query می‌کند.</p></div>
+    <div class="tile" data-step="2" style="padding:22px 26px"><span class="tag">NO RECONNECT REFETCH</span><p style="color:var(--text)">وصل شدن دوباره‌ی اینترنت هم refetch نمی‌زند.</p></div>
+    <div class="tile" data-step="3" style="padding:22px 26px"><span class="tag">NO KEEP-PREVIOUS</span><p style="color:var(--text)">key عوض شد؟ تا data ی جدید برسد، Loading.</p></div>
+    <div class="tile" data-step="4" style="padding:22px 26px"><span class="tag">NO INFINITE QUERY</span><p style="color:var(--text)">هر صفحه یک key. برای scroll بی‌نهایت، Paging 3.</p></div>
+    <div class="tile" data-step="5" style="padding:22px 26px"><span class="tag">NO PUSH BUILT-IN</span><p style="color:var(--text)">socket را خودتان به <span class="ltr mono">setData</span> وصل می‌کنید.</p></div>
+    <div class="tile" data-step="6" style="padding:22px 26px"><span class="tag">MEMORY ONLY</span><p style="color:var(--text)">مگر <span class="ltr mono">useCachedQuery</span> با Room (جلسه‌ی ۳).</p></div>
+  </div>
+  <p class="lead" data-step="7" style="margin-top:28px">هر کدام چند خط است. ولی هر خط engine را بزرگ‌تر می‌کند؛ پس فقط وقتی واقعاً لازم شد.</p>
+</section>
+
+<!-- 27 · RECAP -->
+<section class="slide col" id="recap" data-title="جمع‌بندی">
+  <div class="eyebrow">Recap · your four questions</div>
+  <p class="q">چهار سؤال، چهار جواب</p>
+  <div class="col" style="gap:22px;margin-top:40px">
+    <p class="q" data-step="1" style="font-size:36px;margin:0"><span class="acc mono" style="font-size:22px">ENGINE</span> &nbsp;شش فیلد؛ fetch سه سؤال می‌پرسد؛ همه‌چیز thread-safe.</p>
+    <p class="q" data-step="2" style="font-size:36px;margin:0"><span class="acc mono" style="font-size:22px">REQUESTS</span> &nbsp;فقط چهار چیز request می‌فرستد. staleTime را با product انتخاب کنید.</p>
+    <p class="q" data-step="3" style="font-size:36px;margin:0"><span class="acc mono" style="font-size:22px">LIVE · PAYLOAD</span> &nbsp;polling محدود، یا push به داخل setData. حجم جواب کار API است.</p>
+    <p class="q" data-step="4" style="font-size:36px;margin:0"><span class="acc mono" style="font-size:22px">STATE</span> &nbsp;هر state یک صاحب. UI state یا بخشی از key است، یا فرم را پر می‌کند.</p>
+  </div>
+</section>
+
+<!-- 28 · NEXT -->
+<section class="slide col" id="next" data-title="جلسه‌ی بعد">
+  <div class="eyebrow">Next Monday · Session 3 · Building</div>
+  <p class="big" style="margin-top:20px">حالا با هم <span class="acc">می‌سازیم</span>.</p>
+  <p class="q dim" data-step="1" style="font-size:46px">معماری کامل، جای ViewModel، قانون‌ها، و یک feature از صفر.</p>
+  <div class="tile" data-step="2" style="margin-top:36px;max-width:1150px">
+    <span class="tag">HOMEWORK</span>
+    <p style="color:var(--text)">۱. <span class="ltr mono acc">QueryEntry.kt</span> را کامل بخوانید (حدود ۳۰۰ خط). حالا هر خطش را می‌شناسید.</p>
+    <p style="color:var(--text)">۲. یکی از دو test ی که نداریم را بنویسید: <b>refetch ناموفق data را نگه می‌دارد</b>، یا <b>جواب دیررسیده دور ریخته می‌شود</b>.</p>
+  </div>
+</section>
+
+<!-- 29 · Q&A -->
+<section class="slide col center" id="thanks" data-title="پرسش و پاسخ" style="gap:24px">
+  <div class="eyebrow">Q&amp;A</div>
+  <p class="huge">سؤال؟</p>
+  <p class="lead ltr" style="text-align:right">github.com/lumoradevlab/ComposeCleanArch</p>
+  <p class="lead faint ltr" style="text-align:right">Parisa Hazhir Ghader · parisaghader.org</p>
+</section>
+
+</div></div>
+<div id="bar"></div>
+<div id="ctrl"><button id="b-prev" type="button">‹</button><span id="ctr">1 / 1</span><button id="b-next" type="button">›</button><button id="b-notes" type="button">notes (N)</button><button id="b-full" type="button">full (F)</button></div>
+
+<script>
+(function(){
+  var slides=[].slice.call(document.querySelectorAll('.slide'));
+  var total=slides.length, cur=0, step=0;
+  var chan=('BroadcastChannel' in window)?new BroadcastChannel('qc-s2'):null, notesWin=null;
+  function maxStep(s){var m=0;s.querySelectorAll('[data-step],[data-only]').forEach(function(e){m=Math.max(m,+(e.dataset.step||e.dataset.only))});return m}
+  function setVal(id,txt,cls){var e=document.getElementById(id);if(!e)return;e.textContent=txt;var p=e.closest('.phone');if(p){p.classList.remove('stale','fresh');if(cls)p.classList.add(cls)}}
+  var ACT={};
+  function state(){return{type:'state',index:cur,total:total,id:slides[cur].id,title:slides[cur].dataset.title,next:cur+1<total?slides[cur+1].dataset.title:null,step:step,steps:maxStep(slides[cur])}}
+  function broadcast(){var m=state();if(chan)chan.postMessage(m);if(notesWin&&!notesWin.closed){try{notesWin.postMessage(m,'*')}catch(e){}}}
+  function render(){
+    slides.forEach(function(s,i){s.classList.toggle('on',i===cur)});
+    var s=slides[cur];
+    s.querySelectorAll('[data-step]').forEach(function(e){e.classList.toggle('shown',+e.dataset.step<=step)});
+    s.querySelectorAll('[data-only]').forEach(function(e){e.classList.toggle('shown',+e.dataset.only===step)});
+    s.querySelectorAll('[data-hl-code]').forEach(function(code){code.classList.toggle('hlmode',step>0);
+      code.querySelectorAll('.ln').forEach(function(l){var h=(l.dataset.hl||'').split(',');l.classList.toggle('hl',h.indexOf(String(step))>-1)})});
+    s.querySelectorAll('[data-vals]').forEach(function(e){var v=e.dataset.vals.split('|');e.textContent=v[Math.min(step,v.length-1)];
+      if(e.dataset.cls!==undefined){var c=e.dataset.cls.split('|');e.className=(e.dataset.base||'')+' '+(c[Math.min(step,c.length-1)]||'')}});
+    if(ACT[s.id])ACT[s.id](step);
+    document.getElementById('bar').style.width=((cur+1)/total*100)+'%';
+    document.getElementById('ctr').textContent=(cur+1)+' / '+total;
+    try{history.replaceState(null,'','#'+(cur+1))}catch(e){}
+    broadcast();
+  }
+  function go(i){cur=Math.max(0,Math.min(total-1,i));step=0;render()}
+  function next(){if(step<maxStep(slides[cur]))step++;else if(cur<total-1){cur++;step=0}render()}
+  function prev(){if(step>0)step--;else if(cur>0){cur--;step=maxStep(slides[cur])}render()}
+  function fit(){var k=Math.min(innerWidth/1600,innerHeight/900);document.getElementById('stage').style.transform='scale('+k+')'}
+  function openNotes(){if(notesWin&&!notesWin.closed){notesWin.focus();broadcast();return}notesWin=window.open('notes.html','qc-s2-notes','width=960,height=780');setTimeout(broadcast,500);setTimeout(broadcast,1300)}
+  function full(){if(!document.fullscreenElement)document.documentElement.requestFullscreen&&document.documentElement.requestFullscreen();else document.exitFullscreen&&document.exitFullscreen()}
+  function remote(d){if(!d||typeof d!=='object')return;if(d.type==='nav')(d.dir>0?next:prev)();if(d.type==='hello')broadcast()}
+  if(chan)chan.onmessage=function(e){remote(e.data)};
+  addEventListener('message',function(e){remote(e.data)});
+  addEventListener('keydown',function(e){
+    if(e.metaKey||e.ctrlKey||e.altKey)return;
+    if(['ArrowRight','ArrowDown',' ','PageDown','Enter'].indexOf(e.key)>-1){e.preventDefault();next()}
+    else if(['ArrowLeft','ArrowUp','PageUp','Backspace'].indexOf(e.key)>-1){e.preventDefault();prev()}
+    else if(e.key==='Home')go(0);else if(e.key==='End')go(total-1);
+    else if(e.key==='n'||e.key==='N')openNotes();else if(e.key==='f'||e.key==='F')full();
+  });
+  document.getElementById('stage').addEventListener('click',next);
+  document.getElementById('b-next').onclick=next;document.getElementById('b-prev').onclick=prev;
+  document.getElementById('b-notes').onclick=openNotes;document.getElementById('b-full').onclick=full;
+  var tx=null;addEventListener('touchstart',function(e){tx=e.touches[0].clientX},{passive:true});
+  addEventListener('touchend',function(e){if(tx===null)return;var dx=e.changedTouches[0].clientX-tx;tx=null;if(Math.abs(dx)>50)(dx>0?next:prev)()});
+  addEventListener('resize',fit);fit();
+  var h=parseInt(location.hash.slice(1),10);cur=(h>0&&h<=total)?h-1:0;render();
+})();
+</script>
+</body>
+</html>

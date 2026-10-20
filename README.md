@@ -9,13 +9,13 @@ state goes through a shared, React-Query-style cache (`useQuery` / `useMutation`
 | Session | Title | Status | Contents |
 |---|---|---|---|
 | 1 | **The idea** | Ready · [open](https://lumoradevlab.github.io/query-client-presentation/session-1/) | Three phones, three copies; server data is a copy; the web had this first (React Query); why Compose fits; one shared box (QueryEntry), its key, QueryClient; before/after; the three tools; QueryState; useMutation; where each piece lives |
-| 2 | **The engine** | Coming | staleTime, observers and cacheTime, one request at a time, invalidate, retry, late responses, live data; the interactive simulators; testing the engine |
+| 2 | **The engine** | Ready · [open](https://lumoradevlab.github.io/query-client-presentation/session-2/) | Built on Session 1's questions: the six fields of QueryEntry, the only four things that send a request, staleTime and cacheTime, single-flight, polling vs push, payload, late responses (epoch), retry, a failed refetch, query state next to UI state, testing the engine, and what the engine does not do |
 | 3 | **Building** | Coming | The architecture around the engine, where a ViewModel still belongs, the rules, the recipe, building a feature together |
 
 Each session is about 45 minutes, opens with a recap and the one-sentence destination, and ends with a bridge to
 the next session.
 
-**Teacher's guide (Persian):** [session-1/guide.html](https://lumoradevlab.github.io/query-client-presentation/session-1/guide.html), slide by slide and build by build: what to say, what to ask, and the bridge to the next step.
+**Teacher's guides (Persian):** [session-1/guide.html](https://lumoradevlab.github.io/query-client-presentation/session-1/guide.html) · [session-2/guide.html](https://lumoradevlab.github.io/query-client-presentation/session-2/guide.html), slide by slide and build by build: what to say, what to ask, and the bridge to the next step.
 
 ---
 

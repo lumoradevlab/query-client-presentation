@@ -1,0 +1,638 @@
+<!doctype html><html lang="fa" dir="rtl"><head><meta charset=utf-8><title>راهنمای مدرس Query Client — جلسه‌ی ۲</title><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Vazirmatn:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: reading column with a sticky lesson index on the start (right) side. Nocturne palette, dark-first. */
+:root{
+  --bg:#161826;--surface:#1e2030;--surface-2:#262839;--line:rgba(233,233,237,.12);
+  --text:#e9e9ed;--dim:#b2b6ca;--faint:#8b8fa3;--accent:#9184d9;--accent-2:#b5abfc;--accent-soft:rgba(145,132,217,.14);
+  --code-bg:#10121b;--code-fg:#d9dbe6;
+  --font:'Vazirmatn','Inter',system-ui,sans-serif;--mono:'JetBrains Mono','Vazirmatn',ui-monospace,monospace;
+  color-scheme:dark;
+}
+@media (prefers-color-scheme: light){:root:not([data-theme="dark"]){--bg:#f3f5fe;--surface:#ffffff;--surface-2:#e8ebf7;--line:rgba(22,24,38,.12);--text:#161826;--dim:#3f4252;--faint:#5f6374;--accent:#5d5294;--accent-2:#5d5294;--accent-soft:rgba(93,82,148,.10);--code-bg:#1b1d2b;--code-fg:#d9dbe6;color-scheme:light}}
+:root[data-theme="light"]{--bg:#f3f5fe;--surface:#ffffff;--surface-2:#e8ebf7;--line:rgba(22,24,38,.12);--text:#161826;--dim:#3f4252;--faint:#5f6374;--accent:#5d5294;--accent-2:#5d5294;--accent-soft:rgba(93,82,148,.10);--code-bg:#1b1d2b;--code-fg:#d9dbe6;color-scheme:light}
+body{background:var(--bg);color:var(--text);font-family:var(--font)}
+.page{direction:rtl;max-width:1180px;margin:0 auto;padding-inline:20px;padding-block:40px 80px;display:grid;grid-template-columns:240px minmax(0,1fr);gap:48px}
+header.top{grid-column:1/-1;display:flex;flex-direction:column;gap:8px;border-bottom:1px solid var(--line);padding-bottom:24px}
+.eyebrow{font:600 13px/1 var(--mono);letter-spacing:.08em;color:var(--accent);text-transform:uppercase;direction:ltr;text-align:right}
+h1{font-size:clamp(28px,4vw,40px);font-weight:800;line-height:1.3;text-wrap:balance;margin:0}
+.sub{color:var(--dim);font-size:16px;line-height:1.9;margin:0}
+nav.toc{position:sticky;top:calc(env(safe-area-inset-top,0px) + 20px);align-self:start;max-height:calc(100vh - 40px);overflow:auto}
+nav.toc ol{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:2px}
+nav.toc a{display:block;padding:7px 12px;border-radius:8px;color:var(--dim);text-decoration:none;font-size:14px;line-height:1.6;border-inline-start:2px solid transparent}
+nav.toc a:hover,nav.toc a:focus-visible{background:var(--accent-soft);color:var(--text);outline:none}
+nav.toc a.on{border-inline-start-color:var(--accent);color:var(--text);background:var(--accent-soft)}
+main{min-width:0;display:flex;flex-direction:column;gap:56px}
+section{display:flex;flex-direction:column;gap:14px;scroll-margin-top:20px}
+h2{font-size:26px;font-weight:800;line-height:1.5;margin:0;text-wrap:balance;padding-bottom:10px;border-bottom:1px solid var(--line)}
+h3{font-size:18px;font-weight:700;color:var(--accent-2);margin:14px 0 0}
+p,li{font-size:17px;line-height:2.05;color:var(--dim);margin:0;max-width:68ch}
+strong{color:var(--text);font-weight:700}
+p.meta{font-size:14px;color:var(--faint)}
+p.goal{background:var(--accent-soft);border-inline-start:3px solid var(--accent);padding:12px 16px;border-radius:4px 10px 10px 4px;color:var(--text)}
+ul,ol{margin:0;padding-inline-start:26px;display:flex;flex-direction:column;gap:6px}
+li::marker{color:var(--accent)}
+ul.check{list-style:none;padding:0}
+ul.check label{display:flex;gap:10px;align-items:baseline;cursor:pointer}
+ul.check input{accent-color:var(--accent);inline-size:16px;block-size:16px;flex:none;transform:translateY(3px)}
+code{direction:ltr;font-variant-ligatures:none;font-family:var(--mono);font-size:.86em;background:var(--accent-soft);color:var(--accent-2);padding:1px 6px;border-radius:5px;unicode-bidi:isolate;white-space:nowrap}
+pre{direction:ltr;font-variant-ligatures:none;text-align:left;background:var(--code-bg);color:var(--code-fg);border-radius:10px;padding:16px 18px;overflow-x:auto;margin:0;font:14px/1.65 var(--mono)}
+pre code{background:none;color:inherit;padding:0;white-space:pre;font-size:inherit}
+.tablewrap{overflow-x:auto;border:1px solid var(--line);border-radius:10px}
+table{border-collapse:collapse;width:100%;font-size:15px}
+th{text-align:right;background:var(--surface-2);color:var(--text);font-weight:700;padding:10px 14px;white-space:nowrap}
+td{padding:10px 14px;border-top:1px solid var(--line);color:var(--dim);line-height:1.9;vertical-align:top}
+td:first-child{color:var(--text);font-weight:600}
+a{color:var(--accent-2)}
+.tools{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+.tools button{font:500 14px var(--font);color:var(--text);background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:7px 14px;cursor:pointer}
+.tools button:hover,.tools button:focus-visible{border-color:var(--accent);outline:none}
+@media (max-width:860px){.page{grid-template-columns:minmax(0,1fr);gap:28px}nav.toc{position:static;max-height:none}nav.toc ol{flex-direction:row;flex-wrap:wrap}nav.toc a{font-size:13px;padding:5px 10px;border:1px solid var(--line)}}
+@media (prefers-reduced-motion:no-preference){html{scroll-behavior:smooth}}
+</style>
+<style>
+.part{margin-top:8px;padding:14px 18px;border-radius:12px;background:var(--accent-soft);border:1px solid var(--line)}
+.part span{font-size:15px;font-weight:800;color:var(--accent-2);letter-spacing:.02em}
+p.where{color:var(--text);font-size:16px;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:10px 14px}
+p.bridge{color:var(--text);border-top:1px dashed var(--line);padding-top:12px;margin-top:6px}
+blockquote.say{margin:0;padding:14px 18px;border-inline-start:3px solid var(--accent);background:var(--surface);border-radius:4px 10px 10px 4px;color:var(--text);font-size:17px;line-height:2.05;max-width:68ch}
+nav.toc li.tp{font-size:12px;font-weight:800;color:var(--accent);padding:14px 12px 4px;letter-spacing:.02em}
+nav.toc li.tp:first-child{padding-top:0}
+ol ol,ol ul,ul ul{margin-top:6px}
+</style>
+<div class="page" lang="fa" dir="rtl">
+<header class="top">
+  <span class="eyebrow">Teacher's guide · Session 2 of 3 · The engine</span>
+  <h1>راهنمای مدرس — جلسه‌ی ۲</h1>
+  <p class="sub">جلسه‌ی دوم از سه جلسه، اسلاید به اسلاید و build به build: کجای مسیر هستیم، ایده برای خودتان (با کد واقعی ComposeCleanArch)، روی اسلاید چه اتفاقی می‌افتد و چه بگویید، از کلاس چه بپرسید، اگر پرسیدند چه جواب بدهید، و پل به قدم بعد. این جلسه بر اساس سؤال‌های هفته‌ی پیش ساخته شده.</p>
+  <div class="tools"><button type="button" id="fs-down">کوچک‌تر کردن متن</button><button type="button" id="fs-up">بزرگ‌تر کردن متن</button></div>
+</header>
+<nav class="toc" aria-label="فهرست"><ol><li><a href="#c1">نقشه‌ی جلسه‌ی ۲ — قبل از هر چیز این را بخوانید</a></li><li><a href="#c2">قبل از جلسه</a></li><li class="tp">بخش ۱ — شروع</li><li><a href="#c3">فصل ۱ — شروع، و «شما پرسیدید»</a></li><li><a href="#c4">فصل ۲ — هفته‌ی پیش در یک اسلاید</a></li><li class="tp">بخش ۲ — داخل جعبه</li><li><a href="#c5">فصل ۳ — شش فیلد</a></li><li><a href="#c6">فصل ۴ — جعبه چطور حالت عوض می‌کند</a></li><li><a href="#c7">فصل ۵ — fetch: سه سؤال</a></li><li class="tp">بخش ۳ — کِی request می‌رود</li><li><a href="#c8">فصل ۶ — فقط چهار چیز request می‌فرستد</a></li><li><a href="#c9">فصل ۷ — staleTime</a></li><li><a href="#c10">فصل ۸ — observers و cacheTime</a></li><li><a href="#c11">فصل ۹ — single-flight</a></li><li><a href="#c12">فصل ۱۰ — یک مسیر واقعی، request به request</a></li><li><a href="#c13">فصل ۱۱ — انتخاب staleTime</a></li><li class="tp">بخش ۴ — data زنده و payload</li><li><a href="#c14">فصل ۱۲ — polling</a></li><li><a href="#c15">فصل ۱۳ — polling یا push</a></li><li><a href="#c16">فصل ۱۴ — payload</a></li><li class="tp">بخش ۵ — درستی</li><li><a href="#c17">فصل ۱۵ — جواب دیررسیده</a></li><li><a href="#c18">فصل ۱۶ — retry</a></li><li><a href="#c19">فصل ۱۷ — refetch ناموفق</a></li><li><a href="#c20">فصل ۱۸ — useMutation از داخل</a></li><li class="tp">بخش ۶ — query state و UI state</li><li><a href="#c21">فصل ۱۹ — دو نوع state، دو صاحب</a></li><li><a href="#c22">فصل ۲۰ — فیلتر بخشی از key است</a></li><li><a href="#c23">فصل ۲۱ — فرم</a></li><li><a href="#c24">فصل ۲۲ — سه نوع loading</a></li><li class="tp">بخش ۷ — test و محدودیت‌ها</li><li><a href="#c25">فصل ۲۳ — test بدون emulator</a></li><li><a href="#c26">فصل ۲۴ — ۱۲ قول، ۱۲ test</a></li><li><a href="#c27">فصل ۲۵ — کارهایی که engine نمی‌کند</a></li><li class="tp">بخش ۸ — پایان</li><li><a href="#c28">فصل ۲۶ — جمع‌بندی، جلسه‌ی بعد، سؤال</a></li><li><a href="#c29">پیوست — سؤال‌های احتمالی و جواب‌ها</a></li><li><a href="#c30">پیوست — کد واقعی، تکه به تکه</a></li></ol></nav>
+<main><section id="c1"><h2>نقشه‌ی جلسه‌ی ۲ — قبل از هر چیز این را بخوانید</h2>
+<p>جلسه‌ی ۲ از ۳ · <strong>The engine</strong> · حدود ۶۵ دقیقه · ۲۹ اسلاید · <a href="https://lumoradevlab.github.io/query-client-presentation/session-2/" target="_blank" rel="noopener"><bdi>باز کردن اسلایدها</bdi></a></p>
+<p><strong>کار این جلسه:</strong> هفته‌ی پیش کلاس پر از سؤال‌های فنی بود: engine چطور کار می‌کند، این همه request، payload، و query state کنار UI state. این جلسه دقیقاً به همان‌ها جواب می‌دهد، با کد واقعی ComposeCleanArch. این بار جواب «جلسه‌ی بعد» نیست؛ امروز همان جلسه است.</p>
+<p><strong>لحن:</strong> مخاطب مهندس است و به ادعا اعتماد نمی‌کند. هر ادعا را با کد یا test نشان دهید، و هر جا engine کاری را نمی‌کند (اسلاید ۲۶) صادقانه بگویید. «نمی‌دانم، چک می‌کنم» از یک حدس غلط بهتر است.</p>
+<p><strong>جمله‌ی اصلی</strong> (اسلاید ۷ می‌گویید، اسلاید ۲۷ تکرار می‌کنید):</p>
+<blockquote class="say">«جعبه فقط وقتی به سرور می‌رود که دلیل داشته باشد: خالی است، stale است، یا می‌دانیم عوض شده. هر چیز دیگری صفر request است.»</blockquote>
+<p><strong>چهار سؤال هفته‌ی پیش و جایی که جوابشان است:</strong></p>
+<div class="tablewrap"><table><thead><tr><th>سؤال</th><th>اسلاید</th><th>جواب در یک خط</th></tr></thead><tbody><tr><td>engine چطور کار می‌کند؟</td><td>۴ تا ۶</td><td>شش فیلد؛ fetch سه سؤال می‌پرسد؛ همه‌چیز thread-safe</td></tr><tr><td>این همه request؟</td><td>۷ تا ۱۲</td><td>فقط چهار چیز request می‌فرستد؛ staleTime را با product انتخاب کنید</td></tr><tr><td>data زنده و payload؟</td><td>۱۳ تا ۱۵</td><td>polling محدود یا push به داخل setData؛ حجم جواب کار API است</td></tr><tr><td>query state و UI state؟</td><td>۲۰ تا ۲۳</td><td>هر state یک صاحب؛ UI state یا بخشی از key است یا فرم را پر می‌کند</td></tr></tbody></table></div>
+<p><strong>مسیر جلسه:</strong></p>
+<div class="tablewrap"><table><thead><tr><th>بخش</th><th>اسلاید</th><th>زمان</th><th>کار</th></tr></thead><tbody><tr><td>شروع</td><td>۱ تا ۳</td><td>۴ دقیقه</td><td>سؤال‌های هفته‌ی پیش، مرور در یک اسلاید</td></tr><tr><td>داخل جعبه</td><td>۴ تا ۶</td><td>۹ دقیقه</td><td>شش فیلد، حالت‌ها، fetch</td></tr><tr><td>کِی request می‌رود</td><td>۷ تا ۱۲</td><td>۱۷ دقیقه</td><td>چهار trigger، staleTime، cacheTime، single-flight، شمردن، انتخاب staleTime</td></tr><tr><td>data زنده و payload</td><td>۱۳ تا ۱۵</td><td>۷ دقیقه</td><td>polling، push، payload</td></tr><tr><td>درستی</td><td>۱۶ تا ۱۹</td><td>۹ دقیقه</td><td>جواب دیررسیده، retry، refetch ناموفق، mutation</td></tr><tr><td>query state و UI state</td><td>۲۰ تا ۲۳</td><td>۱۱ دقیقه</td><td>دو صاحب، فیلتر در key، فرم، سه نوع loading</td></tr><tr><td>test و محدودیت‌ها</td><td>۲۴ تا ۲۶</td><td>۶ دقیقه</td><td>test بدون emulator، ۱۲ قول، کارهایی که engine نمی‌کند</td></tr><tr><td>پایان</td><td>۲۷ تا ۲۹</td><td>۳ دقیقه</td><td>چهار جواب، جلسه‌ی بعد و تمرین، سؤال</td></tr></tbody></table></div>
+<p><strong>اگر وقت کم بود</strong> (به ترتیب): اسلاید ۲۳ (سه نوع loading) را در یک جمله بگویید؛ ۲۴ و ۲۵ را با هم و فقط سطر آخر ۲۵ را؛ اسلاید ۱۲ را بدون build. اسلایدهای ۷، ۸، ۱۱، ۱۴، ۲۰ و ۲۶ را کوتاه نکنید؛ جواب مستقیم سؤال‌های هفته‌ی پیش‌اند.</p>
+<p><strong>واژه‌های امروز</strong> (اگر وسط جلسه گیر کردید):</p>
+<div class="tablewrap"><table><thead><tr><th>کلمه</th><th>یعنی</th></tr></thead><tbody><tr><td><strong>staleTime</strong></td><td>تا کی data تازه است؛ در این مدت هیچ request ی نمی‌رود (پیش‌فرض ۵ دقیقه)</td></tr><tr><td><strong>cacheTime</strong></td><td>بعد از رفتن آخرین screen، جعبه چقدر در حافظه می‌ماند (پیش‌فرض ۱۰ دقیقه)</td></tr><tr><td><strong>observer</strong></td><td>یک screen که الان جعبه را نگاه می‌کند</td></tr><tr><td><strong>single-flight</strong></td><td>در هر لحظه حداکثر یک request برای هر key</td></tr><tr><td><strong>epoch</strong></td><td>شماره‌ی هر fetch؛ جواب با شماره‌ی قدیمی دور ریخته می‌شود</td></tr><tr><td><strong>force</strong></td><td>fetch ی که staleTime و request در راه را نادیده می‌گیرد (invalidate، refetch، polling)</td></tr></tbody></table></div>
+<p><strong>اسلایدها مرحله‌به‌مرحله ساخته می‌شوند.</strong> هر → یک تکه را نشان می‌دهد. در چند اسلاید (۸، ۹، ۱۶) یک شمارنده یا مقدار هم با هر → عوض می‌شود. در این راهنما هر → با «→» مشخص شده.</p>
+</section>
+<section id="c2"><h2>قبل از جلسه</h2>
+<ul class="check"><li><label><input type="checkbox"> <span>لینک اسلایدها را در Chrome باز کنید: <a href="https://lumoradevlab.github.io/query-client-presentation/session-2/" target="_blank" rel="noopener"><bdi>session-2</bdi></a></span></label></li><li><label><input type="checkbox"> <span>لپ‌تاپ به پروژکتور در حالت extend. کلید F برای تمام‌صفحه، کلید N برای پنجره‌ی یادداشت.</span></label></li><li><label><input type="checkbox"> <span>یک بار کل اسلایدها را با → جلو بروید؛ مخصوصاً ۸ (شمارنده‌ی request)، ۹ (شمارنده‌ی observers) و ۱۶ (مقدار جعبه).</span></label></li><li><label><input type="checkbox"> <span><a href="https://github.com/lumoradevlab/ComposeCleanArch" target="_blank" rel="noopener"><bdi>ComposeCleanArch</bdi></a> را در Android Studio باز کنید. این فایل‌ها را در تب‌های جدا نگه دارید: <code>QueryEntry.kt</code>، <code>QueryHooks.kt</code>، <code>MutationHooks.kt</code>، <code>RetryPolicy.kt</code>، <code>QueryTest.kt</code>. اگر کسی گفت «کد واقعی را نشان بده»، همان لحظه باز کنید.</span></label></li><li><label><input type="checkbox"> <span><strong>اختیاری، برای اسلاید ۲۴:</strong> یک بار <code>./gradlew :core:query:test</code> را اجرا کنید تا Gradle گرم باشد. اگر وقت بود، زنده اجرا کنید.</span></label></li><li><label><input type="checkbox"> <span>اینترنت وصل باشد (فونت‌ها از Google می‌آیند).</span></label></li><li><label><input type="checkbox"> <span>اگر transcript سؤال‌های هفته‌ی پیش را دارید، دو سه سؤال واقعی را با اسم موضوع (نه اسم آدم) برای اسلاید ۲ آماده کنید.</span></label></li></ul>
+<div class="tablewrap"><table><thead><tr><th>کلید</th><th>کار</th></tr></thead><tbody><tr><td>→ ↓ Space یا کلیک</td><td>build بعدی، بعد اسلاید بعد</td></tr><tr><td>← ↑</td><td>قدم قبل</td></tr><tr><td>N</td><td>پنجره‌ی یادداشت</td></tr><tr><td>F</td><td>تمام‌صفحه</td></tr></tbody></table></div>
+</section>
+<div class="part"><span>بخش ۱ — شروع</span></div>
+<section id="c3"><h2>فصل ۱ — شروع، و «شما پرسیدید»</h2>
+<p class="meta">اسلایدهای ۱ و ۲ · حدود ۳ دقیقه</p>
+<p class="where"><strong>کجای مسیر هستیم:</strong> اول جلسه. قبل از هر توضیح، به کلاس نشان می‌دهید که سؤال‌هایشان را شنیده‌اید.</p>
+<h3>ایده (برای خودتان)</h3>
+<p>هفته‌ی پیش بیشتر سؤال‌ها را به «جلسه‌ی بعد» حواله دادید. امروز آن قول را پس می‌دهید. اسلاید ۲ همین را می‌گوید: چهار دسته سؤال، و اینکه کل جلسه جواب همان‌هاست. این کار دو اثر دارد: کلاس می‌داند امروز به سؤالش می‌رسد، پس وسط حرف قطع نمی‌کند؛ و مهندس‌ها می‌بینند شما از سؤال سخت فرار نمی‌کنید.</p>
+<h3>روی اسلاید، build به build</h3>
+<ol><li><strong>اسلاید ۱:</strong> عنوان؛ pill ی «۲ · The engine» روشن است.</li><li><strong>اسلاید ۲:</strong> → ENGINE · → REQUESTS · → PAYLOAD · → STATE · → جمله‌ی پایین.</li></ol>
+<blockquote class="say">«هفته‌ی پیش سؤال‌های خیلی خوبی پرسیدید و من بیشترشان را گذاشتم برای امروز. امروز را دقیقاً بر اساس همان‌ها چیده‌ام: engine چطور کار می‌کند، چرا این همه request نمی‌رود، payload، و query state کنار UI state. و جایی هم که engine کاری را نمی‌کند، همان را هم می‌گویم.»</blockquote>
+<p><strong>پل:</strong> «اول یک اسلاید مرور، که همه از یک نقطه شروع کنیم.»</p>
+</section>
+<section id="c4"><h2>فصل ۲ — هفته‌ی پیش در یک اسلاید</h2>
+<p class="meta">اسلاید ۳ · حدود ۱ دقیقه</p>
+<h3>روی اسلاید، build به build</h3>
+<ol><li>→ «screen با key می‌پرسد.»</li><li>→ «QueryClient یک map است.»</li><li>→ «برای هر key یک جعبه، QueryEntry.»</li><li>→ «و جعبه فقط وقتی لازم است به سرور می‌رود.»</li><li>→ «امروز "لازم" را دقیق تعریف می‌کنیم. همه‌اش در یک فایل است: <code>QueryEntry.kt</code>، حدود ۳۰۰ خط.»</li></ol>
+<p><strong>پل:</strong> «پس درِ همین جعبه را باز کنیم.»</p>
+</section>
+<div class="part"><span>بخش ۲ — داخل جعبه</span></div>
+<section id="c5"><h2>فصل ۳ — شش فیلد</h2>
+<p class="meta">اسلاید ۴ · حدود ۳ دقیقه</p>
+<p class="where"><strong>کجای مسیر هستیم:</strong> جواب سؤال اول، «engine چطور کار می‌کند». این اسلاید فهرست کل جلسه است: هر فیلد بعداً یک اسلاید خودش را دارد.</p>
+<h3>ایده (برای خودتان)</h3>
+<p>کل رفتار جعبه از همین چند فیلد درمی‌آید (کد واقعی در <code>QueryEntry.kt</code>، خطوط ۶۳ تا ۸۶):</p>
+<div class="tablewrap"><table><thead><tr><th>فیلد</th><th>نوع</th><th>کار</th><th>اسلاید</th></tr></thead><tbody><tr><td><code>_state</code></td><td><code>MutableStateFlow&lt;QueryState&lt;T&gt;&gt;</code></td><td>چیزی که screen می‌بیند؛ <code>useQuery</code> آن را با <code>collectAsState</code> می‌خواند</td><td>۵</td></tr><tr><td><code>lastFetch</code></td><td><code>@Volatile Long</code></td><td>زمان آخرین fetch موفق؛ با staleTime مقایسه می‌شود</td><td>۸</td></tr><tr><td><code>observers</code></td><td><code>AtomicInteger</code></td><td>تعداد screenهایی که الان نگاه می‌کنند</td><td>۹</td></tr><tr><td><code>inFlight</code></td><td><code>AtomicReference&lt;Deferred&gt;</code></td><td>request در راه؛ پایه‌ی single-flight</td><td>۱۰</td></tr><tr><td><code>latestEpoch</code></td><td><code>AtomicLong</code></td><td>شماره‌ی آخرین fetch یا setData</td><td>۱۶</td></tr><tr><td><code>intervalJob</code> و <code>intervalCount</code></td><td><code>AtomicReference&lt;Job&gt;</code> و <code>AtomicInteger</code></td><td>حلقه‌ی polling و تعداد screenهایی که polling خواسته‌اند</td><td>۱۳</td></tr></tbody></table></div>
+<p>سه فیلد دیگر هم هست که روی اسلاید نیامده: <code>_isManualRefetch</code> (برای spinner ی pull-to-refresh، اسلاید ۲۳)، <code>cleanupJob</code> (تایمر cacheTime، اسلاید ۹) و <code>sourceJob</code> (اتصال به Room در <code>useCachedQuery</code>، جلسه‌ی ۳).</p>
+<p><strong>چرا Atomic؟</strong> سه thread به این فیلدها دست می‌زنند: main (composition، <code>observe</code>/<code>unobserve</code>)، IO (بدنه‌ی fetch در <code>scope</code> ی QueryClient) و حلقه‌ی polling. <code>var</code> ساده یعنی race. همان استدلال هفته‌ی پیش برای ConcurrentHashMap، این بار داخل جعبه.</p>
+<h3>روی اسلاید، build به build</h3>
+<ol><li>→ state · → lastFetch · → observers · → inFlight · → latestEpoch · → intervalJob: هر بار یک خط کد روشن می‌شود و کارتش کنارش.</li><li>→ کارت WHY ATOMIC، و کل کد روشن.</li></ol>
+<blockquote class="say">«کل engine همین شش فیلد است. هر کدام یک اسلاید امروز است. اگر وسط جلسه گم شدید، به این اسلاید برگردید.»</blockquote>
+<h3>اگر پرسیدند</h3>
+<ul><li><strong>«چرا StateFlow و نه LiveData یا SharedFlow؟»</strong> StateFlow همیشه یک مقدار فعلی دارد (screen تازه فوراً state را می‌گیرد)، تکراری‌ها را خودش حذف می‌کند، و Kotlin خالص است؛ پس engine بدون Android test می‌شود.</li><li><strong>«چرا Volatile برای lastFetch و Atomic برای بقیه؟»</strong> lastFetch فقط نوشته و خوانده می‌شود (هیچ «بخوان، تغییر بده، بنویس» ی ندارد)، پس visibility کافی است. بقیه increment یا compare-and-set لازم دارند.</li></ul>
+<p class="bridge"><strong>پل:</strong> «حالا که فیلدها را دیدیم: state چه مقدارهایی می‌گیرد و کی عوض می‌شود؟»</p>
+</section>
+<section id="c6"><h2>فصل ۴ — جعبه چطور حالت عوض می‌کند</h2>
+<p class="meta">اسلاید ۵ · حدود ۳ دقیقه</p>
+<h3>ایده (برای خودتان)</h3>
+<p>هفته‌ی پیش سه حالت را دیدیم. امروز انتقال‌ها را. همه در بدنه‌ی fetch اتفاق می‌افتند:</p>
+<pre dir="ltr"><code>// start of every fetch:
+_state.value = current?.let { Success(it, refreshing = true) } ?: Loading
+// success:
+_state.value = Success(data, refreshing = false)
+// gave up after retries:
+_state.value = if (existing != null) Success(existing, refreshing = false)
+               else Failure(AppError.from(throwable))</code></pre>
+<p>نتیجه‌ی مهم: <strong>Loading فقط وقتی است که هیچ data ای نداریم.</strong> بعد از اولین موفقیت، screen هیچ‌وقت دوباره spinner تمام‌صفحه یا صفحه‌ی error نمی‌بیند (مگر جعبه evict شود و از صفر ساخته شود). این همان stale-while-revalidate ی React Query است.</p>
+<h3>روی اسلاید، build به build</h3>
+<ol><li>→ Loading ← fetch موفق ← Success.</li><li>→ refetch شروع شد: Success با <code>refreshing = true</code>. «data روی صفحه می‌ماند.»</li><li>→ refetch موفق: Success با data ی جدید.</li><li>→ refetch ناموفق: باز Success با data ی قبلی. «error نه. اسلاید ۱۸.»</li><li>→ Loading ← ناموفق بعد از retryها ← Failure.</li><li>→ Failure ← کاربر Retry زد ← Loading.</li><li>→ جمله‌ی پایین.</li></ol>
+<h3>از کلاس بپرسید</h3>
+<ul><li>«کاربر در لیست است و refetch شکست می‌خورد. چه می‌بیند؟» (همان لیست. هیچ تغییری.)</li></ul>
+<h3>اگر پرسیدند</h3>
+<ul><li><strong>«isLoading در QueryResult یعنی کدام؟»</strong> <code>isLoading</code> هم Loading را می‌گیرد و هم Success با refreshing. برای spinner تمام‌صفحه از <code>QueryContent</code> استفاده کنید که فقط روی Loading spinner می‌کشد.</li></ul>
+<p class="bridge"><strong>پل:</strong> «این انتقال‌ها وقتی شروع می‌شوند که fetch صدا زده شود. ولی fetch همیشه request نمی‌زند.»</p>
+</section>
+<section id="c7"><h2>فصل ۵ — fetch: سه سؤال</h2>
+<p class="meta">اسلاید ۶ · حدود ۳ دقیقه</p>
+<h3>ایده (برای خودتان)</h3>
+<p>کد روی اسلاید ساده‌شده است. کد واقعی (<code>QueryEntry.fetch</code>) همین سه سؤال را می‌پرسد، با چند جزئیات:</p>
+<ol><li><strong>request در راه است؟</strong> <code>if (!force &amp;&amp; inFlight.get()?.isActive == true) return</code>.</li><li><strong>fresh است؟</strong> <code>servedFromCache = !force &amp;&amp; !shouldFetch() &amp;&amp; current != null</code>. اگر بله، فقط یک metric «cache hit» ثبت می‌شود و برمی‌گردد.</li><li><strong>وگرنه:</strong> بدنه با <code>scope.async(start = LAZY)</code> ساخته می‌شود ولی هنوز شروع نمی‌شود. بعد در یک حلقه‌ی compare-and-set خودش را در <code>inFlight</code> نصب می‌کند. فقط برنده start می‌شود و فقط برنده epoch جدید می‌گیرد. در آخر، <code>inFlight</code> با <code>compareAndSet(deferred, null)</code> پاک می‌شود.</li></ol>
+<p><strong>force:</strong> fetchهای force (invalidate، <code>refetch()</code>، polling) سؤال ۱ و ۲ را رد می‌کنند. یک fetch ی force اگر request ی در راه باشد، <strong>آن را cancel می‌کند و جایش می‌نشیند</strong> (چون data ی آن request ممکن است قبل از write باشد). polling یک استثنا دارد: اگر request ی در راه باشد، اصلاً fetch نمی‌زند (اسلاید ۱۳).</p>
+<h3>روی اسلاید، build به build</h3>
+<ol><li>→ سؤال ۱ و خطش. «request در راه است؟ صبر کن.»</li><li>→ سؤال ۲ و <code>shouldFetch</code>. «fresh است؟ همان را بده.»</li><li>→ سؤال ۳. «وگرنه یک request، با epoch جدید.»</li><li>→ امضای تابع و جمله‌ی force.</li></ol>
+<h3>اگر پرسیدند</h3>
+<ul><li><strong>«چرا async lazy؟»</strong> تا بدنه قبل از برنده شدن شروع نشود. اگر eager بود، بازنده‌ها هم یک request زده بودند و بعد cancel می‌شدند.</li><li><strong>«fetch روی کدام thread اجرا می‌شود؟»</strong> روی <code>scope</code> ی QueryClient که با <code>@IoDispatcher</code> inject شده. screen هیچ‌وقت block نمی‌شود.</li></ul>
+<p class="bridge"><strong>پل:</strong> «حالا سؤال بزرگ هفته‌ی پیش: پس کِی واقعاً request می‌رود؟»</p>
+</section>
+<div class="part"><span>بخش ۳ — کِی request می‌رود</span></div>
+<section id="c8"><h2>فصل ۶ — فقط چهار چیز request می‌فرستد</h2>
+<p class="meta">اسلاید ۷ · حدود ۳ دقیقه</p>
+<p class="where"><strong>کجای مسیر هستیم:</strong> جواب مستقیم «این همه request». مهم‌ترین اسلاید جلسه؛ آهسته بروید.</p>
+<h3>ایده (برای خودتان)</h3>
+<p>در کل engine فقط این چهار مسیر به <code>fetcher()</code> می‌رسند:</p>
+<div class="tablewrap"><table><thead><tr><th>trigger</th><th>کد</th><th>شرط</th></tr></thead><tbody><tr><td>اولین observer</td><td><code>observe()</code>: <code>if (count == 1) { if (shouldFetch()) fetch() }</code></td><td>فقط نفر <strong>اول</strong>، و فقط اگر خالی یا stale</td></tr><tr><td>invalidate</td><td><code>lastFetch = 0; if (observers &gt; 0) fetch(force = true, manual = true)</code></td><td>اگر کسی نگاه نمی‌کند، فقط stale علامت می‌خورد</td></tr><tr><td>دستی</td><td><code>refetch = { entry.fetch(force = true, manual = true) }</code></td><td>pull-to-refresh یا دکمه‌ی Retry ی QueryContent</td></tr><tr><td>interval</td><td>حلقه‌ی <code>startInterval</code></td><td>فقط وقتی screen در STARTED است و request ی در راه نیست</td></tr></tbody></table></div>
+<p><strong>دو نکته‌ی ظریف که مهندس‌ها ممکن است بپرسند:</strong></p>
+<ul><li><strong>screen دوم fetch نمی‌کند، حتی اگر data stale باشد.</strong> فقط وقتی observers از ۰ به ۱ می‌رود fetch بررسی می‌شود. پس اگر Dashboard باز است و data stale شده، باز کردن Wallet با همان key request نمی‌زند. این عمدی است: کسی که الان نگاه می‌کند همان data را دارد، و refetch برای data ی زنده کار interval است.</li><li><strong>عوض شدن key یا <code>enabled</code> مثل یک screen جدید است.</strong> <code>DisposableEffect(key, enabled)</code> از جعبه‌ی قبلی unobserve و جعبه‌ی جدید را observe می‌کند.</li></ul>
+<h3>روی اسلاید، build به build</h3>
+<ol><li>→ FIRST OBSERVER · → INVALIDATE · → MANUAL · → INTERVAL.</li><li>→ کارت «همه‌ی چیزهای دیگر: صفر request».</li></ol>
+<blockquote class="say">«جعبه فقط وقتی به سرور می‌رود که دلیل داشته باشد: خالی است، stale است، یا می‌دانیم عوض شده. هر چیز دیگری صفر request است.»</blockquote>
+<h3>از کلاس بپرسید</h3>
+<ul><li>«recomposition چند request می‌زند؟» (صفر. <code>remember(key)</code> جعبه را نگه می‌دارد و fetch فقط در effectها صدا زده می‌شود.)</li><li>«کاربر ۲۰ بار گوشی را بچرخاند؟» (صفر، تا وقتی fresh است.)</li></ul>
+<p class="bridge"><strong>پل:</strong> «اولین trigger گفت "خالی یا stale". stale یعنی چه؟»</p>
+</section>
+<section id="c9"><h2>فصل ۷ — staleTime</h2>
+<p class="meta">اسلاید ۸ · حدود ۳ دقیقه</p>
+<h3>ایده (برای خودتان)</h3>
+<pre dir="ltr"><code>private fun shouldFetch(): Boolean =
+    current == null || (now() - lastFetch) &gt; staleTime</code></pre>
+<p><code>lastFetch</code> فقط با fetch موفق یا <code>setData</code> جلو می‌رود؛ invalidate آن را ۰ می‌کند. پیش‌فرض staleTime ۵ دقیقه است (<code>QueryClient.DEFAULT_STALE_TIME_MS</code>).</p>
+<p><strong>اشتباه رایج:</strong> «وقتی stale شد، refetch می‌کند.» نه. stale شدن خودش هیچ کاری نمی‌کند؛ هیچ تایمری برای آن نیست. فقط وقتی یکی از چهار trigger اتفاق بیفتد، <code>shouldFetch</code> بررسی می‌شود. stale یعنی «دفعه‌ی بعد بپرس»، نه «الان بپرس».</p>
+<h3>روی اسلاید، build به build</h3>
+<p>شمارنده‌ی «requests» بالا با هر → عوض می‌شود.</p>
+<ol><li>→ دقیقه‌ی ۰، Dashboard: جعبه خالی، ۱ request. نوار سبز «fresh · 5 min».</li><li>→ دقیقه‌ی ۲، Wallet با همان key: fresh، صفر.</li><li>→ دقیقه‌ی ۴.۵، چرخش: fresh، صفر.</li><li>→ دقیقه‌ی ۷، برگشت به Dashboard: stale، ۱ request؛ نوار «fresh again».</li><li>→ جمله‌ی پایین: «بین ۵ و ۷ data کهنه بود و هیچ request ی نرفت.»</li></ol>
+<h3>اگر پرسیدند</h3>
+<ul><li><strong>«در دقیقه‌ی ۷، Dashboard اول data ی کهنه را نشان می‌دهد؟»</strong> بله، فوراً، با <code>refreshing = true</code>؛ و چند صد میلی‌ثانیه بعد data ی تازه. کاربر هیچ‌وقت صفحه‌ی خالی نمی‌بیند.</li><li><strong>«چرا چرخش در دقیقه‌ی ۴.۵ صفر است؟ Activity دوباره ساخته شد.»</strong> composition از بین رفت، پس unobserve (observers = ۰، تایمر cacheTime شروع)، و composition جدید observe (observers = ۱، تایمر لغو، fresh است، fetch نه).</li></ul>
+<p class="bridge"><strong>پل:</strong> «staleTime می‌گوید کِی دوباره بپرسیم. ولی جعبه کِی از حافظه پاک می‌شود؟»</p>
+</section>
+<section id="c10"><h2>فصل ۸ — observers و cacheTime</h2>
+<p class="meta">اسلاید ۹ · حدود ۳ دقیقه</p>
+<h3>ایده (برای خودتان)</h3>
+<pre dir="ltr"><code>// useQuery
+DisposableEffect(key, options.enabled) {
+    if (options.enabled) entry.observe()
+    onDispose { if (options.enabled) entry.unobserve() }
+}
+
+// QueryEntry
+fun observe() {
+    val count = observers.incrementAndGet()
+    cleanupJob.getAndSet(null)?.cancel()      // a screen came back: cancel eviction
+    if (count == 1) { startSourceCollection(); if (shouldFetch()) fetch() }
+}
+fun unobserve() {
+    if (observers.decrementAndGet() &lt;= 0) {
+        cleanupJob.set(scope.launch {
+            delay(cacheTime)
+            if (isActive &amp;&amp; observers.get() &lt;= 0) onEvict?.invoke(key)  // → QueryClient.evict
+        })
+    }
+}</code></pre>
+<p>evict در QueryClient با <code>computeIfPresent</code> اتمی است و یک بار دیگر چک می‌کند که کسی برنگشته باشد (فصل ۱۲ ی جلسه‌ی ۱). پیش‌فرض cacheTime ۱۰ دقیقه است.</p>
+<p><strong>staleTime در برابر cacheTime:</strong> staleTime درباره‌ی <em>تازگی</em> است (کِی دوباره بپرسیم). cacheTime درباره‌ی <em>حافظه</em> است (کِی دور بریزیم). یک جعبه می‌تواند stale باشد و هنوز در حافظه؛ همین باعث می‌شود برگشت به screen فوراً data نشان دهد و پشت صحنه refetch کند.</p>
+<h3>روی اسلاید، build به build</h3>
+<p>شمارنده‌ی OBSERVERS و وضعیت THE BOX با هر → عوض می‌شوند.</p>
+<ol><li>→ A باز شد: ۱. جعبه خالی، fetch.</li><li>→ B باز شد: ۲. fetch نه.</li><li>→ A بسته شد: ۱.</li><li>→ B بسته شد: ۰. «timer 10′». data هنوز در حافظه است.</li><li>→ B سه دقیقه بعد برگشت: ۱. تایمر لغو؛ data فوراً، بدون spinner (و fresh است، پس fetch نه).</li><li>→ B رفت و ۱۰ دقیقه کسی نیامد: removed.</li></ol>
+<h3>اگر پرسیدند</h3>
+<ul><li><strong>«چند جعبه همزمان در حافظه است؟»</strong> جعبه‌هایی که observer دارند، به‌علاوه‌ی آن‌هایی که در ۱۰ دقیقه‌ی آخر رها شده‌اند. <code>queryClient.entryCount()</code> عدد دقیق را می‌دهد.</li><li><strong>«screen در back stack هنوز observer است؟»</strong> بستگی دارد. با Navigation Compose، screen ی که زیر screen دیگر رفته از composition خارج می‌شود (مگر saveState/restoreState آن را نگه دارد)، پس unobserve می‌شود. به همین خاطر برگشت به آن یک observe ی جدید است.</li></ul>
+<p class="bridge"><strong>پل:</strong> «اگر سه screen دقیقاً در یک لحظه باز شوند چه؟ سه نفر اول؟»</p>
+</section>
+<section id="c11"><h2>فصل ۹ — single-flight</h2>
+<p class="meta">اسلاید ۱۰ · حدود ۲ دقیقه</p>
+<h3>ایده (برای خودتان)</h3>
+<p>مثلاً Dashboard، یک widget در header و Wallet هر سه موجودی را می‌خواهند. هر سه <code>fetch()</code> را صدا می‌زنند. اولی <code>inFlight</code> را با compare-and-set می‌گیرد؛ دو تای دیگر <code>isActive == true</code> می‌بینند و برمی‌گردند. هر سه یک StateFlow را نگاه می‌کنند، پس وقتی جواب رسید هر سه با هم آپدیت می‌شوند.</p>
+<p>این جواب تمرین هفته‌ی پیش هم هست: دو screen با <code>useHeadlines("techcrunch")</code> = یک request.</p>
+<h3>روی اسلاید، build به build</h3>
+<ol><li>→ سه caller · → جعبه: call 1 برنده، 2 و 3 صبر · → یک request به سرور · → دو خط کد · → اسم test.</li></ol>
+<h3>اگر پرسیدند</h3>
+<ul><li><strong>«test ی هست که واقعاً روی thread های مختلف چک کند؟»</strong> بله: <code>concurrent fetches across real threads run the fetcher exactly once</code> در <code>QueryTest.kt</code>، با <code>runBlocking</code> و thread های واقعی، نه dispatcher ی test.</li><li><strong>«دو screen با دو key متفاوت ولی همان endpoint؟»</strong> دو جعبه، دو request. single-flight بر اساس key است. برای همین key باید دقیق باشد (جلسه‌ی ۱، فصل ۱۱).</li></ul>
+<p class="bridge"><strong>پل:</strong> «حالا همه‌ی این‌ها را روی یک مسیر واقعی بشماریم.»</p>
+</section>
+<section id="c12"><h2>فصل ۱۰ — یک مسیر واقعی، request به request</h2>
+<p class="meta">اسلاید ۱۱ · حدود ۳ دقیقه</p>
+<h3>ایده (برای خودتان)</h3>
+<p>فرض‌ها: Dashboard، Wallet و Buy هر سه موجودی را با همان key نشان می‌دهند؛ staleTime پیش‌فرض (۵ دقیقه)؛ mutation ی خرید <code>invalidateKeys = listOf(WalletKeys.balance("USDT"))</code> دارد.</p>
+<div class="tablewrap"><table><thead><tr><th>کار</th><th>request</th><th>چرا، دقیق</th></tr></thead><tbody><tr><td>Dashboard</td><td>1</td><td>جعبه وجود ندارد؛ observe ی اول، <code>current == null</code></td></tr><tr><td>Wallet</td><td>0</td><td>اگر Dashboard هنوز در composition است، observer دوم؛ اگر نه، observer اول ولی fresh</td></tr><tr><td>چرخش</td><td>0</td><td>unobserve، observe، fresh</td></tr><tr><td>خرید</td><td>1 + 1</td><td>write؛ بعد invalidate؛ Buy observer است، پس refetch همان لحظه</td></tr><tr><td>برگشت به Dashboard</td><td>0</td><td>refetch ی بعد از خرید lastFetch را جلو برد؛ fresh</td></tr><tr><td>۷ دقیقه بعد</td><td>1</td><td>stale</td></tr></tbody></table></div>
+<h3>روی اسلاید، build به build</h3>
+<p>قبل از هر ردیف بپرسید «چند request؟» و صبر کنید. بعد → بزنید.</p>
+<ol><li>→ ردیف‌های ۱ تا ۶ · → جمع: ۴ (۳ read + ۱ write) · → جمله‌ی پایین.</li></ol>
+<blockquote class="say">«هر request یک دلیل دارد: خالی، stale، یا می‌دانیم عوض شده.»</blockquote>
+<h3>اگر پرسیدند</h3>
+<ul><li><strong>«با ViewModel هم می‌شد همین‌قدر کم request زد.»</strong> بله، اگر خودتان cache مشترک، dedup، staleTime و invalidate بین ViewModelها را بنویسید. دقیقاً همان چیزی که این engine است. حرف ما این نیست که ViewModel نمی‌تواند؛ این است که این کد را یک بار و در یک جا نوشته‌ایم.</li></ul>
+<p class="bridge"><strong>پل:</strong> «ولی بعضی data واقعاً مدام عوض می‌شود. ۵ دقیقه برای قیمت که معنی ندارد.»</p>
+</section>
+<section id="c13"><h2>فصل ۱۱ — انتخاب staleTime</h2>
+<p class="meta">اسلاید ۱۲ · حدود ۳ دقیقه</p>
+<h3>ایده (برای خودتان)</h3>
+<p>staleTime برای هر hook جداست (<code>QueryOptions</code>). دو preset در کد هست: <code>QueryOptions.freshFor(millis)</code> و <code>QueryOptions.OfflineForever</code> (staleTime = <code>Long.MAX_VALUE</code>؛ فقط با invalidate تازه می‌شود).</p>
+<div class="tablewrap"><table><thead><tr><th>data</th><th>تنظیم</th><th>چرا</th></tr></thead><tbody><tr><td>قیمت، ticker</td><td><code>refetchInterval = 5_000</code> یا push</td><td>هر ثانیه عوض می‌شود؛ staleTime به‌تنهایی کمکی نمی‌کند چون stale شدن request نمی‌زند</td></tr><tr><td>موجودی</td><td><code>freshFor(30_000)</code> + invalidate بعد از هر write</td><td>بیشتر با کار خود کاربر عوض می‌شود؛ ۳۰ ثانیه برای تغییرهای بیرونی (واریز)</td></tr><tr><td>feed، لیست خبر</td><td>پیش‌فرض (۵ دقیقه)</td><td>کمی کهنه بودن اشکالی ندارد</td></tr><tr><td>پروفایل، تنظیمات</td><td><code>OfflineForever</code></td><td>فقط وقتی خود کاربر عوض کند، که آن هم invalidate می‌کند</td></tr></tbody></table></div>
+<p><strong>نکته برای خودتان (باگ شناخته‌شده در ComposeCleanArch):</strong> با <code>OfflineForever</code>، اگر invalidate وقتی صدا زده شود که <strong>هیچ screen ی جعبه را نگاه نمی‌کند</strong>، refetch بعدی اتفاق نمی‌افتد. invalidate فقط <code>lastFetch = 0</code> می‌کند، ولی <code>now() - 0 &gt; Long.MAX_VALUE</code> هیچ‌وقت درست نیست؛ پس screen ی بعدی (تا وقتی جعبه evict نشده) data ی قبل از write را می‌بیند. با staleTime های معمولی این مشکل نیست. اگر کسی این را پیدا کرد، تأییدش کنید: درست دیده است.</p>
+<h3>روی اسلاید، build به build</h3>
+<ol><li>→ PRICE · → BALANCE · → FEED · → PROFILE · → جمله‌ی پایین.</li></ol>
+<blockquote class="say">«سؤال درست "data چند وقت یک بار عوض می‌شود؟" نیست. سؤال درست این است: "چقدر کهنه بودن برای کاربر اشکال دارد؟" و جواب این را product می‌دهد، نه ما.»</blockquote>
+<p class="bridge"><strong>پل:</strong> «برای data ای که واقعاً زنده است، polling. ولی polling ی که حواسش جمع است.»</p>
+</section>
+<div class="part"><span>بخش ۴ — data زنده و payload</span></div>
+<section id="c14"><h2>فصل ۱۲ — polling</h2>
+<p class="meta">اسلاید ۱۳ · حدود ۲ دقیقه</p>
+<p class="where"><strong>کجای مسیر هستیم:</strong> جواب «data مدام عوض می‌شود».</p>
+<h3>ایده (برای خودتان)</h3>
+<pre dir="ltr"><code>// useQuery: poll only while STARTED
+LaunchedEffect(key, options.enabled, options.refetchInterval) {
+    lifecycleOwner.lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
+        entry.startInterval(options.refetchInterval)
+        try { awaitCancellation() } finally { entry.stopInterval() }
+    }
+}
+
+// QueryEntry: one loop per box
+fun startInterval(interval: Long) {
+    if (observers.get() &lt;= 0 || interval &lt;= 0) return
+    if (intervalCount.incrementAndGet() == 1) {
+        intervalJob.set(scope.launch {
+            while (isActive &amp;&amp; intervalCount.get() &gt; 0 &amp;&amp; observers.get() &gt; 0) {
+                delay(interval)
+                if (inFlight.get()?.isActive != true) fetch(force = true, manual = false)
+            }
+        })
+    }
+}</code></pre>
+<ul><li><strong>فقط STARTED:</strong> اپ به background رفت یا صفحه خاموش شد، <code>repeatOnLifecycle</code> بلاک را cancel می‌کند و <code>stopInterval</code> صدا زده می‌شود. برگشت به STARTED دوباره شروعش می‌کند. test: <code>stopInterval pauses polling, startInterval resumes it</code>.</li><li><strong>یک حلقه برای هر جعبه:</strong> <code>intervalCount</code> می‌شمارد چند screen polling خواسته‌اند؛ فقط اولی حلقه را می‌سازد. سه screen = یک request در هر دوره. اگر intervalها فرق کنند، interval ی اولین screen برنده است.</li><li><strong>روی هم انباشته نمی‌شود:</strong> اگر request قبلی هنوز در راه است، tick رد می‌شود. چرا force نمی‌کنیم؟ چون force request ی در راه را cancel می‌کند؛ روی شبکه‌ای کندتر از interval، هر request درست قبل از رسیدن cancel می‌شد و data هیچ‌وقت تازه نمی‌شد. test: <code>a tick that lands on a still-running fetch is skipped, not forced</code>.</li></ul>
+<h3>روی اسلاید، build به build</h3>
+<ol><li>→ ONLY WHILE VISIBLE · → ONE LOOP PER BOX · → NO PILE-UP · → جمله‌ی پایین.</li></ol>
+<h3>اگر پرسیدند</h3>
+<ul><li><strong>«polling باتری را نمی‌خورد؟»</strong> فقط وقتی screen روی صفحه است، و فقط یک request در هر دوره برای هر key. اپ در background صفر request می‌زند.</li><li><strong>«polling ۱ ثانیه‌ای برای ۵۰ symbol؟»</strong> نه. این دقیقاً جایی است که push لازم است. اسلاید بعد.</li></ul>
+<p class="bridge"><strong>پل:</strong> «بعضی‌ها گفتید polling برای data زنده اشتباه است. گاهی درست می‌گویید.»</p>
+</section>
+<section id="c15"><h2>فصل ۱۳ — polling یا push</h2>
+<p class="meta">اسلاید ۱۴ · حدود ۳ دقیقه</p>
+<h3>ایده (برای خودتان)</h3>
+<p>engine به push مخالف نیست؛ فقط push را خودش انجام نمی‌دهد. جعبه یک در دوم دارد: <code>setData</code>.</p>
+<pre dir="ltr"><code>// QueryEntry
+fun setData(data: T) {
+    lastFetch = now()
+    latestEpoch.incrementAndGet()      // an in-flight HTTP response can no longer win
+    _state.value = QueryState.Success(data, refreshing = false)
+    source?.let { src -&gt; scope.launch { src.writer(data) } }
+}
+
+// QueryClient
+fun &lt;T&gt; setData(key: String, data: T) {
+    (entries[key] as? QueryEntry&lt;T&gt;)?.setData(data)   // no-op if no screen created the box yet
+}</code></pre>
+<p><strong>الگوی hybrid:</strong> HTTP برای snapshot ی اول (<code>useQuery</code> مثل همیشه)، socket برای تغییرها (<code>queryClient.setData</code>)، و بعد از reconnect یک <code>invalidateMatching("ticker\\..*")</code> برای پر کردن هر چه وسط قطعی از دست رفت. screen فقط <code>useQuery</code> را می‌شناسد.</p>
+<p><strong>socket کجا زندگی کند؟</strong> در یک کلاس Singleton (مثلاً <code>TickerSocket</code>) که QueryClient را inject کرده؛ نه در screen. شروع و توقفش را به lifecycle ی اپ (یا به اینکه آیا screen ی آن key را observe می‌کند) ببندید. این بخش امروز در ComposeCleanArch نیست؛ الگوست، نه کد موجود.</p>
+<h3>روی اسلاید، build به build</h3>
+<ol><li>→ POLLING IS ENOUGH · → USE PUSH · → کد socket · → سه جمله.</li></ol>
+<h3>اگر پرسیدند</h3>
+<ul><li><strong>«setData وقتی جعبه وجود ندارد؟»</strong> هیچ کاری نمی‌کند. پیام socket برای symbol ی که هیچ screen ی نشانش نمی‌دهد دور ریخته می‌شود؛ که معمولاً همان چیزی است که می‌خواهید.</li><li><strong>«order book با هزار تغییر در ثانیه؟»</strong> هر setData یک emit به StateFlow است. برای این حجم، پیام‌ها را در socket جمع کنید (مثلاً هر ۱۰۰ میلی‌ثانیه یک snapshot) و بعد setData. یا اصلاً آن screen را با یک Flow اختصاصی بسازید؛ engine برای همه‌چیز نیست.</li><li><strong>«epoch اینجا چه کار می‌کند؟»</strong> اگر یک HTTP fetch قبل از پیام socket شروع شده و بعد از آن برسد، data ی قدیمی‌تر دارد. چون setData epoch را جلو برده، آن جواب دور ریخته می‌شود. اسلاید ۱۶.</li></ul>
+<p class="bridge"><strong>پل:</strong> «سؤال بعدی هفته‌ی پیش: حجم جواب‌ها.»</p>
+</section>
+<section id="c16"><h2>فصل ۱۴ — payload</h2>
+<p class="meta">اسلاید ۱۵ · حدود ۲ دقیقه</p>
+<h3>ایده (برای خودتان)</h3>
+<p>جواب صادقانه: engine به اندازه‌ی هر جواب کاری ندارد؛ fetcher هر چه برگرداند، همان cache می‌شود. کار engine کم کردن <strong>تعداد</strong> request است، و request ی که نرود صفر byte است. اندازه‌ی هر جواب تصمیم API است، و چند ابزار با engine کنار هم کار می‌کنند:</p>
+<ul><li><strong>صفحه‌بندی:</strong> هر صفحه یک key (<code>orders.list.open.1</code>). فقط صفحه‌ای که دیده می‌شود گرفته می‌شود.</li><li><strong>خلاصه در برابر کامل:</strong> لیست با endpoint ی خلاصه (id، عنوان، قیمت)، صفحه‌ی جزئیات با endpoint ی کامل. دو key، دو جعبه.</li><li><strong>HTTP cache:</strong> <code>OkHttpClient.Builder().cache(Cache(dir, 10L * 1024 * 1024))</code>. اگر سرور <code>ETag</code> یا <code>Last-Modified</code> بفرستد، OkHttp خودش درخواست شرطی می‌زند و جواب <code>304</code> بدون body است. این زیر fetcher است و engine از آن خبر ندارد. در ComposeCleanArch امروز تنظیم نشده؛ اضافه کردنش یک خط است. شرطش این است که backend ETag بفرستد.</li><li><strong>gzip:</strong> OkHttp به‌طور پیش‌فرض <code>Accept-Encoding: gzip</code> می‌فرستد.</li></ul>
+<p><strong>حافظه:</strong> فقط جعبه‌های زنده و جعبه‌های ۱۰ دقیقه‌ی اخیر. هر جعبه یک مرجع به همان object ی است که fetcher برگرداند؛ کپی نمی‌شود. اگر یک لیست بزرگ است، همان لیستی است که ViewModel هم نگه می‌داشت؛ با این فرق که یک بار، نه برای هر screen.</p>
+<h3>روی اسلاید، build به build</h3>
+<ol><li>→ ENGINE · → PAGES · → SUMMARY VS DETAIL · → ETAG / 304 · → جمله‌ی حافظه.</li></ol>
+<h3>اگر پرسیدند</h3>
+<ul><li><strong>«staleTime و HTTP cache با هم قاطی نمی‌شوند؟»</strong> نه؛ دو لایه‌اند. staleTime تصمیم می‌گیرد که اصلاً fetcher صدا زده شود. اگر صدا زده شد، HTTP cache تصمیم می‌گیرد که body دوباره دانلود شود یا 304 کافی است.</li></ul>
+<p class="bridge"><strong>پل:</strong> «تا اینجا "کِی". حالا "درست": اگر جواب‌ها به ترتیب نرسند؟»</p>
+</section>
+<div class="part"><span>بخش ۵ — درستی</span></div>
+<section id="c17"><h2>فصل ۱۵ — جواب دیررسیده</h2>
+<p class="meta">اسلاید ۱۶ · حدود ۳ دقیقه</p>
+<h3>ایده (برای خودتان)</h3>
+<p>سناریو: fetch #1 روی شبکه‌ی کند شروع شده. کاربر خرید می‌کند؛ invalidate یک fetch ی force (#2) می‌سازد. #2 زودتر برمی‌گردد با موجودی جدید. اگر جواب #1 بعداً برسد و بنویسد، کاربر موجودی <strong>قبل از خرید</strong> را می‌بیند؛ بدترین باگ ممکن در یک اپ مالی.</p>
+<p>دو قفل داریم:</p>
+<ol><li><strong>cancel:</strong> fetch ی force، fetch ی در راه را cancel می‌کند (<code>running?.cancel()</code>). با Retrofit و suspend، cancel به OkHttp می‌رسد و call قطع می‌شود.</li><li><strong>epoch:</strong> برای وقتی که cancel کافی نیست: fetcher ی که cancellation را چک نمی‌کند (کد blocking، یک library دیگر)، یا جوابی که درست قبل از cancel parse شده. هر fetch موقع برنده شدن شماره می‌گیرد، و قبل از نوشتن چک می‌کند:</li></ol>
+<pre dir="ltr"><code>val data = fetcher()
+if (epoch.get() != latestEpoch.get()) break   // superseded: drop
+lastFetch = now()
+_state.value = QueryState.Success(data, refreshing = false)</code></pre>
+<p><code>setData</code> هم epoch را جلو می‌برد، پس یک write ی socket یا optimistic از یک HTTP قدیمی‌تر شکست نمی‌خورد. همین چک برای error هم هست: fetch ی قدیمی نمی‌تواند با یک error روی data ی تازه بنویسد.</p>
+<h3>روی اسلاید، build به build</h3>
+<p>مقدار BOX SHOWS بالا با هر → عوض می‌شود.</p>
+<ol><li>→ fetch #1 (epoch 1). جعبه: 1,250.</li><li>→ خرید، fetch #2 (epoch 2)، #1 cancel می‌شود.</li><li>→ #2 رسید: <strong>1,230</strong> (سبز).</li><li>→ «ولی اگر جواب #1 با این حال برسد؟ بدون epoch:» <strong>1,250</strong> (قرمز).</li><li>→ «با epoch: ۱ ≠ ۲، دور ریخته شد.» <strong>1,230</strong> و خط کد.</li></ol>
+<h3>اگر پرسیدند</h3>
+<ul><li><strong>«test دارد؟»</strong> نه، و صادقانه بگویید. یکی از دو test ی است که تمرین این هفته است (اسلاید ۲۵ و ۲۸).</li><li><strong>«چرا timestamp نه؟»</strong> ساعت دستگاه می‌تواند عقب و جلو برود؛ یک شمارنده‌ی اتمی همیشه یکنواخت است.</li></ul>
+<p class="bridge"><strong>پل:</strong> «و اگر fetch اصلاً شکست بخورد؟»</p>
+</section>
+<section id="c18"><h2>فصل ۱۶ — retry</h2>
+<p class="meta">اسلاید ۱۷ · حدود ۲ دقیقه</p>
+<h3>ایده (برای خودتان)</h3>
+<pre dir="ltr"><code>// RetryPolicy.kt — shared by reads and writes
+internal fun isRetryable(throwable: Throwable): Boolean = when (throwable) {
+    is IOException -&gt; true
+    is HttpStatusException -&gt; when (throwable.httpStatusCode) {
+        HttpStatusException.NETWORK_ERROR_CODE -&gt; true
+        408 -&gt; true
+        in 500..599 -&gt; true
+        else -&gt; false
+    }
+    else -&gt; false
+}</code></pre>
+<div class="tablewrap"><table><thead><tr><th></th><th>read (<code>useQuery</code>)</th><th>write (<code>useMutation</code>)</th></tr></thead><tbody><tr><td>پیش‌فرض</td><td><code>maxAttempts = 3</code> (یعنی ۲ retry)</td><td><code>retryCount = 0</code></td></tr><tr><td>فاصله</td><td><code>retryDelayMs * attempt</code>: ۱ ثانیه، بعد ۲ ثانیه</td><td><code>retryDelay * (attempt + 1)</code></td></tr><tr><td>در این مدت کاربر چه می‌بیند</td><td>Loading (یا data ی قبلی با refreshing)</td><td><code>isLoading = true</code></td></tr><tr><td>4xx</td><td>هرگز retry</td><td>هرگز retry</td></tr></tbody></table></div>
+<p><strong>429:</strong> در <code>RateLimitInterceptor</code> ی لایه‌ی شبکه چند بار retry می‌شود، پس به این تابع نمی‌رسد مگر اینکه تکرار شود.</p>
+<p><strong>چرا write پیش‌فرض retry ندارد؟</strong> اگر سرور خرید را انجام داده ولی جواب در راه گم شده (timeout)، retry یعنی خرید دوم. retry ی امن برای write فقط با idempotency key در backend ممکن است.</p>
+<h3>روی اسلاید، build به build</h3>
+<ol><li>→ RETRY · TRANSIENT · → NEVER · CLIENT ERROR · → READ · → WRITE · → جمله‌ی پایین.</li></ol>
+<p class="bridge"><strong>پل:</strong> «و وقتی همه‌ی retryها تمام شد؟»</p>
+</section>
+<section id="c19"><h2>فصل ۱۷ — refetch ناموفق</h2>
+<p class="meta">اسلاید ۱۸ · حدود ۲ دقیقه</p>
+<h3>ایده (برای خودتان)</h3>
+<pre dir="ltr"><code>// a superseded fetch must not overwrite fresher state with a stale error
+if (epoch.get() != latestEpoch.get()) break
+// a failed refetch keeps the last good data on screen
+val existing = current
+_state.value =
+    if (existing != null) QueryState.Success(existing, refreshing = false)
+    else QueryState.Failure(AppError.from(throwable))</code></pre>
+<p>Failure فقط در بار اول. بعد از آن، data ی قبلی می‌ماند. <code>QueryContent</code> در حالت Failure یک <code>AppErrorState</code> با دکمه‌ی Retry می‌کشد که <code>refetch</code> را صدا می‌زند.</p>
+<p><strong>محدودیت، صادقانه:</strong> وقتی refetch شکست می‌خورد، کاربر هیچ نشانه‌ای نمی‌بیند. Success هیچ فیلد error ندارد. برای data ی حساس (مثلاً قیمت) ممکن است بخواهید بگویید «آخرین به‌روزرسانی ۲ دقیقه پیش». امروز engine این را نمی‌دهد؛ metric ی خطا (<code>QueryMetrics.errors</code>) ثبت می‌شود ولی به screen نمی‌رسد.</p>
+<h3>روی اسلاید، build به build</h3>
+<ol><li>→ گوشی چپ: بار اول شکست، Failure و Retry.</li><li>→ گوشی راست: refetch شکست، لیست سر جایش.</li><li>→ خط کد · → «data ی کمی کهنه بهتر از صفحه‌ی خالی است.»</li></ol>
+<h3>اگر پرسیدند</h3>
+<ul><li><strong>«test دارد؟»</strong> برای Room بله (<code>persistent tier serves the cached value when the fetch fails</code>). برای جعبه‌ی حافظه نه؛ این تمرین این هفته است.</li></ul>
+<p class="bridge"><strong>پل:</strong> «تا اینجا read. write هم سه مشکل کلاسیک دارد.»</p>
+</section>
+<section id="c20"><h2>فصل ۱۸ — useMutation از داخل</h2>
+<p class="meta">اسلاید ۱۹ · حدود ۲ دقیقه</p>
+<h3>ایده (برای خودتان)</h3>
+<ol><li><strong>single-flight:</strong> <code>inFlight</code> ی mutation یک <code>AtomicReference&lt;Job&gt;</code> است. tap ی دوم وقتی اولی <code>isActive</code> است نادیده گرفته می‌شود (و حتی دو tap دقیقاً همزمان: job با <code>start = LAZY</code> ساخته می‌شود و فقط برنده‌ی compare-and-set شروع می‌شود). یعنی نه write ی دوم، نه onSuccess ی دوم، نه navigation ی دوم.</li><li><strong>rememberUpdatedState:</strong> <code>mutate</code> یک lambda ی پایدار است (با <code>remember</code> یک بار ساخته می‌شود) تا Button هر frame recompose نشود. ولی <code>mutationFn</code> و <code>options</code> را از <code>rememberUpdatedState</code> می‌خواند؛ پس اگر lambda به مقدار تازه‌ای (مثلاً متن فرم) وابسته است، مقدار تازه استفاده می‌شود، نه closure ی frame اول.</li><li><strong>ترتیب:</strong> موفقیت ← <code>state = MutationState(data = result)</code> ← invalidate همه‌ی <code>invalidateKeys</code> ← <code>onSuccess</code>. شکست ← <code>onError</code>، بدون invalidate.</li></ol>
+<p><strong>scope:</strong> پیش‌فرض <code>rememberCoroutineScope()</code>. اگر کاربر وسط write از screen برود، coroutine cancel می‌شود (request ممکن است به سرور رسیده باشد). برای writeهایی که حتماً باید تمام شوند، یک scope ی بلندتر پاس بدهید یا WorkManager. جلسه‌ی ۳.</p>
+<h3>روی اسلاید، build به build</h3>
+<ol><li>→ SINGLE-FLIGHT · → LATEST LAMBDA · → ORDER، هر بار خطوطش روشن.</li></ol>
+<p class="bridge"><strong>پل:</strong> «engine را دیدیم. حالا سؤال چهارم: query state و UI state کنار هم.»</p>
+</section>
+<div class="part"><span>بخش ۶ — query state و UI state</span></div>
+<section id="c21"><h2>فصل ۱۹ — دو نوع state، دو صاحب</h2>
+<p class="meta">اسلاید ۲۰ · حدود ۳ دقیقه</p>
+<p class="where"><strong>کجای مسیر هستیم:</strong> جواب سؤال چهارم هفته‌ی پیش. از اینجا تا اسلاید ۲۳.</p>
+<h3>ایده (برای خودتان)</h3>
+<div class="tablewrap"><table><thead><tr><th></th><th>query state</th><th>UI state</th></tr></thead><tbody><tr><td>مثال</td><td>سفارش‌ها، موجودی، پروفایل</td><td>تب انتخاب‌شده، متن search، فرم در حال ویرایش، dialog باز</td></tr><tr><td>منبع حقیقت</td><td>سرور</td><td>خود screen</td></tr><tr><td>صاحب</td><td>جعبه (<code>useQuery</code>)</td><td><code>remember</code> / <code>rememberSaveable</code>، یا ViewModel وقتی منطق دارد</td></tr><tr><td>مشترک؟</td><td>بله، بین همه‌ی screenها</td><td>نه، مال همین screen</td></tr><tr><td>عمر</td><td>تا cacheTime بعد از آخرین screen</td><td>تا خود screen (یا تا process death با Saveable)</td></tr></tbody></table></div>
+<p><strong>قانون:</strong> هر state یک صاحب. دو اشتباه رایج:</p>
+<ul><li><strong>UI state در جعبه:</strong> مثلاً تب انتخاب‌شده را با setData در جعبه نگه داشتن. حالا همه‌ی screenها یک تب دارند.</li><li><strong>کپی server data در remember:</strong> <code>var orders by remember { mutableStateOf(result.data) }</code>. حالا دو کپی داریم؛ invalidate جعبه را تازه می‌کند ولی کپی کهنه می‌ماند. دقیقاً همان مشکل هفته‌ی پیش (سه phone، سه کپی).</li></ul>
+<p>این دو نوع state به دو شکل به هم وصل می‌شوند: UI state <strong>بخشی از key</strong> است (اسلاید ۲۱)، یا server data <strong>مقدار اولیه‌ی فرم</strong> است (اسلاید ۲۲).</p>
+<h3>روی اسلاید، build به build</h3>
+<ol><li>→ QUERY STATE · → UI STATE · → قانون · → دو شکل اتصال.</li></ol>
+<h3>اگر پرسیدند</h3>
+<ul><li><strong>«loading و error کدام‌اند؟»</strong> query state. مال جعبه‌اند و از <code>QueryResult</code> می‌آیند؛ screen آن‌ها را نگه نمی‌دارد. loading ی یک mutation هم مال mutation است (<code>save.isLoading</code>).</li><li><strong>«selection در یک لیست (چند آیتم تیک‌خورده)؟»</strong> UI state؛ ولی id ها را نگه دارید، نه objectها. اگر لیست refetch شد، id ها هنوز معتبرند.</li></ul>
+<p class="bridge"><strong>پل:</strong> «شکل اول: UI state بخشی از key.»</p>
+</section>
+<section id="c22"><h2>فصل ۲۰ — فیلتر بخشی از key است</h2>
+<p class="meta">اسلاید ۲۱ · حدود ۳ دقیقه</p>
+<h3>ایده (برای خودتان)</h3>
+<p>کد این اسلاید مثال است (<code>useOrders</code> و <code>OrderKeys</code> در ComposeCleanArch نیستند؛ شکلشان مثل <code>useHeadlines</code> و <code>ArticleKeys</code> است).</p>
+<pre dir="ltr"><code>object OrderKeys {
+    fun list(filter: Filter, page: Int) = "orders.list.${filter.name.lowercase()}.$page"
+}
+
+@Composable
+fun useOrders(filter: Filter, page: Int): QueryResult&lt;List&lt;Order&gt;&gt; {
+    val provider = hiltViewModel&lt;HookProvider&gt;()
+    return useQuery(
+        key = OrderKeys.list(filter, page),
+        fetcher = { provider.orderRepository.list(filter, page) },
+    )
+}</code></pre>
+<p>با عوض شدن filter، key عوض می‌شود: <code>remember(key)</code> جعبه‌ی جدید را می‌گیرد، <code>DisposableEffect(key, ...)</code> از جعبه‌ی قبلی unobserve و جعبه‌ی جدید را observe می‌کند. جعبه‌ی قبلی تا cacheTime زنده می‌ماند؛ برگشت به آن تب صفر request است (اگر fresh باشد).</p>
+<p><strong>search:</strong> دو چیز لازم دارد:</p>
+<pre dir="ltr"><code>var text by rememberSaveable { mutableStateOf("") }
+var query by remember { mutableStateOf("") }
+LaunchedEffect(text) { delay(300); query = text }          // debounce
+val results = useSearch(query, QueryOptions(enabled = query.length &gt;= 2))</code></pre>
+<p><code>enabled = false</code> یعنی observe نمی‌شود، پس هیچ fetch ی نمی‌رود. debounce در UI state است، نه در engine.</p>
+<p><strong>محدودیت، صادقانه:</strong> با عوض شدن key، جعبه‌ی جدید خالی است و screen Loading می‌بیند. React Query یک <code>keepPreviousData</code> دارد که تا رسیدن data ی جدید، data ی قبلی را نشان می‌دهد. engine ما ندارد. اگر لازم شد، screen می‌تواند آخرین Success را خودش نگه دارد؛ ولی این فعلاً در engine نیست (اسلاید ۲۶).</p>
+<h3>روی اسلاید، build به build</h3>
+<ol><li>→ دو خط rememberSaveable · → hook و key · → FilterTabs و برگشت به تب · → useSearch و enabled.</li></ol>
+<h3>از کلاس بپرسید</h3>
+<ul><li>«کاربر ده بار بین تب Open و Closed جابه‌جا شود، چند request؟» (۲، تا وقتی هر دو fresh هستند.)</li></ul>
+<p class="bridge"><strong>پل:</strong> «شکل دوم: server data مقدار اولیه‌ی یک فرم.»</p>
+</section>
+<section id="c23"><h2>فصل ۲۱ — فرم</h2>
+<p class="meta">اسلاید ۲۲ · حدود ۳ دقیقه</p>
+<h3>ایده (برای خودتان)</h3>
+<p>مشکل: فرم «ویرایش پروفایل» با نام فعلی شروع می‌شود (server data)، ولی از لحظه‌ای که کاربر تایپ می‌کند، متن مال screen است (UI state). اگر این دو را قاطی کنیم، یکی از دو باگ را داریم:</p>
+<ul><li><code>remember { mutableStateOf(p.name) }</code> بدون key: اگر پروفایل کاربر دیگری نشان داده شود (همان screen، id ی دیگر)، فرم نام قبلی را نگه می‌دارد.</li><li><code>remember(p) { ... }</code>: هر refetch یک object ی جدید می‌سازد (data class، equals ولی ممکن است فیلد دیگری عوض شده باشد)، و متن کاربر وسط تایپ پاک می‌شود.</li></ul>
+<p><strong>درست:</strong> <code>rememberSaveable(p.id) { mutableStateOf(p.name) }</code>. فرم فقط وقتی از نو شروع می‌شود که <em>موجودیت</em> عوض شود، نه وقتی data تازه شود.</p>
+<p>بعد از Save: mutation ← invalidate ی <code>ProfileKeys.ME</code> ← جعبه refetch ← <code>p.name</code> حالا برابر <code>name</code> است ← دکمه غیرفعال. هیچ کد اضافه‌ای برای «sync کردن فرم با سرور» لازم نیست.</p>
+<p><strong>کِی ViewModel؟</strong> وقتی UI state خودش منطق دارد: validation ی چند فیلدی، wizard ی چند مرحله‌ای، draft ی که باید ذخیره شود. ViewModel صاحب UI state می‌شود؛ server data هنوز از hook می‌آید. جلسه‌ی ۳ دقیق.</p>
+<h3>روی اسلاید، build به build</h3>
+<ol><li>→ SEED ONCE · → KEY = p.id · → SUBMIT · → WHEN A VIEWMODEL (کل کد روشن).</li></ol>
+<h3>از کلاس بپرسید</h3>
+<ul><li>«اگر key ی rememberSaveable به جای <code>p.id</code>، خود <code>p</code> بود، چه می‌شد؟» (هر refetch متن کاربر را پاک می‌کرد.)</li></ul>
+<p class="bridge"><strong>پل:</strong> «آخرین تکه‌ی state: سه نوع loading.»</p>
+</section>
+<section id="c24"><h2>فصل ۲۲ — سه نوع loading</h2>
+<p class="meta">اسلاید ۲۳ · حدود ۲ دقیقه</p>
+<h3>ایده (برای خودتان)</h3>
+<div class="tablewrap"><table><thead><tr><th>حالت</th><th>از کجا</th><th>UI</th></tr></thead><tbody><tr><td>Loading</td><td><code>state is Loading</code></td><td>spinner ی تمام‌صفحه؛ فقط بار اول</td></tr><tr><td>refreshing</td><td><code>Success(data, refreshing = true)</code></td><td>data روی صفحه؛ اگر خواستید یک نوار باریک</td></tr><tr><td>manual</td><td><code>isManualRefetch</code></td><td>spinner ی pull-to-refresh</td></tr></tbody></table></div>
+<pre dir="ltr"><code>PullToRefreshBox(
+    isRefreshing = headlines.isManualRefetch,
+    onRefresh = headlines.refetch,
+) {
+    QueryContent(headlines) { ArticleList(it) }
+}</code></pre>
+<p><strong>نکته برای خودتان:</strong> invalidate هم <code>fetch(force = true, manual = true)</code> صدا می‌زند، پس بعد از یک mutation، اگر screen ی با pull-to-refresh جعبه را نگاه می‌کند، spinner ی pull هم کوتاه دیده می‌شود. اگر کسی پرسید، درست دیده؛ رفتار فعلی engine این است.</p>
+<h3>روی اسلاید، build به build</h3>
+<ol><li>→ Loading · → Success(refreshing) · → isManualRefetch · → کد.</li></ol>
+<p class="bridge"><strong>پل:</strong> «خیلی قول دادیم. چطور ثابتشان کنیم؟»</p>
+</section>
+<div class="part"><span>بخش ۷ — test و محدودیت‌ها</span></div>
+<section id="c25"><h2>فصل ۲۳ — test بدون emulator</h2>
+<p class="meta">اسلاید ۲۴ · حدود ۲ دقیقه</p>
+<h3>ایده (برای خودتان)</h3>
+<p><code>QueryEntry</code> دو چیز inject می‌گیرد که test را ممکن می‌کند: <code>now: () -&gt; Long</code> (ساعت) و <code>scope</code> (با dispatcher). test ها <code>runTest(UnconfinedTestDispatcher())</code> و <code>backgroundScope</code> استفاده می‌کنند؛ پس coroutineها فوراً اجرا می‌شوند و یک دقیقه staleTime با <code>clock.advance(...)</code> در صفر میلی‌ثانیه می‌گذرد. هیچ Android، هیچ emulator، هیچ Robolectric.</p>
+<p>کد اسلاید همان اولین test ی <code>QueryTest.kt</code> است (<code>within stale time serves cache, refetches once stale</code>)، کمی کوتاه‌شده.</p>
+<h3>روی اسلاید، build به build</h3>
+<ol><li>→ CLOCK IS INJECTED · → DISPATCHER IS INJECTED · → RUN IT.</li></ol>
+<p><strong>اختیاری:</strong> اگر وقت هست، در Android Studio <code>./gradlew :core:query:test</code> را اجرا کنید. چند ثانیه بعد ۱۲ test سبز.</p>
+<p class="bridge"><strong>پل:</strong> «و این ۱۲ test دقیقاً همان قول‌های امروزند.»</p>
+</section>
+<section id="c26"><h2>فصل ۲۴ — ۱۲ قول، ۱۲ test</h2>
+<p class="meta">اسلاید ۲۵ · حدود ۲ دقیقه</p>
+<h3>ایده (برای خودتان)</h3>
+<p>هر کارت یک قول امروز و اسم دقیق test ی آن در <code>QueryTest.kt</code> است. دو قول test ندارند و این را صادقانه بگویید: <strong>جواب دیررسیده (epoch)</strong> و <strong>refetch ناموفق data را نگه می‌دارد</strong>. هر دو تمرین این هفته‌اند.</p>
+<p><strong>راهنمای تمرین (برای وقتی که کسی پرسید از کجا شروع کند):</strong></p>
+<pre dir="ltr"><code>@Test
+fun `a failed refetch keeps the last good data`() = runTest(UnconfinedTestDispatcher()) {
+    var fail = false
+    val entry = QueryEntry(
+        key = "k",
+        fetcher = { if (fail) throw IOException("offline") else "v1" },
+        staleTime = 0, cacheTime = Long.MAX_VALUE,
+        scope = backgroundScope, maxAttempts = 1,
+    )
+    entry.observe()                       // v1
+    fail = true
+    entry.fetch(force = true)             // fails
+    assertEquals(QueryState.Success("v1"), entry.state.value)
+}</code></pre>
+<p>برای test ی epoch: یک fetcher با <code>CompletableDeferred</code> بسازید تا ترتیب جواب‌ها را کنترل کنید؛ fetch اول را شروع کنید، <code>setData("new")</code> بزنید، بعد جواب fetch اول را complete کنید و چک کنید state هنوز <code>"new"</code> است.</p>
+<h3>روی اسلاید، build به build</h3>
+<ol><li>→ cache و dedup و invalidate · → retry و Room · → polling و evict · → دو کارت قرمز: «و دو قول test ندارند.»</li></ol>
+<p class="bridge"><strong>پل:</strong> «و صادقانه: کارهایی که engine اصلاً نمی‌کند.»</p>
+</section>
+<section id="c27"><h2>فصل ۲۵ — کارهایی که engine نمی‌کند</h2>
+<p class="meta">اسلاید ۲۶ · حدود ۲ دقیقه</p>
+<p class="where"><strong>کجای مسیر هستیم:</strong> برای این مخاطب، این اسلاید اعتماد می‌سازد. کوتاهش نکنید.</p>
+<h3>ایده (برای خودتان)</h3>
+<div class="tablewrap"><table><thead><tr><th>نمی‌کند</th><th>React Query</th><th>اگر لازم شد</th></tr></thead><tbody><tr><td>refetch با برگشت از background</td><td><code>refetchOnWindowFocus</code></td><td>یک observer روی <code>ProcessLifecycleOwner</code> که <code>invalidateMatching</code> بزند</td></tr><tr><td>refetch با وصل شدن اینترنت</td><td><code>refetchOnReconnect</code></td><td><code>ConnectivityManager.NetworkCallback</code> + invalidate</td></tr><tr><td>نگه داشتن data ی قبلی با key ی جدید</td><td><code>placeholderData</code> / <code>keepPreviousData</code></td><td>screen آخرین Success را نگه دارد؛ یا یک option در engine</td></tr><tr><td>infinite query</td><td><code>useInfiniteQuery</code></td><td>Paging 3</td></tr><tr><td>push</td><td>(React Query هم ندارد)</td><td>socket + <code>setData</code> (اسلاید ۱۴)</td></tr><tr><td>ماندن بعد از process death</td><td>persister</td><td><code>useCachedQuery</code> با Room (جلسه‌ی ۳)</td></tr></tbody></table></div>
+<p>چرا نداریم؟ هر کدام چند خط است، ولی هر خط engine را بزرگ‌تر و سخت‌تر برای خواندن می‌کند. قانون: وقتی یک screen ی واقعی لازمش داشت، اضافه می‌کنیم؛ با test.</p>
+<h3>روی اسلاید، build به build</h3>
+<ol><li>→ شش کارت، یکی‌یکی · → جمله‌ی پایین.</li></ol>
+<p class="bridge"><strong>پل:</strong> «برگردیم به چهار سؤال هفته‌ی پیش.»</p>
+</section>
+<div class="part"><span>بخش ۸ — پایان</span></div>
+<section id="c28"><h2>فصل ۲۶ — جمع‌بندی، جلسه‌ی بعد، سؤال</h2>
+<p class="meta">اسلایدهای ۲۷ تا ۲۹ · حدود ۳ دقیقه</p>
+<h3>اسلاید ۲۷ — چهار سؤال، چهار جواب</h3>
+<ol><li>→ ENGINE: «شش فیلد؛ fetch سه سؤال می‌پرسد؛ همه‌چیز thread-safe.»</li><li>→ REQUESTS: «فقط چهار چیز request می‌فرستد. staleTime را با product انتخاب کنید.»</li><li>→ LIVE · PAYLOAD: «polling محدود، یا push به داخل setData. حجم جواب کار API است.»</li><li>→ STATE: «هر state یک صاحب. UI state یا بخشی از key است، یا فرم را پر می‌کند.»</li></ol>
+<blockquote class="say">«جعبه فقط وقتی به سرور می‌رود که دلیل داشته باشد: خالی است، stale است، یا می‌دانیم عوض شده.»</blockquote>
+<h3>اسلاید ۲۸ — جلسه‌ی بعد و تمرین</h3>
+<ol><li>→ «جلسه‌ی بعد با هم می‌سازیم: معماری کامل، جای ViewModel، قانون‌ها، و یک feature از صفر.»</li><li>→ تمرین: <code>QueryEntry.kt</code> را کامل بخوانید؛ و یکی از دو test ی گمشده را بنویسید (راهنما در فصل ۲۴).</li></ol>
+<h3>اسلاید ۲۹ — سؤال</h3>
+<p>جواب‌های آماده در پیوست بعدی. اگر جواب را نمی‌دانید: «در کد چک می‌کنم و جلسه‌ی بعد جواب می‌دهم» و یادداشتش کنید.</p>
+</section>
+<section id="c29"><h2>پیوست — سؤال‌های احتمالی و جواب‌ها</h2>
+<p>جواب کوتاه بدهید و اگر لازم شد کد را در Android Studio باز کنید. جواب‌ها با کد ComposeCleanArch چک شده‌اند.</p>
+<h3>۱. request و کارایی</h3>
+<p><strong>با این همه screen، سرور زیر بار نمی‌رود؟</strong> برعکس: هر key حداکثر یک request در لحظه، هیچ request ی برای data ی fresh، و polling فقط روی صفحه. نسبت به ViewModel ی که در هر <code>init</code> fetch می‌کند، request کمتر است.</p>
+<p><strong>اگر staleTime را ۰ بگذارم؟</strong> هر بار که اولین screen جعبه را باز کند refetch می‌شود (ولی data ی قبلی فوراً نشان داده می‌شود). screen دوم با همان key هنوز request نمی‌زند، چون فقط observer ی اول fetch را بررسی می‌کند.</p>
+<p><strong>recomposition request می‌زند؟</strong> نه. fetch فقط در effectها (<code>DisposableEffect</code>، <code>LaunchedEffect</code>) و با کار کاربر صدا زده می‌شود.</p>
+<p><strong>collectAsState در هر screen گران نیست؟</strong> نه. StateFlow فقط وقتی emit می‌کند که مقدار عوض شود، و <code>QueryResult</code> با <code>remember(state, isManualRefetch)</code> ساخته می‌شود.</p>
+<h3>۲. data زنده</h3>
+<p><strong>چرا WebSocket پیش‌فرض نیست؟</strong> چون بیشتر data زنده نیست، و WebSocket برای هر endpoint کار backend می‌خواهد. engine هر دو را پشتیبانی می‌کند: polling داخلی، push از طریق <code>setData</code>.</p>
+<p><strong>polling وقتی دو screen دو interval مختلف می‌خواهند؟</strong> یک حلقه برای جعبه، با interval ی اولین screen. اگر لازم است، key را جدا کنید.</p>
+<p><strong>بعد از برگشت از background، data کهنه نمی‌ماند؟</strong> برای screen ی با polling، حلقه با STARTED دوباره شروع می‌شود و اولین tick بعد از یک دوره می‌آید. برای بقیه، تا یکی از چهار trigger اتفاق نیفتد نه. این یکی از محدودیت‌های اسلاید ۲۶ است.</p>
+<h3>۳. state</h3>
+<p><strong>QueryResult را می‌شود به یک ViewModel پاس داد؟</strong> نه؛ hook فقط داخل Compose کار می‌کند. اگر ViewModel به server data نیاز دارد، از repository بگیرد. ولی معمولاً لازم نیست: screen هر دو را می‌گیرد (data از hook، UI state از ViewModel) و ترکیبشان می‌کند. جلسه‌ی ۳.</p>
+<p><strong>derived state، مثلاً جمع سبد خرید؟</strong> از data حساب کنید، نگه ندارید: <code>val total = remember(cart.data) { cart.data?.sumOf { it.price } }</code>. یک منبع حقیقت.</p>
+<p><strong>دو query که به هم وابسته‌اند؟</strong> <code>enabled</code> روی دومی: <code>useOrders(userId, QueryOptions(enabled = userId != null))</code>، و id داخل key.</p>
+<p><strong>optimistic update؟</strong> با <code>queryClient.setData</code> ممکن است و epoch مراقب است که یک fetch ی قدیمی رویش ننویسد. ولی rollback ی خودکار نداریم؛ در onError باید خودتان invalidate کنید. برای پول، اول جواب سرور را صبر کنید.</p>
+<h3>۴. engine</h3>
+<p><strong>چرا خود TanStack Query را port نکردیم؟</strong> نسخه‌ی Kotlin ندارد، و چیزی که لازم داشتیم حدود ۸۸۰ خط شد. هر کس تیم می‌تواند کلش را بخواند.</p>
+<p><strong>چرا fetcher یک lambda است و نه یک interface؟</strong> چون هر hook فقط یک تابع suspend لازم دارد که repository را صدا بزند. interface فقط boilerplate اضافه می‌کرد.</p>
+<p><strong>«اولین hook برنده است» یعنی چه دقیقاً؟</strong> <code>getOrCreate</code> با <code>computeIfAbsent</code> فقط بار اول fetcher، staleTime، cacheTime و maxAttempts را می‌گیرد. hook های بعدی با همان key تنظیمات خودشان را دارند ولی نادیده گرفته می‌شوند. برای همین: هر key فقط یک hook.</p>
+<p><strong>OfflineForever و invalidate؟</strong> نکته‌ی فصل ۱۱ را ببینید: اگر وقتی هیچ screen ی جعبه را نگاه نمی‌کند invalidate شود، refetch ی بعدی اتفاق نمی‌افتد تا جعبه evict شود. باگ شناخته‌شده؛ اگر کسی پیدایش کرد، درست دیده است.</p>
+<p><strong>metrics را کجا ببینم؟</strong> <code>QueryClient</code> برای هر key <code>QueryMetrics</code> نگه می‌دارد: <code>fetchCount</code>، <code>cacheHits</code>، <code>errors</code>، <code>averageTimeMs</code>.</p>
+<h3>۵. test</h3>
+<p><strong>UI test داریم؟</strong> نه؛ ۱۲ test فقط برای engine است. screen را با جدا کردن یک composable ی بی‌state (که data می‌گیرد) test کنید؛ نه شبکه لازم است و نه QueryClient.</p>
+<p><strong>چطور یک screen را با QueryClient ی واقعی test کنم؟</strong> <code>ProvideQueryClient(QueryClient(testDispatcher))</code> دور screen، و یک repository ی fake. جلسه‌ی ۳.</p>
+</section>
+<section id="c30"><h2>پیوست — کد واقعی، تکه به تکه</h2>
+<p>کدهای اصلی از <code>core/query</code> ی ComposeCleanArch، برای وقتی که کسی گفت «کد واقعی را نشان بده». روی اسلایدها ساده‌شده‌اند؛ این‌ها واقعی‌اند (فقط کامنت‌ها کوتاه شده‌اند).</p>
+<p><strong>fetch: نصب اتمی و epoch</strong> (<code>QueryEntry.kt</code>)</p>
+<pre dir="ltr"><code>while (true) {
+    val running = inFlight.get()
+    if (!force &amp;&amp; running?.isActive == true) {
+        deferred.cancel()
+        if (manual) _isManualRefetch.value = false
+        return
+    }
+    if (inFlight.compareAndSet(running, deferred)) {
+        running?.cancel()                              // a forced fetch replaces the old one
+        epoch.set(latestEpoch.incrementAndGet())       // claim the epoch AFTER install
+        break
+    }
+}
+deferred.start()
+scope.launch {
+    try { deferred.join() } finally { inFlight.compareAndSet(deferred, null) }
+}</code></pre>
+<p><strong>بدنه‌ی fetch: retry، epoch، نگه داشتن data</strong></p>
+<pre dir="ltr"><code>_state.value = current?.let { QueryState.Success(it, refreshing = true) } ?: QueryState.Loading
+var attempt = 1
+while (true) {
+    try {
+        val data = fetcher()
+        if (epoch.get() != latestEpoch.get()) break
+        lastFetch = now()
+        source?.writer(data)
+        _state.value = QueryState.Success(data, refreshing = false)
+        break
+    } catch (cancellation: CancellationException) {
+        throw cancellation
+    } catch (throwable: Throwable) {
+        if (attempt &lt; maxAttempts &amp;&amp; isRetryable(throwable)) {
+            delay(retryDelayMs * attempt); attempt++; continue
+        }
+        if (epoch.get() != latestEpoch.get()) break
+        val existing = current
+        _state.value = if (existing != null) QueryState.Success(existing, refreshing = false)
+                       else QueryState.Failure(AppError.from(throwable))
+        break
+    }
+}</code></pre>
+<p><strong>invalidate و setData</strong></p>
+<pre dir="ltr"><code>fun invalidate() {
+    lastFetch = 0L
+    if (observers.get() &gt; 0) fetch(force = true, manual = true)
+}
+
+fun setData(data: T) {
+    lastFetch = now()
+    latestEpoch.incrementAndGet()
+    _state.value = QueryState.Success(data, refreshing = false)
+    source?.let { src -&gt; scope.launch { src.writer(data) } }
+}</code></pre>
+<p><strong>useMutation: single-flight</strong> (<code>MutationHooks.kt</code>)</p>
+<pre dir="ltr"><code>val currentFn = rememberUpdatedState(mutationFn)
+val currentOptions = rememberUpdatedState(options)
+val inFlight = remember { AtomicReference&lt;Job?&gt;(null) }
+
+val mutate: (P) -&gt; Unit = remember {
+    { params: P -&gt;
+        val running = inFlight.get()
+        if (running == null || !running.isActive) {
+            val job = scope.launch(start = CoroutineStart.LAZY) {
+                // ... run currentFn.value(params) with retry,
+                // then invalidateKeys.forEach(client::invalidate), then onSuccess
+            }
+            job.invokeOnCompletion { inFlight.compareAndSet(job, null) }
+            if (inFlight.compareAndSet(running, job)) job.start() else job.cancel()
+        }
+    }
+}</code></pre>
+<p><strong>پیش‌فرض‌ها</strong> (<code>QueryClient.kt</code>)</p>
+<pre dir="ltr"><code>const val DEFAULT_STALE_TIME_MS = 5 * 60 * 1000L     // 5 min
+const val DEFAULT_CACHE_TIME_MS = 10 * 60 * 1000L    // 10 min
+const val DEFAULT_MAX_ATTEMPTS = 3                   // 1 try + 2 retries
+const val DEFAULT_RETRY_DELAY_MS = 1000L             // 1s, then 2s</code></pre>
+</section></main>
+</div>
+<script>
+(function(){
+  var links=[].slice.call(document.querySelectorAll('nav.toc a'));
+  var obs=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){links.forEach(function(a){a.classList.toggle('on',a.getAttribute('href')==='#'+e.target.id)})}})},{rootMargin:'0px 0px -70% 0px'});
+  document.querySelectorAll('main section').forEach(function(s){obs.observe(s)});
+  var size=17; try{var v=parseFloat(localStorage.getItem('tg-fs'));if(v)size=v}catch(e){}
+  function apply(){document.querySelectorAll('main p, main li, main blockquote').forEach(function(el){el.style.fontSize=size+'px'});try{localStorage.setItem('tg-fs',size)}catch(e){}}
+  if(size!==17)apply();
+  document.getElementById('fs-up').onclick=function(){size=Math.min(24,size+1);apply()};
+  document.getElementById('fs-down').onclick=function(){size=Math.max(14,size-1);apply()};
+})();
+</script>
+
+</body></html>
